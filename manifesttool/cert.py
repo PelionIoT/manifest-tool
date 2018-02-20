@@ -1,21 +1,7 @@
 # -*- coding: utf-8 -*-
-# ----------------------------------------------------------------------------
-# Copyright 2016-2017 ARM Limited or its affiliates
-#
-# SPDX-License-Identifier: Apache-2.0
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-# ----------------------------------------------------------------------------
+# -*- copyright-holder: ARM Limited or its affiliates -*-
+# -*- copyright-dates: 2016-2017 -*-
+# -*- copyright-comment-string: # -*-
 from __future__ import print_function
 import logging, sys, os
 from cryptography import x509
@@ -112,6 +98,11 @@ def create(options):
     options.output_file.close()
     print('[\033[1;93mWARNING\033[1;0m]: Certificates generated with this tool are self-signed and for testing only',
             file=sys.stderr)
+    if options.valid_time < 10 * 365.25:
+        print('[\033[1;93mWARNING\033[1;0m]: This certificate is valid for {} days. For production,'
+              'use certificates with at least 10 years validity.'.format(options.valid_time),
+                file=sys.stderr)
+
     return 0
 
 def add(options):

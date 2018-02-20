@@ -1,21 +1,7 @@
 # -*- coding: utf-8 -*-
-# ----------------------------------------------------------------------------
-# Copyright 2016-2017 ARM Limited or its affiliates
-#
-# SPDX-License-Identifier: Apache-2.0
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-# ----------------------------------------------------------------------------
+# -*- copyright-holder: ARM Limited or its affiliates -*-
+# -*- copyright-dates: 2016-2017 -*-
+# -*- copyright-comment-string: # -*-
 
 import logging, sys
 LOG = logging.getLogger(__name__)
@@ -25,6 +11,7 @@ import copy
 import time
 import tempfile
 import os
+import os.path
 import shutil
 
 MAX_NAME_LEN = 128 # The update API has a maximum name length of 128, but this is not queriable.
@@ -53,7 +40,7 @@ def main(options):
                      ' <api key> or by manually editing .mbed_cloud_config.json')
         return 1
     if not options.payload_name:
-        name = options.payload.name + time.strftime('-%Y-%m-%dT%H:%M:%S')
+        name = os.path.basename(options.payload.name) + time.strftime('-%Y-%m-%dT%H:%M:%S')
         LOG.warning('Using {} as payload name.'.format(name))
         options.payload_name = name
     if len(options.payload_name) > MAX_NAME_LEN:
@@ -64,7 +51,7 @@ def main(options):
         return 1
 
     if not options.manifest_name:
-        name = options.payload.name + time.strftime('-%Y-%m-%dT%H:%M:%S-manifest')
+        name = os.path.basename(options.payload.name) + time.strftime('-%Y-%m-%dT%H:%M:%S-manifest')
         LOG.warning('Using {} as manifest name.'.format(name))
         options.manifest_name = name
 

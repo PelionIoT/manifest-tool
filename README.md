@@ -21,13 +21,13 @@ There are 3 options for installing the manifest tool, but all use `pip`:
 1. Install from GitHub over HTTPS.
 
     ```
-        $ pip install git+https://github.com/ARMmbed/manifest-tool.git
+        $ pip install git+https://github.com/ARMmbed/manifest-tool-restricted.git
     ```
 
 1. Install from GitHub over SSH.
 
     ```
-        $ pip install git+ssh://git@github.com/ARMmbed/manifest-tool.git
+        $ pip install git+ssh://git@github.com/ARMmbed/manifest-tool-restricted.git
     ```
 
 1. Install from a local copy of this repository.

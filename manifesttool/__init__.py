@@ -2,4 +2,4 @@
 # -*- copyright-holder: ARM Limited or its affiliates -*-
 # -*- copyright-dates: 2016-2017 -*-
 # -*- copyright-comment-string: # -*-
-__version__ = '1.3.2'
+__version__ = '1.4.2'

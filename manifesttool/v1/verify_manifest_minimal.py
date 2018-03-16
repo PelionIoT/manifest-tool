@@ -32,7 +32,7 @@ Manifest.componentType = namedtype.NamedTypes(
     ),
     namedtype.NamedType('applyImmediately', univ.Boolean()),
     namedtype.NamedType('encryptionMode', univ.Choice(componentType=namedtype.NamedTypes(
-        namedtype.NamedType('enum', univ.Enumerated(namedValues=namedval.NamedValues(('invalid', 0), ('aes-128-ctr-ecc-secp256r1-sha256', 1), ('none-ecc-secp256r1-sha256', 2), ('none-none-sha256', 3)))),
+        namedtype.NamedType('enum', univ.Enumerated(namedValues=namedval.NamedValues(('invalid', 0), ('aes-128-ctr-ecc-secp256r1-sha256', 1), ('none-ecc-secp256r1-sha256', 2), ('none-none-sha256', 3), ('none-psk-aes-128-ccm-sha256', 4), ('aes-128-ccm-psk-sha256', 5)))),
         namedtype.NamedType('objectId', univ.ObjectIdentifier())
     ))
     ),

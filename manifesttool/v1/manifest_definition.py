@@ -3,17 +3,80 @@
 # -*- copyright-dates: 2016-2017 -*-
 # -*- copyright-comment-string: # -*-
 #
-# This file has been generated using asn1ate (v <unknown>) from './manifest-0.9.6.asn'
-# Last Modified on 2016-11-16 10:00:45
+# This file has been generated using asn1ate (v <unknown>) from './ASN.1/v1/manifest-1.0.0'
+# Last Modified on 2017-11-21 17:47:43
 from pyasn1.type import univ, char, namedtype, namedval, tag, constraint, useful
+
+
+class Uri(char.UTF8String):
+    pass
+
+
+class Bytes(univ.OctetString):
+    pass
 
 
 class UUID(univ.OctetString):
     pass
 
 
-class Uri(char.UTF8String):
+class Payload(univ.OctetString):
     pass
+
+
+class CertificateReference(univ.Sequence):
+    pass
+
+
+CertificateReference.componentType = namedtype.NamedTypes(
+    namedtype.NamedType('fingerprint', Bytes()),
+    namedtype.NamedType('uri', Uri())
+)
+
+
+class SignatureBlock(univ.Sequence):
+    pass
+
+
+SignatureBlock.componentType = namedtype.NamedTypes(
+    namedtype.NamedType('signature', univ.OctetString()),
+    namedtype.NamedType('certificates', univ.SequenceOf(componentType=CertificateReference()))
+)
+
+
+class MacBlock(univ.Sequence):
+    pass
+
+
+MacBlock.componentType = namedtype.NamedTypes(
+    namedtype.NamedType('pskID', univ.OctetString()),
+    namedtype.NamedType('keyTableVersion', univ.Integer()),
+    namedtype.OptionalNamedType('keyTableIV', univ.OctetString()),
+    namedtype.OptionalNamedType('keyTableRef', char.UTF8String()),
+    namedtype.NamedType('keyTableIndexSize', univ.Integer()),
+    namedtype.NamedType('keyTableRecordSize', univ.Integer())
+)
+
+
+class KeyTableEntry(univ.Sequence):
+    pass
+
+
+KeyTableEntry.componentType = namedtype.NamedTypes(
+    namedtype.OptionalNamedType('hash', univ.OctetString().subtype(implicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatSimple, 0))),
+    namedtype.OptionalNamedType('payloadKey', univ.OctetString().subtype(implicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatSimple, 1)))
+)
+
+
+class ResourceSignature(univ.Sequence):
+    pass
+
+
+ResourceSignature.componentType = namedtype.NamedTypes(
+    namedtype.NamedType('hash', univ.OctetString()),
+    namedtype.NamedType('signatures', univ.SequenceOf(componentType=SignatureBlock())),
+    namedtype.OptionalNamedType('macs', univ.SequenceOf(componentType=MacBlock()))
+)
 
 
 class ResourceReference(univ.Sequence):
@@ -27,16 +90,12 @@ ResourceReference.componentType = namedtype.NamedTypes(
 )
 
 
-class Bytes(univ.OctetString):
+class ResourceAlias(univ.Sequence):
     pass
 
 
-class CertificateReference(univ.Sequence):
-    pass
-
-
-CertificateReference.componentType = namedtype.NamedTypes(
-    namedtype.NamedType('fingerprint', Bytes()),
+ResourceAlias.componentType = namedtype.NamedTypes(
+    namedtype.NamedType('hash', univ.OctetString()),
     namedtype.NamedType('uri', Uri())
 )
 
@@ -71,16 +130,6 @@ PayloadDescription.componentType = namedtype.NamedTypes(
 )
 
 
-class ResourceAlias(univ.Sequence):
-    pass
-
-
-ResourceAlias.componentType = namedtype.NamedTypes(
-    namedtype.NamedType('hash', univ.OctetString()),
-    namedtype.NamedType('uri', Uri())
-)
-
-
 class Manifest(univ.Sequence):
     pass
 
@@ -101,7 +150,7 @@ Manifest.componentType = namedtype.NamedTypes(
     ),
     namedtype.NamedType('applyImmediately', univ.Boolean()),
     namedtype.NamedType('encryptionMode', univ.Choice(componentType=namedtype.NamedTypes(
-        namedtype.NamedType('enum', univ.Enumerated(namedValues=namedval.NamedValues(('invalid', 0), ('aes-128-ctr-ecc-secp256r1-sha256', 1), ('none-ecc-secp256r1-sha256', 2), ('none-none-sha256', 3)))),
+        namedtype.NamedType('enum', univ.Enumerated(namedValues=namedval.NamedValues(('invalid', 0), ('aes-128-ctr-ecc-secp256r1-sha256', 1), ('none-ecc-secp256r1-sha256', 2), ('none-none-sha256', 3), ('none-psk-aes-128-ccm-sha256', 4), ('aes-128-ccm-psk-sha256', 5)))),
         namedtype.NamedType('objectId', univ.ObjectIdentifier())
     ))
     ),
@@ -109,10 +158,6 @@ Manifest.componentType = namedtype.NamedTypes(
     namedtype.NamedType('dependencies', univ.SequenceOf(componentType=ResourceReference())),
     namedtype.OptionalNamedType('payload', PayloadDescription())
 )
-
-
-class Payload(univ.OctetString):
-    pass
 
 
 class Resource(univ.Sequence):
@@ -130,26 +175,6 @@ Resource.componentType = namedtype.NamedTypes(
 )
 
 
-class SignatureBlock(univ.Sequence):
-    pass
-
-
-SignatureBlock.componentType = namedtype.NamedTypes(
-    namedtype.NamedType('signature', univ.OctetString()),
-    namedtype.NamedType('certificates', univ.SequenceOf(componentType=CertificateReference()))
-)
-
-
-class ResourceSignature(univ.Sequence):
-    pass
-
-
-ResourceSignature.componentType = namedtype.NamedTypes(
-    namedtype.NamedType('hash', univ.OctetString()),
-    namedtype.NamedType('signatures', univ.SequenceOf(componentType=SignatureBlock()))
-)
-
-
 class SignedResource(univ.Sequence):
     pass
 
@@ -158,3 +183,5 @@ SignedResource.componentType = namedtype.NamedTypes(
     namedtype.NamedType('resource', Resource()),
     namedtype.NamedType('signature', ResourceSignature())
 )
+
+

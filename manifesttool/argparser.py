@@ -11,8 +11,7 @@ class MainArgumentParser(object):
         self.parser = self._make_parser()
 
     def _make_parser(self):
-        parser = argparse.ArgumentParser(description = 'Create or transform a manifest.'
-        ' Use {} [command] -h for help on each command.'.format(sys.argv[0]))
+        parser = argparse.ArgumentParser(description = 'Create or transform a manifest')
 
         # Add all top-level commands
         parser.add_argument('-l', '--log-level', choices=['debug','info','warning','exception'], default='info')
@@ -107,6 +106,7 @@ class MainArgumentParser(object):
         init_parser.add_argument('-q', '--quiet', help='Do not prompt for certificate fields', action='store_true')
         init_parser.add_argument('-f', '--force', action='store_true',
             help='Overwrite existing update_default_resources.c')
+        init_parser.add_argument('--psk', action='store_true', help='initialize this project as a PSK authentication project')
 
         self._addVerifyArgs(sign_parser, ['input-file'])
         sign_source_group = sign_parser.add_mutually_exclusive_group(required=True)
@@ -194,6 +194,32 @@ class MainArgumentParser(object):
         #     help='Secret data used for encryption, e.g. a pre-shared key or a private key.\
         #           The exact contents is dictated by the encryption method used. The secret may\
         #           be base64 encoded or may be a filename.')
+        if not 'mac' in exclusions:
+            parser.add_argument('--mac',
+                help='Use Pre-Shared-Key MAC authentication, with a master key supplied in --private-key. '
+                'A filter ID or Device Unique ID is also required to specify which devices should have TAGs created. '
+                'These can be supplied in --filter-id or --device-urn.\n'
+                'The manifest tool will create a PSK for each device based on the master key and the concatenation of three LwM2M values: \n'
+                '    /10255/0/3 (Vendor ID)\n'
+                '    /10255/0/4 (Device Class ID)\n'
+                '    Device URN (Endpoint Client Name)',
+                action='store_true')
+            parser.add_argument('--filter-id', help='specify which devices to use.')
+            parser.add_argument('--device-urn', action='append',
+                help='Specify devices to target with the update by their URNs (Endpoint Client Name). '
+                'The manifest tool will derive a PSK for the specified device based on the master key and the concatenation of: \n'
+                '    Vendor ID\n'
+                '    Device Class ID\n'
+                '    Device URN\n'
+                '--device-urn can be used multiple times to specify multiple devices.')
+            parser.add_argument('--psk-table', help='Specify the file to use to store the PSK table. '
+                'This file is used with the --mac argument in order to specify the output file for the pre-shared keys. '
+                'The table is composed of three columns: device URN, WrappedManifestDigest, and WrappedPayloadKey.',
+                type=argparse.FileType('wb'))
+            parser.add_argument('--psk-table-encoding', help='', choices=['protobuf', 'text'], default='text')
+        if not 'payload-key' in exclusions:
+            parser.add_argument('--payload-key', help='supply the payload encryption key. This is the key that is used encrypt the payload. '
+                'The payload key is encrypted for each device using a shared secret.')
         if not 'payload' in exclusions:
             parser.add_argument('-p', '--payload',
                 help='Supply a local copy of the payload file.'

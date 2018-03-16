@@ -60,6 +60,12 @@ const uint16_t arm_uc_default_certificate_size = sizeof(arm_uc_default_certifica
 const uint8_t arm_uc_default_psk[] = {{
     {psk}
 }};
-const uint16_t arm_uc_default_psk_bits = 128;
+const uint8_t arm_uc_default_psk_size = sizeof(arm_uc_default_psk);
+const uint16_t arm_uc_default_psk_bits = sizeof(arm_uc_default_psk)*8;
+
+const uint8_t arm_uc_default_psk_id[] = {{
+    {pskId}
+}};
+const uint8_t arm_uc_default_psk_id_size = sizeof(arm_uc_default_psk_id);
 #endif
 '''

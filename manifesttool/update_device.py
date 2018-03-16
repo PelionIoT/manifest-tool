@@ -11,7 +11,6 @@ import copy
 import time
 import tempfile
 import os
-import os.path
 import shutil
 
 MAX_NAME_LEN = 128 # The update API has a maximum name length of 128, but this is not queriable.
@@ -40,7 +39,7 @@ def main(options):
                      ' <api key> or by manually editing .mbed_cloud_config.json')
         return 1
     if not options.payload_name:
-        name = os.path.basename(options.payload.name) + time.strftime('-%Y-%m-%dT%H:%M:%S')
+        name = options.payload.name + time.strftime('-%Y-%m-%dT%H:%M:%S')
         LOG.warning('Using {} as payload name.'.format(name))
         options.payload_name = name
     if len(options.payload_name) > MAX_NAME_LEN:
@@ -51,7 +50,7 @@ def main(options):
         return 1
 
     if not options.manifest_name:
-        name = os.path.basename(options.payload.name) + time.strftime('-%Y-%m-%dT%H:%M:%S-manifest')
+        name = options.payload.name + time.strftime('-%Y-%m-%dT%H:%M:%S-manifest')
         LOG.warning('Using {} as manifest name.'.format(name))
         options.manifest_name = name
 

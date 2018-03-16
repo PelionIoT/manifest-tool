@@ -1,0 +1,10 @@
+syntax = "proto3";
+
+package pskManifest;
+message DeviceEntry {
+    string urn = 1;
+    bytes opaque = 2;
+};
+message KeyTable {
+    repeated DeviceEntry entries = 1;
+}

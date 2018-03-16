@@ -11,6 +11,7 @@ from pyasn1.error import PyAsn1Error
 
 from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.backends import default_backend
+from cryptography.hazmat.primitives.kdf.hkdf import HKDF
 
 from future.moves.urllib.request import urlopen, Request
 from future.moves.urllib.parse import urlparse, urlencode
@@ -33,6 +34,28 @@ def sha_hash(content):
     sha = hashlib.sha256()
     sha.update(content)
     return sha.digest()
+
+def getDevicePSK_HKDF(mode, masterKey, vendorId, classId, keyUsage):
+    # Construct the device PSK
+    # Device UUID is the IKM.
+    hashAlg = {
+        'aes-128-ctr-ecc-secp256r1-sha256' : hashes.SHA256,
+        'none-ecc-secp256r1-sha256': hashes.SHA256,
+        'none-none-sha256': hashes.SHA256,
+        'none-psk-aes-128-ccm-sha256': hashes.SHA256,
+        'psk-aes-128-ccm-sha256': hashes.SHA256
+    }.get(mode)
+
+    hkdf = HKDF(
+        algorithm = hashAlg(),
+        length = 128/8,
+        # The master key is the salt
+        salt = masterKey,
+        # Device Vendor ID + Device Class ID is the info
+        info = keyUsage + vendorId + classId,
+        backend = default_backend()
+    )
+    return hkdf
 
 def download_file(url):
     # Create request structure

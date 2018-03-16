@@ -98,11 +98,6 @@ def create(options):
     options.output_file.close()
     print('[\033[1;93mWARNING\033[1;0m]: Certificates generated with this tool are self-signed and for testing only',
             file=sys.stderr)
-    if options.valid_time < 10 * 365.25:
-        print('[\033[1;93mWARNING\033[1;0m]: This certificate is valid for {} days. For production,'
-              'use certificates with at least 10 years validity.'.format(options.valid_time),
-                file=sys.stderr)
-
     return 0
 
 def add(options):

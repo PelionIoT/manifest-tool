@@ -1,0 +1,15 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+# -*- copyright-holder: ARM Limited or its affiliates -*-
+# -*- copyright-dates: 2016 -*-
+import sys
+import os
+manifesttoolPath = os.path.join(os.path.dirname(os.path.realpath(__file__)),'..')
+sys.path.insert(0,manifesttoolPath)
+from manifesttool import clidriver
+
+def main():
+  return clidriver.main()
+
+if __name__ == "__main__":
+  sys.exit(main())

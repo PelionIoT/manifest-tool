@@ -1,0 +1,38 @@
+-- -*- coding: utf-8 -*-
+-- -*- copyright-holder: ARM Limited or its affiliates -*-
+-- -*- copyright-dates: 2017 -*-
+-- -*- copyright-comment-string: -- -*-
+-- Manifest definition file in ASN.1 (v. 1.0.0)
+ManifestSchema DEFINITIONS IMPLICIT TAGS ::= BEGIN
+
+  UUID ::= OCTET STRING
+  Manifest ::= SEQUENCE {
+      manifestVersion     ENUMERATED {
+        v1(1)
+      },
+      description UTF8String OPTIONAL,
+      timestamp   INTEGER,
+      vendorId    UUID,
+      classId     UUID,
+      deviceId    UUID,
+      nonce       OCTET STRING,
+      vendorInfo      OCTET STRING,
+      applyPeriod SEQUENCE {
+          validFrom     INTEGER,
+          validTo       INTEGER
+      } OPTIONAL,
+      applyImmediately    BOOLEAN,
+      encryptionMode  CHOICE {
+          enum    ENUMERATED {
+              invalid(0),
+              aes-128-ctr-ecc-secp256r1-sha256(1),
+              none-ecc-secp256r1-sha256(2),
+              none-none-sha256(3)
+          },
+          objectId    OBJECT IDENTIFIER
+      },
+      aliases         ANY,
+      dependencies    ANY,
+      payload         ANY OPTIONAL
+  }
+END

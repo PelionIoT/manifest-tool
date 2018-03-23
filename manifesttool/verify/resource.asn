@@ -1,0 +1,17 @@
+-- -*- coding: utf-8 -*-
+-- -*- copyright-holder: ARM Limited or its affiliates -*-
+-- -*- copyright-dates: 2017 -*-
+-- -*- copyright-comment-string: -- -*-
+-- Manifest definition file in ASN.1 (v. 1.0.0)
+ManifestSchema DEFINITIONS IMPLICIT TAGS ::= BEGIN
+
+  Uri ::= UTF8String
+  Resource ::= SEQUENCE {
+      uri     Uri OPTIONAL,
+      resourceType        ENUMERATED {
+          manifest(0), payload(1)
+      },
+      resource ANY
+  }
+
+END

@@ -4,7 +4,6 @@
 # -*- copyright-comment-string: # -*-
 
 from manifesttool.v1.sign import main as sign_v1
-from manifesttool.v2.sign import main as sign_v2
 from manifesttool.utils import detect_version
 
 def main(options):
@@ -12,8 +11,7 @@ def main(options):
     if not version:
         return 1
     sign = {
-        '1' : sign_v1,
-        '2' : sign_v2
+        '1' : sign_v1
     }.get(version)
     if not sign:
         return 1

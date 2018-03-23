@@ -5,7 +5,6 @@
 import json, logging, binascii
 from builtins import bytes
 from manifesttool.v1.verify import main as verify_v1
-from manifesttool.v2.verify import main as verify_v2
 
 LOG = logging.getLogger(__name__)
 
@@ -47,8 +46,7 @@ def main(options):
 
     # For now, we will assume that 2+ means 2.
     parser = {
-        1 : verify_v1,
-        2 : verify_v2
+        1 : verify_v1
     }.get(version, None)
     if not parser:
         LOG.critical("Unrecognized manifest version.")

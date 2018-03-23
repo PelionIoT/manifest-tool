@@ -184,7 +184,7 @@ class MainArgumentParser(object):
             help='Specify the output file. stdout by default',
             type=argparse.FileType('wb'), default=output_default)
     def _addCreateArgs(self, parser, exclusions=[]):
-        parser.add_argument('-v', '--manifest-version', choices=['1', '2'], default='1')
+        parser.add_argument('-v', '--manifest-version', choices=['1'], default='1')
         if not 'private-key' in exclusions:
             parser.add_argument('-k', '--private-key', metavar='KEY',
                 help='Supply a private key, or a shared secret for signing a created manifest',

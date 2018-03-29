@@ -131,6 +131,28 @@ def checkURN(deviceURN):
     if URNsplit[1] == 'dev' and URNsplit[2] != 'ops':
         raise ValueError('ops-type URNs are recommended dev-class URNs for PSK identities')
 
+def findDevCertFiles(textPattern, directorySearchPaths, searchExtension):
+    IdentityFiles = []
+    AllSourceFiles = []
+    for path in directorySearchPaths:
+        if os.path.isdir(path):
+            for file in os.listdir(path):
+                if file.endswith(searchExtension):
+                    AllSourceFiles.append(os.path.join(path,file))
+    for file in AllSourceFiles:
+        with open(file, 'rt') as fd:
+            for line in fd:
+                if textPattern in line:
+                    IdentityFiles.append(file)
+    if len(IdentityFiles) > 1:
+        raise ValueError('Multiple Endpoint Name definitions found!')
+        sys.exit(1)
+    else:
+        if len(IdentityFiles) == 1:
+            return IdentityFiles[0]
+        else:
+            return ''
+
 
 def main(options):
 
@@ -161,14 +183,16 @@ def main(options):
         # Attempt to read the device endpoint name out of mbed_cloud_dev_credentials.c
         deviceURN = None
         try:
-            with open('mbed_cloud_dev_credentials.c', 'rt') as fd:
+            dev_credential_dirs = ['.','source']
+            dev_cred_file_name = findDevCertFiles('MBED_CLOUD_DEV_BOOTSTRAP_ENDPOINT_NAME', dev_credential_dirs, '.c')
+            with open(dev_cred_file_name, 'rt') as fd:
                 URNLine = None
                 for line in fd:
                     if 'MBED_CLOUD_DEV_BOOTSTRAP_ENDPOINT_NAME' in line:
                         URNLine = line
                         break
                 if URNLine:
-                    m = re.search('const char MBED_CLOUD_DEV_BOOTSTRAP_ENDPOINT_NAME\\[\\] = "([^"]*)";', URNLine)
+                    m = re.search('const\s+char\s+MBED_CLOUD_DEV_BOOTSTRAP_ENDPOINT_NAME\\[\\]\s*=\s*"([^"]*)";', URNLine)
                     if m:
                         deviceURN = m.group(1)
         except IOError:
@@ -187,7 +211,6 @@ def main(options):
             checkURN(deviceURN)
         except ValueError as e:
             LOG.warning('%s', e.message)
-
 
         # Append the device URN extracted from the credentials file to the current list
         PSKIdentities.append(deviceURN)
@@ -256,7 +279,6 @@ def main(options):
     # Write the settings
 
     settings = {
-        'signing-script' : options.signing_script,
         'classId' : str(classId),
         'vendorId' : str(vendorId),
         'vendorDomain' : options.vendor_domain,

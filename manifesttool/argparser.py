@@ -11,7 +11,8 @@ class MainArgumentParser(object):
         self.parser = self._make_parser()
 
     def _make_parser(self):
-        parser = argparse.ArgumentParser(description = 'Create or transform a manifest')
+        parser = argparse.ArgumentParser(description = 'Create or transform a manifest.'
+        ' Use {} [command] -h for help on each command.'.format(sys.argv[0]))
 
         # Add all top-level commands
         parser.add_argument('-l', '--log-level', choices=['debug','info','warning','exception'], default='info')
@@ -87,11 +88,11 @@ class MainArgumentParser(object):
                                 help='Provide a private key file for the certificate provided with -c. ' +
                                      'This allows the manifest tool to perform manifest signing internally.',
                                 type=argparse.FileType('rb'))
-        init_existing_cert_signing.add_argument('-s','--signing-script',
-                                help='Provide a script that should be used for signing. ' +
-                                     'This allows signing with existing infrastructure. ' +
-                                     'The arguments to the script are: {fingerprint of the certificate} '+
-                                     '{hash of the manifest}.',type=argparse.FileType('rb'))
+        # init_existing_cert_signing.add_argument('-s','--signing-script',
+        #                         help='Provide a script that should be used for signing. ' +
+        #                              'This allows signing with existing infrastructure. ' +
+        #                              'The arguments to the script are: {fingerprint of the certificate} '+
+        #                              '{hash of the manifest}.',type=argparse.FileType('rb'))
 
         init_vendor_group = init_parser.add_mutually_exclusive_group(required=True)
         init_vendor_group.add_argument('-V', '--vendor-id', help='')
@@ -205,7 +206,7 @@ class MainArgumentParser(object):
                 '    Device URN (Endpoint Client Name)',
                 action='store_true')
             parser.add_argument('--filter-id', help='specify which devices to use.')
-            parser.add_argument('--device-urn', action='append',
+            parser.add_argument('--device-urn',
                 help='Specify devices to target with the update by their URNs (Endpoint Client Name). '
                 'The manifest tool will derive a PSK for the specified device based on the master key and the concatenation of: \n'
                 '    Vendor ID\n'

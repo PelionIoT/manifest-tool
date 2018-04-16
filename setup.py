@@ -18,12 +18,10 @@
 # ----------------------------------------------------------------------------
 
 from setuptools import setup, find_packages
-import pip
 import manifesttool
 import os
 
-install_reqs = pip.req.parse_requirements('requirements.txt', session=pip.download.PipSession())
-reqs = [str(r.req) for r in install_reqs]
+reqs = list(line for line in open("./requirements.txt"))
 
 if os.name == 'nt':
     entry_points={

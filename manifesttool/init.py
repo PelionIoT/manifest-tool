@@ -183,7 +183,7 @@ def main(options):
     if hasattr(options, 'vendor_domain') and options.vendor_domain:
         domainParts = options.vendor_domain.split('.')
         minPart = min(domainParts)
-        if len(domainParts) < 2 or minPart < 1:
+        if len(domainParts) < 2 or len(minPart) < 1:
             LOG.critical('"{0}" is not a valid domain name.'.format(options.vendor_domain))
             return 1
         options.vendor_id = str(uuid.uuid5(uuid.NAMESPACE_DNS, options.vendor_domain))

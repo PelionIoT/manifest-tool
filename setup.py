@@ -21,7 +21,8 @@ from setuptools import setup, find_packages
 import manifesttool
 import os
 
-reqs = list(line for line in open("./requirements.txt"))
+with open('requirements.txt') as file_handle:
+    reqs = file_handle.readlines()
 
 if os.name == 'nt':
     entry_points={

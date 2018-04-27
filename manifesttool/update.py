@@ -24,6 +24,9 @@ from manifesttool import prepare
 from manifesttool import update_device as device
 
 def main(options):
+    if (hasattr(options,"psk") and options.psk) or (hasattr(options,"mac") and options.mac):
+        LOG.critical('manifest-tool update commands are not currently enabled for PSK/MAC authentication.')
+        return 1
     try:
         from mbed_cloud.update import UpdateAPI
     except:

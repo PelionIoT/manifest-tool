@@ -25,19 +25,24 @@ from collections import namedtuple
 
 from cryptography.hazmat.primitives import ciphers as cryptoCiphers
 from cryptography.hazmat.primitives import hashes as cryptoHashes
+from cryptography.hazmat.primitives.ciphers.aead import AESCCM
 from cryptography.hazmat import backends as cryptoBackends
 from cryptography import x509
 
 from manifesttool import utils, codec, errorhandler, defaults
 from manifesttool.v1.manifest_schema import SignedResource, Resource, ResourceSignature, ResourceReference, \
                                          Manifest, CertificateReference, PayloadDescription, ResourceAlias, \
-                                         SignatureBlock
+                                         SignatureBlock, MacBlock
 from manifesttool.v1 import manifest_definition
+from manifesttool import keytable_pb2
 
 
 # Import different encoders
 from pyasn1.codec.der import encoder as der_encoder
+from pyasn1.codec.native import decoder as native_decoder
 from pyasn1.error import PyAsn1Error
+from pyasn1.type.univ import OctetString, Sequence
+from pyasn1.type import namedtype
 
 from builtins import bytes
 
@@ -65,7 +70,9 @@ class cryptoMode:
         0: _mode('invalid', None, None, None),
         1: _mode('aes-128-ctr-ecc-secp256r1-sha256', 128/8, 256/8, True),
         2: _mode('none-ecc-secp256r1-sha256', 128/8, 256/8, False),
-        3: _mode('none-none-sha256', 128/8, 256/8, False)
+        3: _mode('none-none-sha256', 128/8, 256/8, False),
+        4: _mode('none-psk-aes-128-ccm-sha256', 128/8, 256/8, False),
+        5: _mode('psk-aes-128-ccm-sha256', 128/8, 256/8, True)
     }
     @staticmethod
     def name2enum(name):
@@ -79,6 +86,7 @@ class cryptoMode:
         self.symSize = m.symSize
         self.hashSize = m.hashSize
         self.payloadEncrypt = m.payloadEncrypt
+        self.name = m.name
 
 def ARM_UC_mmCryptoModeShouldEncrypt(mode):
     return cryptoMode(mode).payloadEncrypt
@@ -134,12 +142,7 @@ def get_payload_description(options, manifestInput):
     crypto_mode = manifestGet(manifestInput, 'resource.resource.manifest.encryptionMode.enum', 'encryptionMode')
     crypto_mode = crypto_mode if crypto_mode in cryptoMode.MODES else cryptoMode.name2enum(crypto_mode)
     if not crypto_mode:
-        cryptname = ''
-        if hasattr(options, 'encrypt_payload') and options.encrypt_payload:
-            cryptname = 'aes-128-ctr-ecc-secp256r1-sha256'
-        else:
-            cryptname = 'none-ecc-secp256r1-sha256'
-        crypto_mode = cryptoMode.name2enum(cryptname)
+        crypto_mode = get_crypto_mode(options, manifestInput)
     crypto_name = cryptoMode.MODES.get(crypto_mode).name
 
     payload_file = manifestGet(manifestInput, 'resource.resource.manifest.payload.reference.file', 'payloadFile')
@@ -176,7 +179,7 @@ def get_payload_description(options, manifestInput):
         # Read payload input, record length and hash it
         payload_size = len(content)
         payload_hash = utils.sha_hash(content)
-        LOG.debug('payload of {} bytes loaded. Hash: {}'.format(payload_size, payload_hash))
+        LOG.debug('payload of {} bytes loaded. Hash: {}'.format(payload_size, binascii.b2a_hex(payload_hash)))
 
     # Ensure the cryptoMode is valid
     if not crypto_mode in cryptoMode.MODES:
@@ -292,6 +295,25 @@ def get_manifest_dependencies(options, manifestInput):
         })
     return dependencies
 
+def get_crypto_mode(options, manifestInput):
+    crypto_mode = manifestGet(manifestInput, 'resource.resource.manifest.encryptionMode.enum', 'encryptionMode')
+    crypto_mode = crypto_mode if crypto_mode in cryptoMode.MODES else cryptoMode.name2enum(crypto_mode)
+    if not crypto_mode:
+        isEncrypted = hasattr(options, 'encrypt_payload') and options.encrypt_payload
+        isMAC = hasattr(options, 'mac') and options.mac
+
+        if isEncrypted and isMAC:
+            cryptname = 'psk-aes-128-ccm-sha256'
+        if not isEncrypted and isMAC:
+            cryptname = 'none-psk-aes-128-ccm-sha256'
+        if not isEncrypted and not isMAC:
+            cryptname = 'none-ecc-secp256r1-sha256'
+        if isEncrypted and not isMAC:
+            cryptname = 'aes-128-ctr-ecc-secp256r1-sha256'
+        crypto_mode = cryptoMode.name2enum(cryptname)
+
+    return crypto_mode
+
 def get_manifest(options, manifestInput):
     vendor_info = manifestGet(manifestInput, 'resource.resource.manifest.vendorInfo', 'vendorInfo') or b""
     vendor_id = manifestGet(manifestInput, 'resource.resource.manifest.vendorId', 'vendorId')
@@ -311,17 +333,8 @@ def get_manifest(options, manifestInput):
             'validFrom' : validFrom,
             'validTo'   : validTo,
         }
-    crypto_mode = manifestGet(manifestInput, 'resource.resource.manifest.encryptionMode.enum', 'encryptionMode')
-    crypto_mode = crypto_mode if crypto_mode in cryptoMode.MODES else cryptoMode.name2enum(crypto_mode)
-    if not crypto_mode:
-        cryptname = ''
-        if hasattr(options, 'encrypt_payload') and options.encrypt_payload:
-            cryptname = 'aes-128-ctr-ecc-secp256r1-sha256'
-        else:
-            cryptname = 'none-ecc-secp256r1-sha256'
-        crypto_mode = cryptoMode.name2enum(cryptname)
 
-    crypto_mode = { 'enum' : crypto_mode }
+    crypto_mode = { 'enum' : get_crypto_mode(options, manifestInput) }
     nonce = manifestGet(manifestInput, 'resource.resource.manifest.nonce')
     if nonce:
         nonce = binascii.a2b_hex(nonce)
@@ -345,6 +358,187 @@ def get_manifest(options, manifestInput):
         dependencies = get_manifest_dependencies(options, manifestInput),
         timestamp = manifestGet(manifestInput, 'resource.resource.manifest.timestamp')
     )
+
+def getDevicePSKData(mode, psk, nonce, digest, payload_key):
+    crypto_mode = cryptoMode(mode)
+    LOG.debug('Creating PSK data: ')
+    LOG.debug('    mode: {}'.format(crypto_mode.name))
+    LOG.debug('    iv  ({0} bytes): {1}'.format(len(nonce), binascii.b2a_hex(nonce)))
+    LOG.debug('    md  ({0} bytes): {1}'.format(len(digest), binascii.b2a_hex(digest)))
+
+    data = {'hash':str(digest)}
+    if payload_key:
+        data['cek'] = payload_key
+    asnData = native_decoder.decode(data, asn1Spec=manifest_definition.KeyTableEntry())
+    # print(asnData)
+
+    plainText = der_encoder.encode(asnData)
+    LOG.debug('PSK plaintext ({0} bytes): {1}'.format(len(plainText), binascii.b2a_hex(plainText)))
+
+    pskSig = {
+        'none-psk-aes-128-ccm-sha256': lambda key, iv, d: AESCCM(key[:128/8]).encrypt(iv, d, b''),
+        'psk-aes-128-ccm-sha256': lambda key, iv, d: AESCCM(key[:128/8]).encrypt(iv, d, b'')
+    }.get(crypto_mode.name, lambda a,b,d: None)(psk, nonce, plainText)
+    LOG.debug('PSK data ({0} bytes): {1}'.format(len(pskSig), binascii.b2a_hex(pskSig)))
+    return pskSig
+
+def symmetricArgsOkay(options):
+    okay = hasattr(options, 'private_key') and options.private_key
+    # okay = okay and hasattr(options, 'psk_table_encoding') and options.psk_table_encoding
+    if hasattr(options, 'psk_table_encoding') and options.psk_table_encoding:
+        okay = okay and True
+    okay = okay and hasattr(options, 'psk_table') and options.psk_table
+    return okay
+
+def isPsk(mode):
+    crypto_mode = cryptoMode(mode)
+    return {
+        'aes-128-ctr-ecc-secp256r1-sha256' : False,
+        'none-ecc-secp256r1-sha256':False,
+        'none-none-sha256': False,
+        'none-psk-aes-128-ccm-sha256': True,
+        'psk-aes-128-ccm-sha256': True
+    }.get(crypto_mode.name)
+
+def get_symmetric_signature(options, manifestInput, enc_data):
+    input_hash = manifestGet(manifestInput,'signature.hash') or b''
+
+    # There should always be a signing key on create.
+    if not hasattr(options,'private_key') or not options.private_key:
+        if 'psk-master-key' in manifestInput:
+            try:
+                options.private_key = open(manifestInput['psk-master-key'],'rb')
+            except:
+                LOG.critical('No PSK master key specified and default key ({}) cannot be opened'.format(manifestInput['private-key']))
+                sys.exit(1)
+        else:
+            LOG.critical('Resource is not signed and no PSK master key is provided.')
+            sys.exit(1)
+
+    if not symmetricArgsOkay(options):
+        LOG.critical('--mac requires:')
+        LOG.critical('    --private-key: The master key for generating device PSKs')
+        #                                                                                 80 chars ->|
+        #             ================================================================================
+        LOG.critical('    --psk-table: the output file for PSKs. This argument is optional/ignored')
+        LOG.critical('                 when inline encoding is used.')
+        LOG.critical('    --psk-table-encoding: the encoding to use for the PSK output file.')
+        LOG.critical('    Either:')
+        LOG.critical('        --device-urn: The device URN for the target device (Endpoint Client Name)')
+        LOG.critical('    OR:')
+        LOG.critical('        --filter-id: The filter identifier used to gather device URNs')
+        sys.exit(1)
+
+    # Get SHA-256 hash of content and sign it using private key
+    sha_content = utils.sha_hash(enc_data)
+    # If a hash is provided in the input json, then the encoded content must match the provided hash
+    if input_hash and sha_content != binascii.a2b_hex(input_hash):
+        LOG.critical('Manifest hash provided in input file does not match hashed output')
+        LOG.critical('Expected: {0}'.format(input_hash))
+        LOG.critical('Actual:   {0}'.format(binascii.b2a_hex(sha_content)))
+        sys.exit(1)
+
+    # Load a default URN out of the settings file.
+    devices = manifestGet(manifestInput,'deviceURNs') or []
+    LOG.info('Loaded device URNs from {!r}'.format(defaults.config))
+    for dev in devices:
+        LOG.info('    {!r}'.format(dev))
+    if len(devices) > 1:
+        LOG.warning('Only single device PSK update is supported in 1.4.x.')
+        LOG.warning('Ignoring stored device URNs.')
+        devices = []
+
+    # Optionally load a URN out of the command-line arguments
+    if hasattr(options, 'device_urn') and options.device_urn:
+        if len(devices) >= 1:
+            LOG.warning('Only single device PSK update is supported in 1.4.x.')
+            LOG.warning('Ignoring stored device URNs.')
+            devices = []
+        cmdDevs = [options.device_urn]
+        LOG.info('Loaded device URNs from input arguments')
+        for dev in cmdDevs:
+            LOG.info('    {!r}'.format(dev))
+        devices.extend(cmdDevs)
+    if hasattr(options, 'filter_id') and options.filter_id:
+        LOG.critical('Device Filters not supported yet.')
+        sys.exit(1)
+
+    # Use only unique devices
+    devices = list(set(devices))
+
+    if len(devices) != 1:
+        LOG.critical('Exactly one device URN must be specified.')
+        sys.exit(0)
+
+    crypto_mode = get_crypto_mode(options, manifestInput)
+
+    payload_key = b''
+    if hasattr(options, 'payload_key') and options.payload_key:
+        LOG.debug('Converting payload key ({0}) to binary'.format(options.payload_key))
+        payload_key = bytes(binascii.a2b_hex(options.payload_key))
+    LOG.debug('Payload key length: {0}'.format(len(payload_key)))
+    master_key = options.private_key.read()
+    vendor_id = manifestGet(manifestInput, 'resource.resource.manifest.vendorId', 'vendorId')
+    class_id = manifestGet(manifestInput, 'resource.resource.manifest.classId', 'classId')
+    iv = os.urandom(13)
+    deviceSymmetricInfos = {}
+    # For each device
+    maxIndexSize = 0
+    maxRecordSize = 0
+    LOG.info('Creating per-device validation codes...')
+    for device in devices:
+        LOG.info('    {!r}'.format(device))
+
+        hkdf = utils.getDevicePSK_HKDF(cryptoMode(crypto_mode).name, master_key, uuid.UUID(vendor_id).bytes, uuid.UUID(class_id).bytes, 'Authentication')
+        psk = hkdf.derive(bytes(device, 'utf-8'))
+        maxIndexSize = max(maxIndexSize, len(device))
+        # Now encrypt the hash with the selected AE algorithm.
+        pskCipherData = getDevicePSKData(crypto_mode, psk, iv, sha_content, payload_key)
+        recordData = der_encoder.encode(OctetString(hexValue=binascii.b2a_hex(pskCipherData)))
+        maxRecordSize = max(maxRecordSize, len(recordData))
+        deviceSymmetricInfos[device] = recordData
+    # print (deviceSymmetricInfos)
+    def proto_encode(x):
+        keytable = keytable_pb2.KeyTable()
+
+        for k, d in x.iteritems():
+            entry = keytable.entries.add()
+            entry.urn = k
+            entry.opaque = d
+        return keytable.SerializeToString()
+    # Save the symmetric info file
+    encodedSymmertricInfos = {
+        'json' : lambda x : json.JSONEncoder(default=binascii.b2a_base64).encode(x),
+        'cbor' : lambda x : None,
+        'protobuf': proto_encode,
+        'text' : lambda x : '\n'.join([','.join([binascii.b2a_hex(y) for y in (k,d)]) for k, d in x.iteritems()]) + '\n'
+        # 'inline' : lambda x : None
+    }.get(options.psk_table_encoding)(deviceSymmetricInfos)
+    options.psk_table.write(encodedSymmertricInfos)
+
+    #=========================
+    # PSK ID is the subject key identifier (hash) of the master key.
+    # The URI of the "certificate" is the location at which to find the key table or key query.
+    # PSK is known only to the signer and the device
+    # PSK Signature is AE(PSK, hash), but it is not included, since it must be distributed in the key table.
+    shaMaster = cryptoHashes.Hash(cryptoHashes.SHA256(), cryptoBackends.default_backend())
+    shaMaster.update(master_key)
+    subjectKeyIdentifier = shaMaster.finalize()
+
+    mb = MacBlock(   pskID = subjectKeyIdentifier,
+                keyTableIV = iv,
+               keyTableRef = 'thismessage://1',
+           keyTableVersion = 0,
+        keyTableRecordSize = maxRecordSize,
+         keyTableIndexSize = maxIndexSize
+    )
+    macs=[mb]
+    rs = ResourceSignature(
+            hash = sha_content,
+            signatures = [],
+            macs = macs)
+    return rs
+
 
 def get_signature(options, manifestInput, enc_data):
     signatures = manifestGet(manifestInput,'signature.signatures') or []
@@ -494,10 +688,16 @@ def create_signed_resource(options):
     # specified encoding format
     resource_encoded = utils.encode(resource.to_dict(), options, manifest_definition.Resource())
 
+    signature = None
+    crypto_mode = get_crypto_mode(options, manifestInput)
+    if isPsk(crypto_mode):
+        signature = get_symmetric_signature(options, manifestInput, enc_data = resource_encoded)
+    else:
+        signature = get_signature(options, manifestInput, enc_data = resource_encoded)
     try:
         sresource = SignedResource(
             resource = resource,
-            signature = get_signature(options, manifestInput, enc_data = resource_encoded)
+            signature = signature
         )
         return sresource.to_dict()
     except errorhandler.InvalidObject as err:
@@ -548,6 +748,9 @@ def main(options):
     # Encode data if requested
     output = utils.encode(manifest, options, manifest_definition.SignedResource())
     LOG.debug('Manifest successfully encoded into desired format ({}). Size: {} bytes.'.format(options.encoding, len(output)))
+
+    if hasattr(options, 'mac') and options.mac and options.psk_table_encoding == 'inline':
+        output += options.psk_table
 
     # And we're done
     write_result(output, options)

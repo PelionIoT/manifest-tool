@@ -85,6 +85,7 @@ def main_wrapped(options):
         # TODO: Produce a better failuer message
         LOG.critical('Upload of payload failed with:')
         print(e)
+        LOG.critical('Check API server URL set in manifest-tool init step')
         return 1
 
     LOG.info("Created new firmware at {}".format(payload.url))

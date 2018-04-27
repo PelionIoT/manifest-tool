@@ -70,6 +70,9 @@ class Manifest(BaseObject):
     ENCRYPTION_MODE_AES_128 = 1
     ENCRYPTION_MODE_NONE_ECC = 2
     ENCRYPTION_MODE_NONE = 3
+    ENCRYPTION_MODE_NONE_PSK_CCM_16 = 4
+    ENCRYPTION_MODE_PSK_CCM_16 = 4
+
 
     def __init__(self, **kwargs):
         # Set defaults
@@ -158,7 +161,18 @@ class SignatureBlock(object):
         self.signature = signature
         self.certificates = certificates
 
+class MacBlock(object):
+    def __init__(self, pskID, keyTableIV, keyTableVersion, keyTableIndexSize, keyTableRecordSize, keyTableRef=None):
+        self.pskID = pskID
+        self.keyTableIV = keyTableIV
+        self.keyTableVersion = keyTableVersion
+        self.keyTableRef = keyTableRef
+        self.keyTableIndexSize = keyTableIndexSize
+        self.keyTableRecordSize = keyTableRecordSize
+
 class ResourceSignature(object):
-    def __init__(self, hash, signatures):
+    def __init__(self, hash, signatures, macs=None):
         self.hash = hash
         self.signatures = signatures
+        if macs:
+            self.macs = macs

@@ -21,6 +21,7 @@ certificatePath = '.update-certificates'
 certificate = os.path.join(certificatePath,'default.der')
 certificateKey = os.path.join(certificatePath,'default.key.pem')
 certificateDuration = 90
+pskMasterKey = os.path.join(certificatePath,'default.master.psk')
 config = '.manifest_tool.json'
 cloud_config = '.mbed_cloud_config.json'
 updateResources = 'update_default_resources.c'

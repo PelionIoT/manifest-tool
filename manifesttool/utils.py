@@ -16,6 +16,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ----------------------------------------------------------------------------
+from __future__ import division
 import sys, time, collections, hashlib, logging
 from manifesttool import __version__ as uc_version
 from manifesttool import codec
@@ -67,7 +68,7 @@ def getDevicePSK_HKDF(mode, masterKey, vendorId, classId, keyUsage):
 
     hkdf = HKDF(
         algorithm = hashAlg(),
-        length = 128/8,
+        length = 128//8,
         # The master key is the salt
         salt = masterKey,
         # Device Vendor ID + Device Class ID is the info

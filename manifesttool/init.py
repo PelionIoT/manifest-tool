@@ -16,7 +16,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ----------------------------------------------------------------------------
-from __future__ import print_function
+from __future__ import print_function, division
 from builtins import input, bytes, chr
 import os, sys, json, logging, uuid, re
 import binascii
@@ -246,7 +246,7 @@ def main(options):
 
         if masterKeyRequired:
             LOG.info('Generating a new 256-bit master key')
-            masterKey = os.urandom(256/8)
+            masterKey = os.urandom(256//8)
             masterKeyName = defaults.pskMasterKey
             try:
                 os.makedirs(defaults.certificatePath)
@@ -268,8 +268,8 @@ def main(options):
         shaMaster = hashes.Hash(hashes.SHA256(), default_backend())
         shaMaster.update(masterKey)
         options.psk_id = shaMaster.finalize()
-        psk_hkdf = utils.getDevicePSK_HKDF('none-psk-aes-128-ccm-sha256', masterKey, vendorId.bytes, classId.bytes, 'Authentication')
-        options.psk = psk_hkdf.derive(options.device_urn)
+        psk_hkdf = utils.getDevicePSK_HKDF('none-psk-aes-128-ccm-sha256', masterKey, vendorId.bytes, classId.bytes, b'Authentication')
+        options.psk = psk_hkdf.derive(bytes(options.device_urn, 'utf-8'))
 
     else:
         cert_required = True

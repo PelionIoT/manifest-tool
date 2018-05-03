@@ -52,7 +52,7 @@ class MainArgumentParser(object):
             description='''Signs an existing manifest with one additional signature. The manifest must first be
             validated, so defaults for validation are extracted from .manifest_tool.json when values are not supplied
             as arguments to the tool''')
-        update_parser = subparsers.add_parser('update', help='Work with the mbed Cloud Update service')
+        update_parser = subparsers.add_parser('update', help='Work with the Mbed Cloud Update service')
 
         # Options for creating a new manifest
         self._addCreateArgs(create_parser)
@@ -138,7 +138,7 @@ class MainArgumentParser(object):
         update_sub_parsers = update_parser.add_subparsers(dest='update_action')
 
         prepare_parser = update_sub_parsers.add_parser('prepare', help='Prepare an update',
-            description='''Prepares an update for mbed Cloud. This uploads the specified payload, creates a manifest
+            description='''Prepares an update for Mbed Cloud. This uploads the specified payload, creates a manifest
             and uploads the manifest.''')
 
         self._addCreateArgs(prepare_parser, ['output-file'])
@@ -147,15 +147,16 @@ class MainArgumentParser(object):
             type=argparse.FileType('wb'), default=None)
 
         prepare_parser.add_argument('-n', '--payload-name',
-            help='The reference name for the payload in mbed Cloud. If no name is specified, then one will be created '
+            help='The reference name for the payload in Mbed Cloud. If no name is specified, then one will be created '
                  'using the file name of the payload and the current timestamp.')
         prepare_parser.add_argument('-d', '--payload-description',
-            help='The description of the payload for use in mbed Cloud.')
+            help='The description of the payload for use in Mbed Cloud.')
         prepare_parser.add_argument('--manifest-name',
-            help='The reference name for the manifest in mbed Cloud. If no name is specified, then one will be created '
+            help='The reference name for the manifest in Mbed Cloud. If no name is specified, then one will be created '
                  'using the file name of the manifest and the current timestamp.')
         prepare_parser.add_argument('--manifest-description',
-            help='The description of the manifest for use in mbed Cloud.')
+            help='The description of the manifest for use in Mbed Cloud.')
+        prepare_parser.add_argument('-a', '--api-key', help='API Key for the Mbed Cloud')
 
         update_device_parser = update_sub_parsers.add_parser('device',
             help='Update a single device using its LwM2M Device ID',
@@ -169,20 +170,21 @@ class MainArgumentParser(object):
             type=argparse.FileType('wb'), default=None)
 
         update_device_parser.add_argument('-n', '--payload-name',
-            help='The reference name for the payload in mbed Cloud. If no name is specified, then one will be created '
+            help='The reference name for the payload in Mbed Cloud. If no name is specified, then one will be created '
                  'using the file name of the payload and the current timestamp.')
         update_device_parser.add_argument('-d', '--payload-description',
-            help='The description of the payload for use in mbed Cloud.')
+            help='The description of the payload for use in Mbed Cloud.')
         update_device_parser.add_argument('--manifest-name',
-            help='The reference name for the manifest in mbed Cloud. If no name is specified, then one will be created '
+            help='The reference name for the manifest in Mbed Cloud. If no name is specified, then one will be created '
                  'using the file name of the manifest and the current timestamp.')
         update_device_parser.add_argument('--manifest-description',
-            help='The description of the manifest for use in mbed Cloud.')
+            help='The description of the manifest for use in Mbed Cloud.')
         update_device_parser.add_argument('-D', '--device-id', help='The device ID of the device to update', required=True)
         update_device_parser.add_argument('--no-cleanup', action='store_true',
             help='''Don't delete the campaign, manifest, and firmware image from Mbed Cloud when done''')
         update_device_parser.add_argument('-T', '--timeout', type=int, default=-1,
             help='''Set the time delay before the manifest tool aborts the campaign. Use -1 for indefinite (this is the default).''')
+        update_device_parser.add_argument('-a', '--api-key', help='API Key for the Mbed Cloud')
 
         return parser
 

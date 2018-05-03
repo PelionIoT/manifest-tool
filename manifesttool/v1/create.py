@@ -16,7 +16,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ----------------------------------------------------------------------------
-
+from __future__ import division
 import codecs, hashlib, sys, json, os, base64, binascii, logging, ecdsa, uuid
 from collections import namedtuple
 
@@ -376,8 +376,8 @@ def getDevicePSKData(mode, psk, nonce, digest, payload_key):
     LOG.debug('PSK plaintext ({0} bytes): {1}'.format(len(plainText), binascii.b2a_hex(plainText)))
 
     pskSig = {
-        'none-psk-aes-128-ccm-sha256': lambda key, iv, d: AESCCM(key[:128/8]).encrypt(iv, d, b''),
-        'psk-aes-128-ccm-sha256': lambda key, iv, d: AESCCM(key[:128/8]).encrypt(iv, d, b'')
+        'none-psk-aes-128-ccm-sha256': lambda key, iv, d: AESCCM(key[:128//8]).encrypt(iv, d, b''),
+        'psk-aes-128-ccm-sha256': lambda key, iv, d: AESCCM(key[:128//8]).encrypt(iv, d, b'')
     }.get(crypto_mode.name, lambda a,b,d: None)(psk, nonce, plainText)
     LOG.debug('PSK data ({0} bytes): {1}'.format(len(pskSig), binascii.b2a_hex(pskSig)))
     return pskSig
@@ -489,19 +489,19 @@ def get_symmetric_signature(options, manifestInput, enc_data):
     for device in devices:
         LOG.info('    {!r}'.format(device))
 
-        hkdf = utils.getDevicePSK_HKDF(cryptoMode(crypto_mode).name, master_key, uuid.UUID(vendor_id).bytes, uuid.UUID(class_id).bytes, 'Authentication')
+        hkdf = utils.getDevicePSK_HKDF(cryptoMode(crypto_mode).name, master_key, uuid.UUID(vendor_id).bytes, uuid.UUID(class_id).bytes, b'Authentication')
         psk = hkdf.derive(bytes(device, 'utf-8'))
         maxIndexSize = max(maxIndexSize, len(device))
         # Now encrypt the hash with the selected AE algorithm.
         pskCipherData = getDevicePSKData(crypto_mode, psk, iv, sha_content, payload_key)
-        recordData = der_encoder.encode(OctetString(hexValue=binascii.b2a_hex(pskCipherData)))
+        recordData = der_encoder.encode(OctetString(hexValue=binascii.b2a_hex(pskCipherData).decode("ascii")))
         maxRecordSize = max(maxRecordSize, len(recordData))
         deviceSymmetricInfos[device] = recordData
     # print (deviceSymmetricInfos)
     def proto_encode(x):
         keytable = keytable_pb2.KeyTable()
 
-        for k, d in x.iteritems():
+        for k, d in x.items():
             entry = keytable.entries.add()
             entry.urn = k
             entry.opaque = d
@@ -511,7 +511,7 @@ def get_symmetric_signature(options, manifestInput, enc_data):
         'json' : lambda x : json.JSONEncoder(default=binascii.b2a_base64).encode(x),
         'cbor' : lambda x : None,
         'protobuf': proto_encode,
-        'text' : lambda x : '\n'.join([','.join([binascii.b2a_hex(y) for y in (k,d)]) for k, d in x.iteritems()]) + '\n'
+        'text' : lambda x : '\n'.join([','.join([binascii.b2a_hex(y) for y in (k,d)]) for k, d in x.items()]) + '\n'
         # 'inline' : lambda x : None
     }.get(options.psk_table_encoding)(deviceSymmetricInfos)
     options.psk_table.write(encodedSymmertricInfos)
@@ -632,7 +632,7 @@ def get_signature(options, manifestInput, enc_data):
                 LOG.critical("({file}) is not a valid certificate".format(file=cPath))
                 sys.exit(1)
             if not isinstance(certObj.signature_hash_algorithm, cryptoHashes.SHA256):
-                LOG.critical("In ({file}): Only SHA256 certificates are supported by the mbed Cloud Update client at this time.".format(file=cPath))
+                LOG.critical("In ({file}): Only SHA256 certificates are supported by the Mbed Cloud Update client at this time.".format(file=cPath))
                 sys.exit(1)
             fingerprint = certObj.fingerprint(cryptoHashes.SHA256())
 

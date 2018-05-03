@@ -44,16 +44,22 @@ def main(options):
         # from mbed_cloud.device_directory import DeviceDirectoryAPI
         import mbed_cloud.exceptions
     except:
-        LOG.critical('manifest-tool update commands require installation of the mbed Cloud SDK:'
+        LOG.critical('manifest-tool update commands require installation of the Mbed Cloud SDK:'
                      ' https://github.com/ARMmbed/mbed-cloud-sdk-python')
         return 1
 
-    LOG.debug('Preparing an update on mbed Cloud')
+    LOG.debug('Preparing an update on Mbed Cloud')
     # upload a firmware
     api = None
     # dd_api = None
     try:
-        api = UpdateAPI()
+        # If set use api key set in manifest-tool update.
+        if hasattr(options, 'api_key') and options.api_key:
+            tempKey = options.api_key
+            config = {'api_key': tempKey}
+            api = UpdateAPI(config)
+        # Otherwise use API key set in manifest-tool init
+        else: api = UpdateAPI()
         # dd_api = DeviceDirectoryAPI()
 
     except ValueError:
@@ -171,6 +177,7 @@ def main(options):
             raise e
 
         LOG.info('Created new manifest at {}'.format(manifest.url))
+        LOG.info('Manifest ID: {}'.format(manifest.id))
 
         try:
             campaign = api.add_campaign(

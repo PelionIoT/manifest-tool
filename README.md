@@ -81,7 +81,7 @@ If you do not want to enter the subject information for your certificate (countr
 Once you have run `manifest-tool init`, you can perform updates on a single device by:
 
 ```sh
-$ manifest-tool update device -p <payload> -D <device ID/device endpoint name>
+$ manifest-tool update device -p <payload> -D <device ID>
 ```
 
 This will perform several actions:
@@ -110,7 +110,7 @@ $ manifest-tool update prepare -p <payload> -n <PAYLOAD_NAME> -d <PAYLOAD_DESCRI
 
 Both methods of creating a manifest use the defaults created in `manifest-tool init`. You can override each default using an input file or command-line arguments. See below for more details.
 
-Once this is done, you can upload the manifest file to Mbed Cloud, create an update campaign and start the update campaign using the Mbed Cloud portal.
+Once `manifest-tool update prepare` has been executed the manifest file is automatically uploaded to Mbed Cloud and you can then create and start an update campaign using the Mbed Cloud portal.
 
 ### Advanced usage
 The manifest tool allows for significantly more flexibility than the model above shows. You can override each of the defaults that `manifest-tool init` sets by using the command-line or an input file. The manifest tool supports a variety of commands. You can print a full list of commands by using `manifest-tool --help`.

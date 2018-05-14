@@ -24,10 +24,16 @@ from manifesttool import prepare
 from manifesttool import update_device as device
 
 def main(options):
+    if (hasattr(options,"psk") and options.psk) or (hasattr(options,"mac") and options.mac):
+        LOG.critical('manifest-tool update commands are not currently enabled for PSK/MAC authentication.')
+        return 1
     try:
         from mbed_cloud.update import UpdateAPI
+        from mbed_cloud import __version__ as mc_version
+        if mc_version < "1.2.6":
+            LOG.warning("Your version of mbed-cloud-sdk may need updating: https://github.com/ARMmbed/mbed-cloud-sdk-python")
     except:
-        LOG.critical('manifest-tool update commands require installation of the mbed Cloud SDK: https://github.com/ARMmbed/mbed-cloud-sdk-python')
+        LOG.critical('manifest-tool update commands require installation of the Mbed Cloud SDK: https://github.com/ARMmbed/mbed-cloud-sdk-python')
         return 1
     return {
         "prepare" : prepare.main,

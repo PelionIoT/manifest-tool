@@ -38,14 +38,21 @@ def main_wrapped(options):
         from mbed_cloud.update import UpdateAPI
         import mbed_cloud.exceptions
     except:
-        LOG.critical('manifest-tool update commands require installation of the mbed Cloud SDK:'
+        LOG.critical('manifest-tool update commands require installation of the Mbed Cloud SDK:'
                      ' https://github.com/ARMmbed/mbed-cloud-sdk-python')
         return 1
-    LOG.debug('Preparing an update on mbed Cloud')
+    LOG.debug('Preparing an update on Mbed Cloud')
     # upload a firmware
     api = None
     try:
-        api = UpdateAPI()
+        # If set use api key set in manifest-tool update.
+        if hasattr(options, 'api_key') and options.api_key:
+            tempKey = options.api_key
+            config = {'api_key': tempKey}
+            api = UpdateAPI(config)
+        # Otherwise use API key set in manifest-tool init
+        else: api = UpdateAPI()
+
     except ValueError:
         LOG.critical('API key is required to connect to the Update Service. It can be added using manifest-tool init -a'
                      ' <api key> or by manually editing .mbed_cloud_config.json')
@@ -85,6 +92,7 @@ def main_wrapped(options):
         # TODO: Produce a better failuer message
         LOG.critical('Upload of payload failed with:')
         print(e)
+        LOG.critical('Check API server URL set in manifest-tool init step')
         return 1
 
     LOG.info("Created new firmware at {}".format(payload.url))
@@ -119,6 +127,7 @@ def main_wrapped(options):
         print(e)
         return 1
     LOG.info('Created new manifest at {}'.format(manifest.url))
+    LOG.info('Manifest ID: {}'.format(manifest.id))
     return 0
 
 def main(options):

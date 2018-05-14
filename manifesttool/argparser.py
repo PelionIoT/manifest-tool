@@ -52,7 +52,7 @@ class MainArgumentParser(object):
             description='''Signs an existing manifest with one additional signature. The manifest must first be
             validated, so defaults for validation are extracted from .manifest_tool.json when values are not supplied
             as arguments to the tool''')
-        update_parser = subparsers.add_parser('update', help='Work with the mbed Cloud Update service')
+        update_parser = subparsers.add_parser('update', help='Work with the Mbed Cloud Update service')
 
         # Options for creating a new manifest
         self._addCreateArgs(create_parser)
@@ -102,11 +102,11 @@ class MainArgumentParser(object):
                                 help='Provide a private key file for the certificate provided with -c. ' +
                                      'This allows the manifest tool to perform manifest signing internally.',
                                 type=argparse.FileType('rb'))
-        init_existing_cert_signing.add_argument('-s','--signing-script',
-                                help='Provide a script that should be used for signing. ' +
-                                     'This allows signing with existing infrastructure. ' +
-                                     'The arguments to the script are: {fingerprint of the certificate} '+
-                                     '{hash of the manifest}.',type=argparse.FileType('rb'))
+        # init_existing_cert_signing.add_argument('-s','--signing-script',
+        #                         help='Provide a script that should be used for signing. ' +
+        #                              'This allows signing with existing infrastructure. ' +
+        #                              'The arguments to the script are: {fingerprint of the certificate} '+
+        #                              '{hash of the manifest}.',type=argparse.FileType('rb'))
 
         init_vendor_group = init_parser.add_mutually_exclusive_group(required=True)
         init_vendor_group.add_argument('-V', '--vendor-id', help='')
@@ -121,6 +121,7 @@ class MainArgumentParser(object):
         init_parser.add_argument('-q', '--quiet', help='Do not prompt for certificate fields', action='store_true')
         init_parser.add_argument('-f', '--force', action='store_true',
             help='Overwrite existing update_default_resources.c')
+        init_parser.add_argument('--psk', action='store_true', help='initialize this project as a PSK authentication project')
 
         self._addVerifyArgs(sign_parser, ['input-file'])
         sign_source_group = sign_parser.add_mutually_exclusive_group(required=True)
@@ -137,7 +138,7 @@ class MainArgumentParser(object):
         update_sub_parsers = update_parser.add_subparsers(dest='update_action')
 
         prepare_parser = update_sub_parsers.add_parser('prepare', help='Prepare an update',
-            description='''Prepares an update for mbed Cloud. This uploads the specified payload, creates a manifest
+            description='''Prepares an update for Mbed Cloud. This uploads the specified payload, creates a manifest
             and uploads the manifest.''')
 
         self._addCreateArgs(prepare_parser, ['output-file'])
@@ -146,15 +147,16 @@ class MainArgumentParser(object):
             type=argparse.FileType('wb'), default=None)
 
         prepare_parser.add_argument('-n', '--payload-name',
-            help='The reference name for the payload in mbed Cloud. If no name is specified, then one will be created '
+            help='The reference name for the payload in Mbed Cloud. If no name is specified, then one will be created '
                  'using the file name of the payload and the current timestamp.')
         prepare_parser.add_argument('-d', '--payload-description',
-            help='The description of the payload for use in mbed Cloud.')
+            help='The description of the payload for use in Mbed Cloud.')
         prepare_parser.add_argument('--manifest-name',
-            help='The reference name for the manifest in mbed Cloud. If no name is specified, then one will be created '
+            help='The reference name for the manifest in Mbed Cloud. If no name is specified, then one will be created '
                  'using the file name of the manifest and the current timestamp.')
         prepare_parser.add_argument('--manifest-description',
-            help='The description of the manifest for use in mbed Cloud.')
+            help='The description of the manifest for use in Mbed Cloud.')
+        prepare_parser.add_argument('-a', '--api-key', help='API Key for the Mbed Cloud')
 
         update_device_parser = update_sub_parsers.add_parser('device',
             help='Update a single device using its LwM2M Device ID',
@@ -168,20 +170,21 @@ class MainArgumentParser(object):
             type=argparse.FileType('wb'), default=None)
 
         update_device_parser.add_argument('-n', '--payload-name',
-            help='The reference name for the payload in mbed Cloud. If no name is specified, then one will be created '
+            help='The reference name for the payload in Mbed Cloud. If no name is specified, then one will be created '
                  'using the file name of the payload and the current timestamp.')
         update_device_parser.add_argument('-d', '--payload-description',
-            help='The description of the payload for use in mbed Cloud.')
+            help='The description of the payload for use in Mbed Cloud.')
         update_device_parser.add_argument('--manifest-name',
-            help='The reference name for the manifest in mbed Cloud. If no name is specified, then one will be created '
+            help='The reference name for the manifest in Mbed Cloud. If no name is specified, then one will be created '
                  'using the file name of the manifest and the current timestamp.')
         update_device_parser.add_argument('--manifest-description',
-            help='The description of the manifest for use in mbed Cloud.')
+            help='The description of the manifest for use in Mbed Cloud.')
         update_device_parser.add_argument('-D', '--device-id', help='The device ID of the device to update', required=True)
         update_device_parser.add_argument('--no-cleanup', action='store_true',
             help='''Don't delete the campaign, manifest, and firmware image from Mbed Cloud when done''')
         update_device_parser.add_argument('-T', '--timeout', type=int, default=-1,
             help='''Set the time delay before the manifest tool aborts the campaign. Use -1 for indefinite (this is the default).''')
+        update_device_parser.add_argument('-a', '--api-key', help='API Key for the Mbed Cloud')
 
         return parser
 
@@ -208,6 +211,32 @@ class MainArgumentParser(object):
         #     help='Secret data used for encryption, e.g. a pre-shared key or a private key.\
         #           The exact contents is dictated by the encryption method used. The secret may\
         #           be base64 encoded or may be a filename.')
+        if not 'mac' in exclusions:
+            parser.add_argument('--mac',
+                help='Use Pre-Shared-Key MAC authentication, with a master key supplied in --private-key. '
+                'A filter ID or Device Unique ID is also required to specify which devices should have TAGs created. '
+                'These can be supplied in --filter-id or --device-urn.\n'
+                'The manifest tool will create a PSK for each device based on the master key and the concatenation of three LwM2M values: \n'
+                '    /10255/0/3 (Vendor ID)\n'
+                '    /10255/0/4 (Device Class ID)\n'
+                '    Device URN (Endpoint Client Name)',
+                action='store_true')
+            parser.add_argument('--filter-id', help='specify which devices to use.')
+            parser.add_argument('--device-urn',
+                help='Specify devices to target with the update by their URNs (Endpoint Client Name). '
+                'The manifest tool will derive a PSK for the specified device based on the master key and the concatenation of: \n'
+                '    Vendor ID\n'
+                '    Device Class ID\n'
+                '    Device URN\n'
+                '--device-urn can be used multiple times to specify multiple devices.')
+            parser.add_argument('--psk-table', help='Specify the file to use to store the PSK table. '
+                'This file is used with the --mac argument in order to specify the output file for the pre-shared keys. '
+                'The table is composed of three columns: device URN, WrappedManifestDigest, and WrappedPayloadKey.',
+                type=argparse.FileType('wb'))
+            parser.add_argument('--psk-table-encoding', help='', choices=['protobuf', 'text'], default='text')
+        if not 'payload-key' in exclusions:
+            parser.add_argument('--payload-key', help='supply the payload encryption key. This is the key that is used encrypt the payload. '
+                'The payload key is encrypted for each device using a shared secret.')
         if not 'payload' in exclusions:
             parser.add_argument('-p', '--payload',
                 help='Supply a local copy of the payload file.'

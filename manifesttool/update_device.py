@@ -28,6 +28,13 @@ import os
 import os.path
 import shutil
 
+STOP_STATES = {'autostopped',
+               'conflict',
+               'expired',
+               'manifestremoved',
+               'quotaallocationfailed',
+               'userstopped'}
+
 MAX_NAME_LEN = 128 # The update API has a maximum name length of 128, but this is not queriable.
 
 def main(options):
@@ -37,16 +44,22 @@ def main(options):
         # from mbed_cloud.device_directory import DeviceDirectoryAPI
         import mbed_cloud.exceptions
     except:
-        LOG.critical('manifest-tool update commands require installation of the mbed Cloud SDK:'
+        LOG.critical('manifest-tool update commands require installation of the Mbed Cloud SDK:'
                      ' https://github.com/ARMmbed/mbed-cloud-sdk-python')
         return 1
 
-    LOG.debug('Preparing an update on mbed Cloud')
+    LOG.debug('Preparing an update on Mbed Cloud')
     # upload a firmware
     api = None
     # dd_api = None
     try:
-        api = UpdateAPI()
+        # If set use api key set in manifest-tool update.
+        if hasattr(options, 'api_key') and options.api_key:
+            tempKey = options.api_key
+            config = {'api_key': tempKey}
+            api = UpdateAPI(config)
+        # Otherwise use API key set in manifest-tool init
+        else: api = UpdateAPI()
         # dd_api = DeviceDirectoryAPI()
 
     except ValueError:
@@ -112,6 +125,7 @@ def main(options):
             LOG.critical('Upload of payload failed with:')
             print(e)
             handled = True
+            LOG.critical('Check API server URL set in manifest-tool init step')
             raise e
 
         LOG.info("Created new firmware at {}".format(payload.url))
@@ -163,6 +177,7 @@ def main(options):
             raise e
 
         LOG.info('Created new manifest at {}'.format(manifest.url))
+        LOG.info('Manifest ID: {}'.format(manifest.id))
 
         try:
             campaign = api.add_campaign(
@@ -200,8 +215,8 @@ def main(options):
             if oldstate != c.state:
                 LOG.info("Current state: %r" % (c.state))
                 oldstate = c.state
-            if c.finished_at:
-                LOG.info("Finished at %s" % (c.finished_at))
+            if c.state in STOP_STATES:
+                LOG.info("Finished in state: %r" % (c.state))
                 break
             time.sleep(1)
             if timeout > 0:

@@ -49,6 +49,18 @@ SignatureBlock.componentType = namedtype.NamedTypes(
     namedtype.NamedType('certificates', univ.SequenceOf(componentType=CertificateReference()))
 )
 
+class MacBlock(univ.Sequence):
+    pass
+
+
+MacBlock.componentType = namedtype.NamedTypes(
+    namedtype.NamedType('pskID', univ.OctetString()),
+    namedtype.NamedType('keyTableVersion', univ.Integer()),
+    namedtype.OptionalNamedType('keyTableIV', univ.OctetString()),
+    namedtype.OptionalNamedType('keyTableRef', char.UTF8String()),
+    namedtype.NamedType('keyTableIndexSize', univ.Integer()),
+    namedtype.NamedType('keyTableRecordSize', univ.Integer())
+)
 
 class ResourceSignature(univ.Sequence):
     pass
@@ -56,7 +68,8 @@ class ResourceSignature(univ.Sequence):
 
 ResourceSignature.componentType = namedtype.NamedTypes(
     namedtype.NamedType('hash', univ.OctetString()),
-    namedtype.NamedType('signatures', univ.SequenceOf(componentType=SignatureBlock()))
+    namedtype.NamedType('signatures', univ.SequenceOf(componentType=SignatureBlock())),
+    namedtype.OptionalNamedType('macs', univ.SequenceOf(componentType=MacBlock()))
 )
 
 

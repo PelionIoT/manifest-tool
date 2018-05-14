@@ -16,6 +16,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ----------------------------------------------------------------------------
+from __future__ import division
 import sys, time, collections, hashlib, logging
 from manifesttool import __version__ as uc_version
 from manifesttool import codec
@@ -25,6 +26,7 @@ from pyasn1.error import PyAsn1Error
 
 from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.backends import default_backend
+from cryptography.hazmat.primitives.kdf.hkdf import HKDF
 
 from future.moves.urllib.request import urlopen, Request
 from future.moves.urllib.parse import urlparse, urlencode
@@ -33,6 +35,11 @@ from future.moves.urllib.error import HTTPError, URLError
 from builtins import bytes
 
 LOG = logging.getLogger(__name__)
+
+def fatal(message, *args):
+    """Log a fatal error and exit with an unsuccessful code."""
+    LOG.critical(message, *args)
+    sys.exit(1)
 
 def read_file(fname):
     with open(fname, 'rb') as f:
@@ -48,13 +55,35 @@ def sha_hash(content):
     sha.update(content)
     return sha.digest()
 
+def getDevicePSK_HKDF(mode, masterKey, vendorId, classId, keyUsage):
+    # Construct the device PSK
+    # Device UUID is the IKM.
+    hashAlg = {
+        'aes-128-ctr-ecc-secp256r1-sha256' : hashes.SHA256,
+        'none-ecc-secp256r1-sha256': hashes.SHA256,
+        'none-none-sha256': hashes.SHA256,
+        'none-psk-aes-128-ccm-sha256': hashes.SHA256,
+        'psk-aes-128-ccm-sha256': hashes.SHA256
+    }.get(mode)
+
+    hkdf = HKDF(
+        algorithm = hashAlg(),
+        length = 128//8,
+        # The master key is the salt
+        salt = masterKey,
+        # Device Vendor ID + Device Class ID is the info
+        info = keyUsage + vendorId + classId,
+        backend = default_backend()
+    )
+    return hkdf
+
 def download_file(url):
     # Create request structure
     LOG.debug('Trying to download: {}'.format(url))
     try:
         req = Request(url)
     except ValueError as e:
-        fatal('Client error. Could not download %r as the URL is invalid. Error: %r' % (url, str(e)))
+        fatal('Client error. Could not download %r as the URL is invalid. Error: %r', url, str(e))
     req.add_header('User-Agent', 'ARM Update Client/%s)' % uc_version)
 
     # Read and return
@@ -64,9 +93,9 @@ def download_file(url):
         r.close()
         return content
     except URLError as e:
-        fatal('Could not download %r. Client error: %r' % (url, str(e)))
+        fatal('Could not download %r. Client error: %r', url, str(e))
     except HTTPError as e:
-        fatal('Could not download %r. Server error: %r' % (url, str(e)))
+        fatal('Could not download %r. Server error: %r', url, str(e))
 
 def todict(obj):
   """

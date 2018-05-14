@@ -32,9 +32,25 @@ ManifestSchema DEFINITIONS IMPLICIT TAGS ::= BEGIN
       signature   OCTET STRING,
       certificates SEQUENCE OF CertificateReference
   }
+
+  MacBlock ::= SEQUENCE {
+      pskID              OCTET STRING,
+      keyTableVersion    INTEGER,
+      keyTableIV         OCTET STRING OPTIONAL,
+      keyTableRef        UTF8String OPTIONAL,
+      keyTableIndexSize  INTEGER,
+      keyTableRecordSize INTEGER
+  }
+
+  KeyTableEntry ::= SEQUENCE {
+      hash       [0] IMPLICIT OCTET STRING OPTIONAL,
+      payloadKey [1] IMPLICIT OCTET STRING OPTIONAL
+  }
+
   ResourceSignature ::= SEQUENCE {
       hash        OCTET STRING,
-      signatures SEQUENCE OF SignatureBlock
+      signatures SEQUENCE OF SignatureBlock,
+      macs       SEQUENCE OF MacBlock OPTIONAL
   }
   ResourceReference ::= SEQUENCE {
       hash        OCTET STRING,
@@ -90,7 +106,9 @@ ManifestSchema DEFINITIONS IMPLICIT TAGS ::= BEGIN
               invalid(0),
               aes-128-ctr-ecc-secp256r1-sha256(1),
               none-ecc-secp256r1-sha256(2),
-              none-none-sha256(3)
+              none-none-sha256(3),
+              none-psk-aes-128-ccm-sha256(4),
+              aes-128-ccm-psk-sha256(5)
           },
           objectId    OBJECT IDENTIFIER
       },

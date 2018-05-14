@@ -22,7 +22,15 @@ import pip
 import manifesttool
 import os
 
-install_reqs = pip.req.parse_requirements('requirements.txt', session=pip.download.PipSession())
+
+try: # for pip >= 10
+    from pip._internal.req import parse_requirements
+    from pip._internal.download import PipSession
+except ImportError: # for pip <= 9.0.3
+    from pip.req import parse_requirements
+    from pip.download import PipSession
+
+install_reqs = parse_requirements('requirements.txt', session=PipSession())
 reqs = [str(r.req) for r in install_reqs]
 
 if os.name == 'nt':

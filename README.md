@@ -4,14 +4,6 @@
 
 The manifest tool creates and parses manifest files. You can use it as a command-line utility or Python package.
 
-### Prerequisites
-
-Some platforms require `python-dev` or `python3-dev` to install Python's cryptography library, which is a dependency of the manifest tool. For example, on Ubuntu, run:
-
-```sh
-$ sudo apt-get install python-dev
-```
-
 ### Installation
 
 The manifest tool is compatible both with Python 2.7.11 and later and with Python 3.5.1 and later.

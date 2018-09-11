@@ -30,7 +30,7 @@ def skipAhead(code):
         rc = 2
     if code == 0x83:
         rc = 3
-    if code == 0x83:
+    if code == 0x84:
         rc = 4
     return rc
 

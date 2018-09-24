@@ -20,6 +20,7 @@ import logging, sys
 LOG = logging.getLogger(__name__)
 
 from manifesttool import create
+from urllib3.exceptions import MaxRetryError
 import copy
 import time
 import tempfile
@@ -93,6 +94,12 @@ def main_wrapped(options):
         LOG.critical('Upload of payload failed with:')
         print(e)
         LOG.critical('Check API server URL set in manifest-tool init step')
+        return 1
+    except MaxRetryError as e:
+        LOG.critical('Upload of manifest failed with:')
+        print(e)
+        LOG.critical(
+            'Failed to establish connection to URL. Check validity of API server URL set in manifest-tool init step.')
         return 1
 
     LOG.info("Created new firmware at {}".format(payload.url))

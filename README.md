@@ -38,6 +38,8 @@ There are 3 options for installing the manifest tool, but all use `pip`:
 
 <span class="notes">**Note:** This repository includes `setup.py`, but it does not work on all systems. Please use `pip` for the best experience.</span>
 
+See [Debugging Installation](#debugging-installation) if these steps do not work.
+
 ### Workflow
 
 The update client workflow has three stages:
@@ -111,6 +113,14 @@ $ manifest-tool update prepare -p <payload> -n <PAYLOAD_NAME> -d <PAYLOAD_DESCRI
 Both methods of creating a manifest use the defaults created in `manifest-tool init`. You can override each default using an input file or command-line arguments. See below for more details.
 
 Once `manifest-tool update prepare` has been executed the manifest file is automatically uploaded to Mbed Cloud and you can then create and start an update campaign using the Mbed Cloud portal.
+
+### Debugging Installation
+
+Some platforms require `python-dev` or `python3-dev` to install Python's cryptography library, which is a dependency of the manifest tool. For example, on Ubuntu, run:
+
+```sh
+$ sudo apt-get install python-dev
+```
 
 ### Advanced usage
 The manifest tool allows for significantly more flexibility than the model above shows. You can override each of the defaults that `manifest-tool init` sets by using the command-line or an input file. The manifest tool supports a variety of commands. You can print a full list of commands by using `manifest-tool --help`.

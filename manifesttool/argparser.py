@@ -222,7 +222,7 @@ class MainArgumentParser(object):
                 '    Device URN (Endpoint Client Name)',
                 action='store_true')
             parser.add_argument('--filter-id', help='specify which devices to use.')
-            parser.add_argument('--device-urn',
+            parser.add_argument('--device-urn', action='append',
                 help='Specify devices to target with the update by their URNs (Endpoint Client Name). '
                 'The manifest tool will derive a PSK for the specified device based on the master key and the concatenation of: \n'
                 '    Vendor ID\n'

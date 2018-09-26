@@ -443,17 +443,9 @@ def get_symmetric_signature(options, manifestInput, enc_data):
     LOG.info('Loaded device URNs from {!r}'.format(defaults.config))
     for dev in devices:
         LOG.info('    {!r}'.format(dev))
-    if len(devices) > 1:
-        LOG.warning('Only single device PSK update is supported in 1.4.x.')
-        LOG.warning('Ignoring stored device URNs.')
-        devices = []
 
     # Optionally load a URN out of the command-line arguments
     if hasattr(options, 'device_urn') and options.device_urn:
-        if len(devices) >= 1:
-            LOG.warning('Only single device PSK update is supported in 1.4.x.')
-            LOG.warning('Ignoring stored device URNs.')
-            devices = []
         cmdDevs = [options.device_urn]
         LOG.info('Loaded device URNs from input arguments')
         for dev in cmdDevs:
@@ -465,10 +457,6 @@ def get_symmetric_signature(options, manifestInput, enc_data):
 
     # Use only unique devices
     devices = list(set(devices))
-
-    if len(devices) != 1:
-        LOG.critical('Exactly one device URN must be specified.')
-        sys.exit(0)
 
     crypto_mode = get_crypto_mode(options, manifestInput)
 

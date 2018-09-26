@@ -97,16 +97,16 @@ def mkCert(options):
             print('This process will create a self-signed certificate, which is not suitable for production use.')
             print()
             print('In the terminology used by certificates, the "subject" means the holder of the private key that matches a certificate.')
-            country = input('In which country is the subject located? ')
-            state = input('In which state or province is the subject located? ')
-            locality = input('In which city or region is the subject located? ')
-            organization = input('What is the name of the subject organization? ')
+            country = input('In which country is the subject located? ').strip()
+            state = input('In which state or province is the subject located? ').strip()
+            locality = input('In which city or region is the subject located? ').strip()
+            organization = input('What is the name of the subject organization? ').strip()
             commonName = ''
             if hasattr(options, 'vendor_domain') and options.vendor_domain:
-                commonName = input('What is the common name of the subject organization? [{}]'.format(options.vendor_domain)) or options.vendor_domain
+                commonName = input('What is the common name of the subject organization? [{}]'.format(options.vendor_domain)).strip() or options.vendor_domain
             else:
                 commonName = input('What is the common name of the subject organization? ')
-            validity = input('How long (in days) should the certificate be valid? [{}]'.format(defaults.certificateDuration)) or defaults.certificateDuration
+            validity = input('How long (in days) should the certificate be valid? [{}]'.format(defaults.certificateDuration)).strip() or defaults.certificateDuration
 
         try:
             os.makedirs(defaults.certificatePath)
@@ -212,22 +212,26 @@ def main(options):
         except IOError:
             # Handle missing file
             pass
-        if not deviceURN:
-            LOG.critical('An endpoint name must be populated in mbed_cloud_dev_credentials.c')
-            return 1
-        if deviceURN == '0':
-            LOG.critical('An endpoint name in mbed_cloud_dev_credentials.c must be initialized (not \'0\') and must be different for each device.')
-            return 1
-        if deviceURN in PSKIdentities:
-            LOG.warning('Device URN %r already exists in .manifest-tool.json. Is it unique?', deviceURN)
 
-        try:
-            checkURN(deviceURN)
-        except ValueError as e:
-            LOG.warning('%s', e.message)
+        if len(PSKIdentities) == 0:
+            # endpoint name must be set in the credentials file if there are no endpoints in the configuration already
+            if not deviceURN:
+                LOG.critical('An endpoint name must be populated in mbed_cloud_dev_credentials.c')
+                return 1
+            if deviceURN == '0':
+                LOG.critical('An endpoint name in mbed_cloud_dev_credentials.c must be initialized (not \'0\') and must be different for each device.')
+                return 1
+            else:
+                if deviceURN in PSKIdentities:
+                    LOG.warning('Device URN %r already exists in .manifest-tool.json. Is it unique?', deviceURN)
+                try:
+                    checkURN(deviceURN)
+                except ValueError as e:
+                    LOG.warning('%s', e.message)
 
-        # Append the device URN extracted from the credentials file to the current list
-        PSKIdentities.append(deviceURN)
+                # Append the device URN extracted from the credentials file to the current list
+                PSKIdentities.append(deviceURN)
+
         # Install the device URN extracted from the credentials file into the options object for
         # use in generating template files
         options.device_urn = deviceURN

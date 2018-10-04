@@ -20,6 +20,7 @@ from __future__ import division
 import sys, time, collections, hashlib, logging
 from manifesttool import __version__ as uc_version
 from manifesttool import codec
+import os
 
 from pyasn1.codec.der import encoder as der_encoder
 from pyasn1.error import PyAsn1Error
@@ -54,6 +55,29 @@ def sha_hash(content):
     sha = hashlib.sha256()
     sha.update(content)
     return sha.digest()
+
+def read_file_chunked(options, fd):
+    data = fd.read(options.chunk_size)
+    while data:
+        yield data
+        data = fd.read(options.chunk_size)
+
+def hash_file(options, fname):
+    if not hasattr(options,'hash') or not options.hash:
+        options.hash = 'sha256'
+    md = {
+        'sha256' : hashes.Hash(hashes.SHA256(), backend=default_backend())
+    }.get(options.hash, None)
+
+    if not hasattr(options,'chunk_size') or not options.chunk_size:
+        options.chunk_size = 4096
+    with open(fname,'rb') as fd:
+        for chunk in read_file_chunked(options, fd):
+            md.update(chunk)
+    return md.finalize()
+
+def size_file(options, fname):
+    return os.path.getsize(fname)
 
 def getDevicePSK_HKDF(mode, masterKey, vendorId, classId, keyUsage):
     # Construct the device PSK

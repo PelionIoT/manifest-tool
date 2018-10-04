@@ -167,18 +167,16 @@ def get_payload_description(options, manifestInput):
         LOG.debug('Found hash in input, skipping payload load. Hash: {}'.format(payload_hash))
         payload_hash = binascii.a2b_hex(payload_hash)
     else:
-        if payload_file:
-            payload_filePath = payload_file
-            # If file path is not absolute, then make it relative to input file
-            if os.path.isabs(payload_file) or not options.input_file.isatty():
-                payload_filePath = os.path.join(os.path.dirname(options.input_file.name), payload_file)
-            content = utils.read_file(payload_filePath)
-        else:
-            content = utils.download_file(payload_uri)
-
+        if not payload_file:
+            LOG.critical('Either a payload file or a payload hash must be specified.')
+            sys.exit(1)
+        payload_filePath = payload_file
+        # If file path is not absolute, then make it relative to input file
+        if os.path.isabs(payload_file) or not options.input_file.isatty():
+            payload_filePath = os.path.join(os.path.dirname(options.input_file.name), payload_file)
         # Read payload input, record length and hash it
-        payload_size = len(content)
-        payload_hash = utils.sha_hash(content)
+        payload_size = utils.size_file(options, payload_filePath)
+        payload_hash = utils.hash_file(options, payload_filePath)
         LOG.debug('payload of {} bytes loaded. Hash: {}'.format(payload_size, binascii.b2a_hex(payload_hash)))
 
     # Ensure the cryptoMode is valid

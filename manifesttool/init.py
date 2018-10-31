@@ -178,7 +178,6 @@ def main(options):
             settings = json.load(f)
     # Populate a default list of PSKIdentities
     PSKIdentities = settings.get('deviceURNs', [])
-    print (PSKIdentities)
 
     if hasattr(options, 'vendor_domain') and options.vendor_domain:
         domainParts = options.vendor_domain.split('.')
@@ -212,26 +211,27 @@ def main(options):
         except IOError:
             # Handle missing file
             pass
+        # A device URN is mandatory for psk init. The URN can come from either
+        # the list in .manifest_tool.json or from the command-line. It is
+        # debatable whether init should be used if the .manifest_tool.json is
+        # already populated, since the purpose of manifest-tool init is to fill
+        # in .manifest_tool.json.
+        if not deviceURN and len(PSKIdentities) == 0:
+            LOG.critical('An endpoint name must be populated in mbed_cloud_dev_credentials.c')
+            return 1
+        if deviceURN == '0':
+            LOG.critical('An endpoint name in mbed_cloud_dev_credentials.c must be initialized (not \'0\') and must be different for each device.')
+            return 1
+        if deviceURN in PSKIdentities:
+            LOG.warning('Device URN %r already exists in .manifest-tool.json. Is it unique?', deviceURN)
 
-        if len(PSKIdentities) == 0:
-            # endpoint name must be set in the credentials file if there are no endpoints in the configuration already
-            if not deviceURN:
-                LOG.critical('An endpoint name must be populated in mbed_cloud_dev_credentials.c')
-                return 1
-            if deviceURN == '0':
-                LOG.critical('An endpoint name in mbed_cloud_dev_credentials.c must be initialized (not \'0\') and must be different for each device.')
-                return 1
-            else:
-                if deviceURN in PSKIdentities:
-                    LOG.warning('Device URN %r already exists in .manifest-tool.json. Is it unique?', deviceURN)
-                try:
-                    checkURN(deviceURN)
-                except ValueError as e:
-                    LOG.warning('%s', e.message)
+        try:
+            checkURN(deviceURN)
+        except ValueError as e:
+            LOG.warning('%s', str(e))
 
-                # Append the device URN extracted from the credentials file to the current list
-                PSKIdentities.append(deviceURN)
-
+        # Append the device URN extracted from the credentials file to the current list
+        PSKIdentities.append(deviceURN)
         # Install the device URN extracted from the credentials file into the options object for
         # use in generating template files
         options.device_urn = deviceURN

@@ -69,7 +69,7 @@ def main(options):
         return 1
     if not options.payload_name:
         name = os.path.basename(options.payload.name) + time.strftime('-%Y-%m-%dT%H:%M:%S')
-        LOG.warning('Using {} as payload name.'.format(name))
+        LOG.info('Using {} as payload name.'.format(name))
         options.payload_name = name
     if len(options.payload_name) > MAX_NAME_LEN:
         LOG.critical(
@@ -80,7 +80,7 @@ def main(options):
 
     if not options.manifest_name:
         name = os.path.basename(options.payload.name) + time.strftime('-%Y-%m-%dT%H:%M:%S-manifest')
-        LOG.warning('Using {} as manifest name.'.format(name))
+        LOG.info('Using {} as manifest name.'.format(name))
         options.manifest_name = name
 
     if len(options.manifest_name) > MAX_NAME_LEN:
@@ -123,16 +123,15 @@ def main(options):
                         **kwArgs)
         except mbed_cloud.exceptions.CloudApiException as e:
             # TODO: Produce a better failuer message
-            LOG.critical('Upload of payload failed with:')
-            print(e)
+            LOG.critical('Upload of payload failed with:\n{}'.format(e).rstrip())
             handled = True
-            LOG.critical('Check API server URL set in manifest-tool init step')
+            LOG.critical('Check API server URL "{}"'.format(api.config["host"]))
             raise e
         except MaxRetryError as e:
-            LOG.critical('Upload of payload failed with:')
-            print(e)
+            LOG.critical('Upload of payload failed with:\n{}'.format(e))
             handled=True
-            LOG.critical('Failed to establish connection to URL. Check validity of API server URL set in manifest-tool init step.')
+            LOG.critical('Failed to establish connection to API-GW')
+            LOG.critical('Check API server URL "{}"'.format(api.config["host"]))
             raise e
 
         LOG.info("Created new firmware at {}".format(payload.url))

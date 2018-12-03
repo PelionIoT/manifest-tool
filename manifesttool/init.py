@@ -58,8 +58,11 @@ def writeUpdateDefaults(options):
             certFp = ', '.join(['0x%x' % x for x in bytes(c_hash[:16])]) + ',\n    ' + ', '.join(['0x%x' % x for x in bytes(c_hash[16:])])
 
             # Calculate the subjectKeyIdentifier
-            c_ski = certObj.extensions.get_extension_for_oid(x509.oid.ExtensionOID.SUBJECT_KEY_IDENTIFIER).value.digest
-            str_ski = ', '.join(['0x%x' % x for x in bytes(c_ski[:16])]) + ',\n    ' + ', '.join(['0x%x' % x for x in bytes(c_ski[16:])])
+            try:
+                c_ski = certObj.extensions.get_extension_for_oid(x509.oid.ExtensionOID.SUBJECT_KEY_IDENTIFIER).value.digest
+                str_ski = ', '.join(['0x%x' % x for x in bytes(c_ski[:16])]) + ',\n    ' + ', '.join(['0x%x' % x for x in bytes(c_ski[16:])])
+            except x509.ExtensionNotFound as e:
+                LOG.warning('No Subject Key Identifier present in certificate')
 
             # Format the certificate
             CByteArray = [ '0x%x'% x for x in bytes(cstr)]
@@ -306,6 +309,13 @@ def main(options):
 
     if hasattr(options, 'psk') and options.psk:
         settings['psk-master-key'] = options.master_key.name
+    elif hasattr(options, 'signing_tool') and options.signing_tool:
+        settings['signing-tool'] = options.signing_tool.name
+        if not hasattr(options, 'signing_key_id') or not options.signing_key_id:
+            LOG.critical('Signing key ID is required with signing tool.')
+            return 1
+        settings['signing-key-id'] = options.signing_key_id
+        settings['default-certificates'] = [ {'file':options.certificate.name}]
     else:
         settings['private-key'] = options.private_key.name
         settings['default-certificates'] = [ {'file':options.certificate.name}]

@@ -102,11 +102,15 @@ class MainArgumentParser(object):
                                 help='Provide a private key file for the certificate provided with -c. ' +
                                      'This allows the manifest tool to perform manifest signing internally.',
                                 type=argparse.FileType('rb'))
-        # init_existing_cert_signing.add_argument('-s','--signing-script',
-        #                         help='Provide a script that should be used for signing. ' +
-        #                              'This allows signing with existing infrastructure. ' +
-        #                              'The arguments to the script are: {fingerprint of the certificate} '+
-        #                              '{hash of the manifest}.',type=argparse.FileType('rb'))
+        init_existing_cert_signing.add_argument('-s','--signing-tool',
+                                help='Provide a tool that should be used for signing. ' +
+                                     'This allows signing with existing infrastructure. ' +
+                                     'The arguments to the tool are: <digest algorithm>' +
+                                     '<key identifier> <input file> <output file>.',
+                                type=argparse.FileType('rb'))
+        init_parser.add_argument('--signing-key-id',
+                                help='Provide an identifier for the private key that will be used to sign  file for the certificate provided with -c. ' +
+                                     'This allows the manifest tool to perform manifest signing internally.')
 
         init_vendor_group = init_parser.add_mutually_exclusive_group(required=True)
         init_vendor_group.add_argument('-V', '--vendor-id', help='')

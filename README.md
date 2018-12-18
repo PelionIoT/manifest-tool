@@ -9,7 +9,13 @@ The manifest tool creates and parses manifest files. You can use it as a command
 
 The manifest tool is compatible both with Python 2.7.11 and later and with Python 3.5.1 and later.
 
-There are 3 options for installing the manifest tool, but all use `pip`:
+There are 4 options for installing the manifest tool, but all use `pip`:
+
+1. Install from PyPi with pip.
+
+    ```
+        $ pip install manifest-tool
+    ```
 
 1. Install from GitHub over HTTPS.
 
@@ -46,12 +52,12 @@ The update client workflow has three stages:
 In a new project that will support the update client, run the following command:
 
 ```
-$ manifest-tool init -d "<company domain name>" -m "<product model identifier>" -a "<Mbed Cloud API Key>" -S "<Mbed Cloud Alternative API address>"
+$ manifest-tool init -d "<company domain name>" -m "<product model identifier>" -a "<Device Management API Key>" -S "<Device Management Alternative API address>"
 ```
 
 Note that you do not need to enter `-S` for the production environment.
 
-The manifest tool is able to use the Mbed Cloud Python SDK to upload firmware and manifests to Mbed Cloud. If you do not require this feature, you can call `manifest-tool init` with fewer arguments:
+The manifest tool is able to use the Device Management Python SDK to upload firmware and manifests to Device Management. If you do not require this feature, you can call `manifest-tool init` with fewer arguments:
 
 ```
 $ manifest-tool init -d "<company domain name>" -m "<product model identifier>"
@@ -61,7 +67,7 @@ This will create several files:
 * A certificate in `.update-certificates/default.der`.
 * A matching private key in `.update-certificates/default.key.pem`.
 * A set of default settings in `.manifest_tool.json`.
-* Mbed Cloud settings in `.mbed_cloud_config.json`.
+* Device Management settings in `.mbed_cloud_config.json`.
 
 The default settings include:
 * A unique vendor identifier, based on the domain name supplied to `init`.
@@ -80,17 +86,17 @@ $ manifest-tool update device -p <payload> -D <device ID>
 ```
 
 This will perform several actions:
-1. Upload the payload to Mbed Cloud.
-1. Hash the payload and create a manifest that links to its location in Mbed Cloud.
+1. Upload the payload to Device Management.
+1. Hash the payload and create a manifest that links to its location in Device Management.
 1. Create an update campaign for the supplied device ID, with the newly created manifest.
 1. Start the campaign.
 1. Wait for the campaign to complete.
-1. Delete the payload, manifest and update campaign out of Mbed Cloud.
+1. Delete the payload, manifest and update campaign out of Device Management.
 
 This allows development with a device for testing purposes.
 
 #### Multidevice update
-If more than one device needs updating, you can use the Mbed Cloud portal to create device filters that can include many devices into an update campaign. First, you need a manifest. Once you have run `manifest-tool init`, you can create manifests by:
+If more than one device needs updating, you can use the Device Management portal to create device filters that can include many devices into an update campaign. First, you need a manifest. Once you have run `manifest-tool init`, you can create manifests by:
 
 ```
 $ manifest-tool update prepare -p <payload>
@@ -105,7 +111,11 @@ $ manifest-tool update prepare -p <payload> -n <PAYLOAD_NAME> -d <PAYLOAD_DESCRI
 
 Both methods of creating a manifest use the defaults created in `manifest-tool init`. You can override each default using an input file or command-line arguments. See below for more details.
 
-Once `manifest-tool update prepare` has been executed the manifest file is automatically uploaded to Mbed Cloud and you can then create and start an update campaign using the Mbed Cloud portal.
+Once `manifest-tool update prepare` has been executed the manifest file is automatically uploaded to Device Management and you can then create and start an update campaign using the Device Management portal.
+
+### External signing tool
+
+The documentation can be found [here](https://cloud.mbed.com/docs/current/updating-firmware/external-signing-tools.html).
 
 ### Debugging Installation
 
@@ -118,8 +128,8 @@ $ sudo apt-get install python-dev
 ### Advanced usage
 The manifest tool allows for significantly more flexibility than the model above shows. You can override each of the defaults that `manifest-tool init` sets by using the command-line or an input file. The manifest tool supports a variety of commands. You can print a full list of commands by using `manifest-tool --help`.
 
-#### Prerequisites
 
+#### Advanced creation Prerequisites
 To create a manifest, you must provide an ECC certificate and private key. The certificate must be an ECC secp256r1 DER encoded certificate. Best practice is for an authority the target device trusts to sign this certificate.
 
 The update client on the target device must have this certificate available, or the certificate must be signed by a certificate that is available on the target device.
@@ -384,10 +394,11 @@ The manifest object contains several fields and one subobject.
 * `payload`: See the [Payload] section.
 * `description`: A free-text description of the payload. This should be small.
 * `vendorId`: Hex representation of the 128-bit RFC4122 GUID that represents the vendor.
-* `classId`: Hex representation of the 128-bit RFC4122 GUID that represents the device class that the update targets. Device classes can mean devices of a given type (for example, smart lights) or model numbers. This allows targeting of updates to particular groups of devices based on the attributes they share, where a device class represents each set of attributes. Because of this, each device can have multiple device classes. Mbed Cloud Update Client only supports the use of device classes to represent model numbers/revisions.
-* `applyImmediately`: This is always assumed to be true. Mbed Cloud Update Client does not currently implement it.
-* `encryptionMode`: Mbed Cloud Client only supports one value:
-    * `none-ecc-secp256r1-sha256`: SHA256 hashing, ECDSA signatures, using the secp256r1 curve. This does not use payload encryption.
+* `classId`: Hex representation of the 128-bit RFC4122 GUID that represents the device class that the update targets. Device classes can mean devices of a given type (for example, smart lights) or model numbers. This allows targeting of updates to particular groups of devices based on the attributes they share, where a device class represents each set of attributes. Because of this, each device can have multiple device classes. Device Management Update Client only supports the use of device classes to represent model numbers/revisions.
+* `applyImmediately`: This is always assumed to be true. Device Management Update Client does not currently implement it.
+* `encryptionMode`: Update Client only supports two values:
+    * `none-ecc-secp256r1-sha256`: SHA256 hashing, ECDSA signatures, using the secp256r1 curve. This does not use payload encryption. (Update Client only)
+    * `none-psk-aes-128-ccm-sha256`: SHA256 hashing, manifest digest is authenticated with AES-CCM-128. This does not use payload encryption. (Update Client Lite only)
 * `vendorInfo`: You can place proprietary information in this field. We recommend DER encoding because this allows you to reuse the update client's general purpose DER parser.
 
 ##### Payload
@@ -430,7 +441,7 @@ Use the signature block to select the certificate the device should use to verif
 }
 ```
 
-* `certificates`: A list of URI/fingerprint pairs. The first certificate in the list must match the private key that you provied to the manifest tool to sign the manifest, supplied through the `-k` command-line option. Each certificate must sign the certificate before it in the list. The last certificate in the list should be the root of trust in the device and can have an empty URI. Instead of a `fingerprint`, you can provide a `file` and the manifest tool will calculate the fingerprint. Note that Mbed Cloud Update Client does not provide a mechanism to fetch certificates in this list. Implementing this feature requires the developer to override `arm_uc_kcm_cert_fetcher`. By default, Mbed Cloud Update Client expects to have one certificate and that this certificate must verify all manifests.
+* `certificates`: A list of URI/fingerprint pairs. The first certificate in the list must match the private key that you provied to the manifest tool to sign the manifest, supplied through the `-k` command-line option. Each certificate must sign the certificate before it in the list. The last certificate in the list should be the root of trust in the device and can have an empty URI. Instead of a `fingerprint`, you can provide a `file` and the manifest tool will calculate the fingerprint. Note that Device Management Update Client does not provide a mechanism to fetch certificates in this list. Implementing this feature requires the developer to override `arm_uc_kcm_cert_fetcher`. By default, Device Management Update Client expects to have one certificate and that this certificate must verify all manifests.
 
 ##### Short-hand parameters
 

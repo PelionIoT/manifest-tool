@@ -65,13 +65,13 @@ def certificateQuery(options, fingerprints, URLs):
                         cert_data = certfile.read()
                         x509cert = x509.load_der_x509_certificate(cert_data, default_backend())
                         fp = x509cert.fingerprint(hashes.SHA256())
-                        if binascii.b2a_hex(fp) == fingerprint:
+                        if binascii.b2a_hex(fp).decode('utf-8') == fingerprint:
                             cert = certfile.name
                             break
                         else:
                             LOG.debug('Fingerprint mismatch for {}\n'
                                          'Expected: {}\n'
-                                         'Actual:   {}'.format(certfile.name, fingerprint, binascii.b2a_hex(fp)))
+                                         'Actual:   {}'.format(certfile.name, fingerprint, binascii.b2a_hex(fp).decode('utf-8')))
             if cert:
                 break
 
@@ -156,7 +156,7 @@ def verifyManifestV1(options, data, signedResource, resource, manifest):
     if c_hash != e_hash:
         LOG.critical('Hash mismatch\nExpected: {}\nActual:   {}'.format(binascii.b2a_hex(e_hash),binascii.b2a_hex(c_hash)))
         return None
-    LOG.debug('Manifest hash: {}'.format(binascii.b2a_hex(c_hash)))
+    LOG.debug('Manifest hash: {}'.format(binascii.b2a_hex(c_hash).decode('utf-8')))
     LOG.info('Maninfest hash: OK')
 
     if not options.certificateQuery:

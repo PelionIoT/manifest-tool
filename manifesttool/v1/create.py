@@ -18,6 +18,11 @@
 # ----------------------------------------------------------------------------
 from __future__ import division
 import codecs, hashlib, sys, json, os, base64, binascii, logging, ecdsa, uuid
+# We use subprocess inline with the guidelines detailed here, so we ignore
+# bandit warnings
+# https://bandit.readthedocs.io/en/latest/plugins/b603_subprocess_without_shell_equals_true.html
+import subprocess #nosec
+import tempfile
 from collections import namedtuple
 
 # from pyasn1 import debug
@@ -363,12 +368,10 @@ def getDevicePSKData(mode, psk, nonce, digest, payload_key):
     LOG.debug('    mode: {}'.format(crypto_mode.name))
     LOG.debug('    iv  ({0} bytes): {1}'.format(len(nonce), binascii.b2a_hex(nonce)))
     LOG.debug('    md  ({0} bytes): {1}'.format(len(digest), binascii.b2a_hex(digest)))
-
-    data = {'hash':str(digest)}
+    data = {'hash':digest}
     if payload_key:
         data['cek'] = payload_key
     asnData = native_decoder.decode(data, asn1Spec=manifest_definition.KeyTableEntry())
-    # print(asnData)
 
     plainText = der_encoder.encode(asnData)
     LOG.debug('PSK plaintext ({0} bytes): {1}'.format(len(plainText), binascii.b2a_hex(plainText)))
@@ -529,9 +532,13 @@ def get_symmetric_signature(options, manifestInput, enc_data):
 def get_signature(options, manifestInput, enc_data):
     signatures = manifestGet(manifestInput,'signature.signatures') or []
     input_hash = manifestGet(manifestInput,'signature.hash') or b''
+    signing_tool = manifestGet(manifestInput, 'signing-tool') or ''
+    if getattr(options, 'signing_tool', None):
+        signing_tool = options.signing_tool
 
-    # There should always be a signing key on create.
-    if not hasattr(options,'private_key') or not options.private_key:
+
+    # There should always be a signing key or signing tool on create.
+    if not signing_tool and not getattr(options,'private_key', None):
         if 'private-key' in manifestInput:
             try:
                 options.private_key = open(manifestInput['private-key'],'r')
@@ -555,85 +562,126 @@ def get_signature(options, manifestInput, enc_data):
             sys.exit(1)
         # TODO: perform best-effort signature validation
 
-    if hasattr(options, 'private_key') and options.private_key:
+    signature = None
+    if signing_tool:
+        # get the key id
+        key_id = manifestGet(manifestInput, 'signing-key-id')
+        if hasattr(options, 'signing_key_id') and options.signing_key_id:
+            key_id = options.signing_key_id
+        digest_algo = 'sha256'
+        infile = None
+        with tempfile.NamedTemporaryFile(delete = False) as f:
+            infile = f.name
+            f.write(enc_data)
+            f.flush()
+            LOG.debug('Temporary manifest file: {}'.format(infile))
+        outfile = None
+        with tempfile.NamedTemporaryFile(delete = False) as f:
+            outfile = f.name
+            LOG.debug('Temporary signature file: {}'.format(outfile))
+
+        try:
+            cmd = [signing_tool, digest_algo, key_id, infile, outfile]
+            LOG.debug('Running "{}" to sign manifest.'.format(' '.join(cmd)))
+            # This command line is constructed internally, so we ignore bandit
+            # warnings about executing a Popen. See:
+            # https://bandit.readthedocs.io/en/latest/plugins/b603_subprocess_without_shell_equals_true.html
+            p = subprocess.Popen(cmd) #nosec
+            p.wait()
+            if p.returncode != 0:
+                LOG.critical('Signing tool failed.')
+                sys.exit(1)
+            with open(outfile, 'rb') as f:
+                signature = f.read()
+
+        except:
+            LOG.critical('Failed to execute signing tool.')
+            sys.exit(1)
+        finally:
+            os.unlink(infile)
+            os.unlink(outfile)
+        LOG.debug('Signature: {}'.format(binascii.b2a_hex(signature).decode('utf-8')))
+
+    elif hasattr(options, 'private_key') and options.private_key:
         sk = ecdsa.SigningKey.from_pem(options.private_key.read())
-        sig = sk.sign_digest(sha_content, sigencode=ecdsa.util.sigencode_der)
+        signature = sk.sign_digest(sha_content, sigencode=ecdsa.util.sigencode_der)
 
-        certificates = []
+    certificates = []
 
-        # pick a signature block with no signature in it.
-        inputCerts = manifestGet(manifestInput, 'certificates') or []
+    # pick a signature block with no signature in it.
+    inputCerts = manifestGet(manifestInput, 'certificates') or []
 
-        # If no certificate was provided in the manifest input or in options,
-        if len(inputCerts) == 0:
-            # then load the default certificate
-            inputCerts = manifestInput.get('default-certificates', [])
+    # If no certificate was provided in the manifest input or in options,
+    if len(inputCerts) == 0:
+        # then load the default certificate
+        inputCerts = manifestInput.get('default-certificates', [])
 
-        # If there is still no certificate,
-        if len(inputCerts) == 0:
-            # Search through all signature blocks for one that contains certificates but no signature
-            for idx, sb in enumerate(signatures):
-                 if not 'signature' in sb:
-                     inputCerts = sb.get('certificates', [])
-                     # This signature will be appended later so we must trim it.
-                     del signatures[idx]
-                     break
+    # If there is still no certificate,
+    if len(inputCerts) == 0:
+        # Search through all signature blocks for one that contains certificates but no signature
+        for idx, sb in enumerate(signatures):
+             if not 'signature' in sb:
+                 inputCerts = sb.get('certificates', [])
+                 # This signature will be appended later so we must trim it.
+                 del signatures[idx]
+                 break
 
-        for idx, cert in enumerate(inputCerts):
-            if not any(k in cert for k in ('file', 'uri')):
-                LOG.critical('Could not find "file" or "uri" property for certificate')
-                sys.exit(1)
+    for idx, cert in enumerate(inputCerts):
+        if not any(k in cert for k in ('file', 'uri')):
+            LOG.critical('Could not find "file" or "uri" property for certificate')
+            sys.exit(1)
 
-            # If 'file', we just use the content in local file
-            if 'file' in cert:
-                fPath = cert['file']
-                if not os.path.isabs(fPath):
-                    fPath = os.path.join(os.path.dirname(options.input_file.name), cert['file'])
-                content = utils.read_file(fPath)
+        # If 'file', we just use the content in local file
+        if 'file' in cert:
+            fPath = cert['file']
+            if not os.path.isabs(fPath):
+                fPath = os.path.join(os.path.dirname(options.input_file.name), cert['file'])
+            content = utils.read_file(fPath)
 
-            # Else we download the file contents
-            else:
-                content = utils.download_file(cert['uri'])
-            # Figure our which extension the certificate has
-            contentPath = cert['file'] if 'file' in cert else cert['uri']
-            ext = contentPath.rsplit('.', 1)[1]
+        # Else we download the file contents
+        else:
+            content = utils.download_file(cert['uri'])
+        # Figure our which extension the certificate has
+        contentPath = cert['file'] if 'file' in cert else cert['uri']
+        ext = contentPath.rsplit('.', 1)[1]
 
-            # Read the certificate file, and get DER encoded data
-            if ext == 'pem':
-                lines = content.replace(" ",'').split()
-                content = binascii.a2b_base64(''.join(lines[1:-1]))
+        # Read the certificate file, and get DER encoded data
+        if ext == 'pem':
+            lines = content.replace(" ",'').split()
+            content = binascii.a2b_base64(''.join(lines[1:-1]))
 
-            # Verify the certificate hash algorithm
-            # Extract subjectPublicKeyInfo field from X.509 certificate (see RFC3280)
-            # fingerprint = utils.sha_hash(content)
-            cPath = cert['file'] if 'file' in cert else cert['uri']
-            certObj = None
-            try:
-                certObj = x509.load_der_x509_certificate(content, cryptoBackends.default_backend())
-            except ValueError as e:
-                LOG.critical("X.509 Certificate Error in ({file}): {error}".format(error=e, file=cPath))
-                sys.exit(1)
+        # Verify the certificate hash algorithm
+        # Extract subjectPublicKeyInfo field from X.509 certificate (see RFC3280)
+        # fingerprint = utils.sha_hash(content)
+        cPath = cert['file'] if 'file' in cert else cert['uri']
+        certObj = None
+        try:
+            certObj = x509.load_der_x509_certificate(content, cryptoBackends.default_backend())
+        except ValueError as e:
+            LOG.critical("X.509 Certificate Error in ({file}): {error}".format(error=e, file=cPath))
+            sys.exit(1)
 
-            if not certObj:
-                LOG.critical("({file}) is not a valid certificate".format(file=cPath))
-                sys.exit(1)
-            if not isinstance(certObj.signature_hash_algorithm, cryptoHashes.SHA256):
-                LOG.critical("In ({file}): Only SHA256 certificates are supported by the Mbed Cloud Update client at this time.".format(file=cPath))
-                sys.exit(1)
-            fingerprint = certObj.fingerprint(cryptoHashes.SHA256())
+        if not certObj:
+            LOG.critical("({file}) is not a valid certificate".format(file=cPath))
+            sys.exit(1)
+        if not isinstance(certObj.signature_hash_algorithm, cryptoHashes.SHA256):
+            LOG.critical("In ({file}): Only SHA256 certificates are supported by the Mbed Cloud Update client at this time.".format(file=cPath))
+            sys.exit(1)
+        fingerprint = certObj.fingerprint(cryptoHashes.SHA256())
 
-            LOG.debug('Creating certificate reference ({}) from {} with fingerprint {}'.format(idx, contentPath, fingerprint))
-            uri = ''
-            if 'uri' in cert:
-                uri = cert['uri']
-            certificates.append(CertificateReference(
-                fingerprint = fingerprint,
-                uri = uri
-            ))
+        LOG.debug('Creating certificate reference ({}) from {} with fingerprint {}'.format(idx, contentPath, fingerprint))
+        uri = ''
+        if 'uri' in cert:
+            uri = cert['uri']
+        certificates.append(CertificateReference(
+            fingerprint = fingerprint,
+            uri = uri
+        ))
 
         LOG.debug('Signed hash ({}) of encoded content ({} bytes) with resulting signature {}'.format(
-            sha_content, len(enc_data), sig))
-        signatures.append(SignatureBlock(signature = sig, certificates = certificates))
+            sha_content, len(enc_data), signature))
+    if signature:
+        signatures.append(SignatureBlock(signature = signature, certificates = certificates))
     return ResourceSignature(
             hash = sha_content,
             signatures = signatures

@@ -18,20 +18,8 @@
 # ----------------------------------------------------------------------------
 
 from setuptools import setup, find_packages
-import pip
 import manifesttool
 import os
-
-
-try: # for pip >= 10
-    from pip._internal.req import parse_requirements
-    from pip._internal.download import PipSession
-except ImportError: # for pip <= 9.0.3
-    from pip.req import parse_requirements
-    from pip.download import PipSession
-
-install_reqs = parse_requirements('requirements.txt', session=PipSession())
-reqs = [str(r.req) for r in install_reqs]
 
 if os.name == 'nt':
     entry_points={
@@ -54,12 +42,12 @@ setup(
     description='Tool/lib to create and parse manifests',
     long_description=open("README.md").read(),
     long_description_content_type="text/markdown",
-    url='https://github.com/ARMmbed/update-client-manifest-manager/manifestTool',
-    author='Brendan Moran',
-    author_email='brendan.moran@arm.com',
+    url='https://github.com/ARMmbed/manifest-tool',
+    author='ARM',
+    author_email='support@arm.com',
     packages=find_packages(exclude=['tests*']),
     zip_safe=False,
     scripts=scripts,
     entry_points=entry_points,
-    install_requires=reqs
+    install_requires=open('requirements.txt').read().splitlines()
 )

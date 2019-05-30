@@ -85,6 +85,9 @@ class Manifest(BaseObject):
         self.description = None
         self.nonce = None
         self.applyImmediately = False
+        self.precursorDigest = None
+        self.priority = None
+
         # self.applyPeriod = {
         #     'validFrom': int(time.time()),
         #     'validTo': int(time.time()) + (3600 * 24 * 30)
@@ -114,20 +117,28 @@ class PayloadDescription(BaseObject):
     FORMAT_CBOR = 2
     FORMAT_HEX_LOCATION_LENGTH_DATA = 3
     FORMAT_ELF = 4
+    FORMAT_BSDIF_STREAM = 5
 
     def __init__(self, **kwargs):
         # Set defaults
-        self.format = {
-            "enum": PayloadDescription.FORMAT_RAW_BINARY
-        }
+        if kwargs.get('format', None) is not None:
+            self.format = { "enum" : kwargs['format']}
+        else:
+            self.format = {
+                "enum": PayloadDescription.FORMAT_RAW_BINARY
+            }
         self.encryptionInfo = None
         self.storageIdentifier = None
         self.reference = None
         self.version = None
+        self.installedDigest = None
+        self.installedSize = None
 
         # Override with kwargs
         for key, value in kwargs.items():
             if value is None:
+                continue
+            if key is "format":
                 continue
             if hasattr(self, key):
                 setattr(self, key, value)

@@ -252,7 +252,17 @@ def verifyManifestV1(options, data, signedResource, resource, manifest):
         else:
             LOG.critical('Payload does not contain a format')
             return None
-
+        if payload['format']['enum'] == 'bsdiff-stream':
+            # Check for presence of required fields
+            if 'precursorDigest' not in full_manifest:
+                LOG.critical('Precursor Digest is mandatory for bsdiff-stream payloads')
+                return None
+            if 'installedDigest' not in payload:
+                LOG.critical('Installed Digest is mandatory for bsdiff-stream payloads')
+                return None
+            if 'installedSize' not in payload:
+                LOG.critical('Installed Size is mandatory for bsdiff-stream payloads')
+                return None
         if emode == 'aes-128-ctr-ecc-secp256r1-sha256':
             if not 'encryptionInfo' in payload:
                 LOG.critical('Encryption info must be present for encrypted payload distribution')

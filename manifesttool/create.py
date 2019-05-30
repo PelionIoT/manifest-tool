@@ -17,9 +17,36 @@
 # limitations under the License.
 # ----------------------------------------------------------------------------
 from manifesttool.v1.create import main as create_v1
+import os
+import sys
+import json
+from manifesttool import defaults
+import logging, sys
+LOG = logging.getLogger(__name__)
 
 def main(options):
+
+    # Read options from manifest input file/
+    # if (options.input_file.isatty()):
+    #     LOG.info("Reading data from from active TTY... Terminate input with ^D")
+    manifestInput = {
+        'applyImmediately' : True
+    }
+
+    try:
+        if os.path.exists(defaults.config):
+            with open(defaults.config) as f:
+                manifestInput.update(json.load(f))
+        if not options.input_file.isatty():
+            content = options.input_file.read()
+            if content and len(content) >= 2: #The minimum size of a JSON file is 2: '{}'
+                manifestInput.update(json.loads(content))
+    except ValueError as e:
+        LOG.critical("JSON Decode Error: {}".format(e))
+        sys.exit(1)
+
     create = {
         '1' : create_v1
     }.get(options.manifest_version)
-    return create(options)
+
+    return create(options, manifestInput)

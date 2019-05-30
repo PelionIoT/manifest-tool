@@ -19,6 +19,7 @@
 import json, logging
 from builtins import bytes
 from manifesttool.v1.parse import parse as parser_v1
+import sys
 
 LOG = logging.getLogger(__name__)
 
@@ -30,15 +31,16 @@ def skipAhead(code):
         rc = 2
     if code == 0x83:
         rc = 3
-    if code == 0x83:
+    if code == 0x84:
         rc = 4
     return rc
 
 def parse(options):
     LOG.debug("Attempting to determine manifest version...")
     # 32 bytes is currently sufficient to detect the manifest type.
-    headerData = bytes(options.input_file.read(32))
-    options.input_file.seek(0)
+    data = options.input_file.read(32)
+    headerData = bytes(data)
+    # options.input_file.seek(0)
     # In both cases, the manifest starts with a DER SEQUENCE tag.
     if headerData[0] != 0x30:
         LOG.critical("input file is not a manifest.")
@@ -64,7 +66,9 @@ def parse(options):
     if not parser:
         LOG.critical("Unrecognized manifest version.")
         return None, None
-    return parser(options)
+    if sys.version_info.major < 3:
+        headerData = ''.join([chr(x) for x in headerData])
+    return parser(options, headerData)
 
 
 def main(options):

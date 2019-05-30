@@ -52,7 +52,7 @@ class MainArgumentParser(object):
             description='''Signs an existing manifest with one additional signature. The manifest must first be
             validated, so defaults for validation are extracted from .manifest_tool.json when values are not supplied
             as arguments to the tool''')
-        update_parser = subparsers.add_parser('update', help='Work with the Mbed Cloud Update service')
+        update_parser = subparsers.add_parser('update', help='Work with the Device Management Update service')
 
         # Options for creating a new manifest
         self._addCreateArgs(create_parser)
@@ -61,7 +61,15 @@ class MainArgumentParser(object):
         parse_parser.add_argument('-j','--pretty-json', action='store_true')
         parse_parser.add_argument('-e','--encoding', choices=['der'], default='der',
             help='Decode created manifest using the provided encoding scheme')
-        self._add_input_file_arg(parse_parser)
+        # deprecated as of 2020:
+        if sys.version_info[0] == 2:
+            parse_parser.add_argument('-i', '--input-file', metavar='FILE',
+                help='Specify the input file. stdin by default',
+                type=argparse.FileType('rb'), default=sys.stdin)
+        elif sys.version_info[0] >= 3:
+            parse_parser.add_argument('-i', '--input-file', metavar='FILE',
+                help='Specify the input file. stdin by default',
+                type=argparse.FileType('rb'), default=sys.stdin.buffer)
         self._add_output_file_arg(parse_parser)
 
         # Options for verifying an existing manifest
@@ -142,7 +150,7 @@ class MainArgumentParser(object):
         update_sub_parsers = update_parser.add_subparsers(dest='update_action')
 
         prepare_parser = update_sub_parsers.add_parser('prepare', help='Prepare an update',
-            description='''Prepares an update for Mbed Cloud. This uploads the specified payload, creates a manifest
+            description='''Prepares an update for Pelion Device Management. This uploads the specified payload, creates a manifest
             and uploads the manifest.''')
 
         self._addCreateArgs(prepare_parser, ['output-file'])
@@ -151,21 +159,21 @@ class MainArgumentParser(object):
             type=argparse.FileType('wb'), default=None)
 
         prepare_parser.add_argument('-n', '--payload-name',
-            help='The reference name for the payload in Mbed Cloud. If no name is specified, then one will be created '
+            help='The reference name for the payload in Pelion Device Management. If no name is specified, then one will be created '
                  'using the file name of the payload and the current timestamp.')
         prepare_parser.add_argument('-d', '--payload-description',
-            help='The description of the payload for use in Mbed Cloud.')
+            help='The description of the payload for use in Pelion Device Management.')
         prepare_parser.add_argument('--manifest-name',
-            help='The reference name for the manifest in Mbed Cloud. If no name is specified, then one will be created '
+            help='The reference name for the manifest in Pelion Device Management. If no name is specified, then one will be created '
                  'using the file name of the manifest and the current timestamp.')
         prepare_parser.add_argument('--manifest-description',
-            help='The description of the manifest for use in Mbed Cloud.')
-        prepare_parser.add_argument('-a', '--api-key', help='API Key for the Mbed Cloud')
+            help='The description of the manifest for use in Pelion Device Management.')
+        prepare_parser.add_argument('-a', '--api-key', help='API Key for Pelion Device Management')
 
         update_device_parser = update_sub_parsers.add_parser('device',
             help='Update a single device using its LwM2M Device ID',
             description='''Update a single device using its LwM2M Device ID. Note that settings may be provided in the
-                manifest tool configuration file ({}). The API key MUST be provided in the Mbed Cloud Client
+                manifest tool configuration file ({}). The API key MUST be provided in the Device Management Client
                 configuration file.'''.format(defaults.config))
         self._addCreateArgs(update_device_parser, ['output-file'])
 
@@ -174,28 +182,28 @@ class MainArgumentParser(object):
             type=argparse.FileType('wb'), default=None)
 
         update_device_parser.add_argument('-n', '--payload-name',
-            help='The reference name for the payload in Mbed Cloud. If no name is specified, then one will be created '
+            help='The reference name for the payload in Pelion Device Management. If no name is specified, then one will be created '
                  'using the file name of the payload and the current timestamp.')
         update_device_parser.add_argument('-d', '--payload-description',
-            help='The description of the payload for use in Mbed Cloud.')
+            help='The description of the payload for use in Pelion Device Management.')
         update_device_parser.add_argument('--manifest-name',
-            help='The reference name for the manifest in Mbed Cloud. If no name is specified, then one will be created '
+            help='The reference name for the manifest in Pelion Device Management. If no name is specified, then one will be created '
                  'using the file name of the manifest and the current timestamp.')
         update_device_parser.add_argument('--manifest-description',
-            help='The description of the manifest for use in Mbed Cloud.')
+            help='The description of the manifest for use in Pelion Device Management.')
         update_device_parser.add_argument('-D', '--device-id', help='The device ID of the device to update', required=True)
         update_device_parser.add_argument('--no-cleanup', action='store_true',
-            help='''Don't delete the campaign, manifest, and firmware image from Mbed Cloud when done''')
+            help='''Don't delete the campaign, manifest, and firmware image from Pelion Device Management when done''')
         update_device_parser.add_argument('-T', '--timeout', type=int, default=-1,
             help='''Set the time delay before the manifest tool aborts the campaign. Use -1 for indefinite (this is the default).''')
-        update_device_parser.add_argument('-a', '--api-key', help='API Key for the Mbed Cloud')
+        update_device_parser.add_argument('-a', '--api-key', help='API Key for Pelion Device Management')
 
         return parser
 
     def _add_input_file_arg(self, parser):
         parser.add_argument('-i', '--input-file', metavar='FILE',
             help='Specify the input file. stdin by default',
-            type=argparse.FileType('rb'), default=sys.stdin)
+            type=argparse.FileType('r'), default=sys.stdin)
 
     def _add_output_file_arg(self, parser):
         output_default = sys.stdout
@@ -245,7 +253,7 @@ class MainArgumentParser(object):
             parser.add_argument('-p', '--payload',
                 help='Supply a local copy of the payload file.'
                      'This option overrides any payload file supplied in a `-i` argument.', metavar='FILE',
-                type=argparse.FileType('rb'), required = True)
+                type=argparse.FileType('rb'), required = False)
         if not 'uri' in exclusions:
             parser.add_argument('-u', '--uri',
                 help='Supply the URI of the payload. '
@@ -265,6 +273,13 @@ class MainArgumentParser(object):
             self._add_input_file_arg(parser)
         if not 'output-file' in exclusions:
             self._add_output_file_arg(parser)
+        if not 'payload-format' in exclusions:
+            parser.add_argument('-f','--payload-format',
+                choices=['raw-binary', 'bsdiff-stream'],
+                help='Speficy the payload format. Supported formats are: '
+                'raw-binary (unprocessed binary bytes with no metadata), '
+                'bsdiff-stream (lz4-compressed bsdiff, reorganised for stream '
+                'processing)')
 
     def _addVerifyArgs(self, verify_parser, exclusions=[]):
         if not 'pretty-json' in exclusions:
@@ -282,7 +297,9 @@ class MainArgumentParser(object):
             verify_parser.add_argument('-C','--class-id', dest='classId', metavar='CLASSID',
                 help='Set the class UUID that verify should expect.' )
         if not 'input-file' in exclusions:
-            self._add_input_file_arg(verify_parser)
+            verify_parser.add_argument('-i', '--input-file', metavar='FILE',
+                help='Specify the input file. stdin by default',
+                type=argparse.FileType('rb'), default=sys.stdin)
         if not 'output-file' in exclusions:
             self._add_output_file_arg(verify_parser)
 

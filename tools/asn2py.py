@@ -57,7 +57,7 @@ def generate_pyasn_code(definition):
     modules = build_semantic_model(parse_tree)
     output = StringIO()
     for module in modules:
-        generate_pyasn1(module, output)
+        generate_pyasn1(module, output, [])
     return output.getvalue()
 
 def write_code_to_file(code, f, definition_file):

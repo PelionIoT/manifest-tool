@@ -33,7 +33,7 @@ def main(options):
         if mc_version < "1.2.6":
             LOG.warning("Your version of mbed-cloud-sdk may need updating: https://github.com/ARMmbed/mbed-cloud-sdk-python")
     except:
-        LOG.critical('manifest-tool update commands require installation of the Mbed Cloud SDK: https://github.com/ARMmbed/mbed-cloud-sdk-python')
+        LOG.critical('manifest-tool update commands require installation of the Pelion Device Management SDK: https://github.com/ARMmbed/mbed-cloud-sdk-python')
         return 1
     return {
         "prepare" : prepare.main,

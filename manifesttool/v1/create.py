@@ -150,6 +150,19 @@ def get_payload_description(options, manifestInput):
         crypto_mode = get_crypto_mode(options, manifestInput)
     crypto_name = cryptoMode.MODES.get(crypto_mode).name
 
+    payload_format = manifestGet(manifestInput, 'resource.resource.manifest.payload.enum', 'payloadFormat')
+    if payload_format:
+        LOG.debug('Found payload format in input: {}'.format(payload_format))
+    else:
+        payload_format = 'raw-binary'
+    if hasattr(options, 'payload_format') and options.payload_format:
+        payload_format = options.payload_format
+
+    payload_format = {
+        'raw-binary' : 1,
+        'bsdiff-stream' : 5
+    }.get(payload_format, 1)
+
     payload_file = manifestGet(manifestInput, 'resource.resource.manifest.payload.reference.file', 'payloadFile')
     if hasattr(options, 'payload') and options.payload:
         payload_file = options.payload.name
@@ -173,7 +186,7 @@ def get_payload_description(options, manifestInput):
         payload_hash = binascii.a2b_hex(payload_hash)
     else:
         if not payload_file:
-            LOG.critical('Either a payload file or a payload hash must be specified.')
+            LOG.critical('Either -p/--payload must be specified or a payload hash must be provided via -i.')
             sys.exit(1)
         payload_filePath = payload_file
         # If file path is not absolute, then make it relative to input file
@@ -232,6 +245,19 @@ def get_payload_description(options, manifestInput):
     else:
         LOG.debug('Will not encrypt payload as crypto mode {} ({}) does not require it'.format(crypto_mode, crypto_name))
 
+    installedDigest = manifestGet(manifestInput, 'installedDigest')
+    installedSize   = manifestGet(manifestInput, 'installedSize')
+    installedFile   = manifestGet(manifestInput, 'installedFile')
+    if installedFile and not installedDigest and not installedSize:
+        installedFilePath = installedFile
+        # If file path is not absolute, then make it relative to input file
+        if os.path.isabs(installedFilePath):
+            installedFilePath = os.path.join(os.path.dirname(options.input_file.name), installedFilePath)
+        # Read payload input, record length and hash it
+        installedSize = utils.size_file(options, installedFilePath)
+        installedDigest = utils.hash_file(options, installedFilePath)
+        LOG.debug('payload of {} bytes loaded. Hash: {}'.format(installedSize, binascii.b2a_hex(installedDigest)))
+
     return PayloadDescription(
         **{
             "storageIdentifier": manifestGet(manifestInput,'resource.resource.manifest.payload.storageIdentifier', 'storageIdentifier') or "default",
@@ -240,7 +266,10 @@ def get_payload_description(options, manifestInput):
                 uri = payload_uri,
                 size = payload_size
             ),
-            "encryptionInfo": encryptionInfo
+            "encryptionInfo": encryptionInfo,
+            "format" : payload_format,
+            "installedSize":installedSize,
+            "installedDigest":installedDigest
         }
     )
 
@@ -345,15 +374,34 @@ def get_manifest(options, manifestInput):
         nonce = os.urandom(nonceSize)
     if not manifestGet(manifestInput, 'resource.resource.manifest.applyImmediately', 'applyImmediately'):
         LOG.warning('applyImmediately is currently ignored by the update client; manifests are always applied immediately.')
+
+    manifestVersion = manifestGet(manifestInput,'resource.resource.manifest.version')
+    precursorDigest = manifestGet(manifestInput, 'precursorDigest')
+    precursorFile   = manifestGet(manifestInput, 'precursorFile')
+    priority        = manifestGet(manifestInput, 'priority')
+    installedDigest = manifestGet(manifestInput, 'installedDigest')
+    installedSize   = manifestGet(manifestInput, 'installedSize')
+    installedFile   = manifestGet(manifestInput, 'installedFile')
+
+    if manifestVersion:
+        pass
+    else:
+        manifestVersion = 'v1'
+
+    if precursorFile and not precursorDigest:
+        precursorDigest = utils.hash_file(options, precursorFile)
+
     return Manifest(
-        manifestVersion = manifestGet(manifestInput,'resource.resource.manifest.version'),
-        vendorInfo = vendor_info,
+        manifestVersion = manifestVersion,
         vendorId = uuid.UUID(vendor_id).bytes if vendor_id else b'',
         classId = uuid.UUID(class_id).bytes if class_id else b'',
         deviceId = uuid.UUID(device_id).bytes if device_id else b'',
         nonce = nonce,
-        applyImmediately = manifestGet(manifestInput, 'resource.resource.manifest.applyImmediately', 'applyImmediately'),
+        vendorInfo = binascii.a2b_hex(vendor_info),
         applyPeriod = applyPeriod,
+        precursorDigest = precursorDigest,
+        applyImmediately = manifestGet(manifestInput, 'resource.resource.manifest.applyImmediately', 'applyImmediately'),
+        priority = priority,
         encryptionMode = crypto_mode,
         description = manifestGet(manifestInput, 'resource.resource.manifest.description', 'description'),
         aliases = get_manifest_aliases(options, manifestInput),
@@ -665,7 +713,7 @@ def get_signature(options, manifestInput, enc_data):
             LOG.critical("({file}) is not a valid certificate".format(file=cPath))
             sys.exit(1)
         if not isinstance(certObj.signature_hash_algorithm, cryptoHashes.SHA256):
-            LOG.critical("In ({file}): Only SHA256 certificates are supported by the Mbed Cloud Update client at this time.".format(file=cPath))
+            LOG.critical("In ({file}): Only SHA256 certificates are supported by the Device Management Update client at this time.".format(file=cPath))
             sys.exit(1)
         fingerprint = certObj.fingerprint(cryptoHashes.SHA256())
 
@@ -687,25 +735,8 @@ def get_signature(options, manifestInput, enc_data):
             signatures = signatures
         )
 
-def create_signed_resource(options):
-    # Read options from manifest input file/
-    # if (options.input_file.isatty()):
-    #     LOG.info("Reading data from from active TTY... Terminate input with ^D")
-    manifestInput = {
-        'applyImmediately' : True
-    }
+def create_signed_resource(options, manifestInput):
 
-    try:
-        if os.path.exists(defaults.config):
-            with open(defaults.config) as f:
-                manifestInput.update(json.load(f))
-        if not options.input_file.isatty():
-            content = options.input_file.read()
-            if content and len(content) >= 2: #The minimum size of a JSON file is 2: '{}'
-                manifestInput.update(json.loads(content))
-    except ValueError as e:
-        LOG.critical("JSON Decode Error: {}".format(e))
-        sys.exit(1)
 
     # Create the Resource structure first, and encode it using specified encoding scheme
     # This encoded data will then be used for signing
@@ -772,11 +803,11 @@ def write_result(data, options):
     if hasattr(options, 'output_file') and options.output_file.isatty():
         options.output_file.write(b'\n')
 
-def main(options):
+def main(options, manifestInput):
     LOG.debug('Creating new manifest from input file and options')
 
     # Parse input files and options. Generate hydrated and hierachial manifest JSON.
-    manifest = create_signed_resource(options)
+    manifest = create_signed_resource(options, manifestInput)
     LOG.debug('Manifest python object successfully created from ASN.1 definition and input')
 
     # Encode data if requested

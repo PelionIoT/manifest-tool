@@ -39,12 +39,14 @@ Manifest.componentType = namedtype.NamedTypes(
     namedtype.NamedType('deviceId', UUID()),
     namedtype.NamedType('nonce', univ.OctetString()),
     namedtype.NamedType('vendorInfo', univ.OctetString()),
+    namedtype.OptionalNamedType('precursorDigest', univ.OctetString()),
     namedtype.OptionalNamedType('applyPeriod', univ.Sequence(componentType=namedtype.NamedTypes(
         namedtype.NamedType('validFrom', univ.Integer()),
         namedtype.NamedType('validTo', univ.Integer())
     ))
     ),
     namedtype.NamedType('applyImmediately', univ.Boolean()),
+    namedtype.OptionalNamedType('priority', univ.Integer()),
     namedtype.NamedType('encryptionMode', univ.Choice(componentType=namedtype.NamedTypes(
         namedtype.NamedType('enum', univ.Enumerated(namedValues=namedval.NamedValues(('invalid', 0), ('aes-128-ctr-ecc-secp256r1-sha256', 1), ('none-ecc-secp256r1-sha256', 2), ('none-none-sha256', 3), ('none-psk-aes-128-ccm-sha256', 4), ('aes-128-ccm-psk-sha256', 5)))),
         namedtype.NamedType('objectId', univ.ObjectIdentifier())

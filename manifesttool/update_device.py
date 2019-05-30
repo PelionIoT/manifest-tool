@@ -20,7 +20,7 @@
 import logging, sys
 LOG = logging.getLogger(__name__)
 
-from manifesttool import create
+from manifesttool.v1.create import main as create_v1
 from urllib3.exceptions import MaxRetryError
 import copy
 import time
@@ -28,6 +28,8 @@ import tempfile
 import os
 import os.path
 import shutil
+import json
+from manifesttool import defaults
 
 STOP_STATES = {'autostopped',
                'conflict',
@@ -45,11 +47,11 @@ def main(options):
         # from mbed_cloud.device_directory import DeviceDirectoryAPI
         import mbed_cloud.exceptions
     except:
-        LOG.critical('manifest-tool update commands require installation of the Mbed Cloud SDK:'
+        LOG.critical('manifest-tool update commands require installation of the Pelion Device Management SDK:'
                      ' https://github.com/ARMmbed/mbed-cloud-sdk-python')
         return 1
 
-    LOG.debug('Preparing an update on Mbed Cloud')
+    LOG.debug('Preparing an update on Pelion Device Management')
     # upload a firmware
     api = None
     # dd_api = None
@@ -67,8 +69,33 @@ def main(options):
         LOG.critical('API key is required to connect to the Update Service. It can be added using manifest-tool init -a'
                      ' <api key> or by manually editing .mbed_cloud_config.json')
         return 1
+
+    manifestInput = {
+        'applyImmediately' : True
+    }
+
+    try:
+        if os.path.exists(defaults.config):
+            with open(defaults.config) as f:
+                manifestInput.update(json.load(f))
+        if not options.input_file.isatty():
+            content = options.input_file.read()
+            if content and len(content) >= 2: #The minimum size of a JSON file is 2: '{}'
+                manifestInput.update(json.loads(content))
+    except ValueError as e:
+        LOG.critical("JSON Decode Error: {}".format(e))
+        return 1
+
+    payload_filePath = manifestInput.get("payloadFile", None)
+    if options.payload:
+        payload_filePath = options.payload.name
+
+    if not payload_filePath:
+        LOG.critical('Either -p/--payload must be specified or a payload file must be provided via -i.')
+        return 1
+
     if not options.payload_name:
-        name = os.path.basename(options.payload.name) + time.strftime('-%Y-%m-%dT%H:%M:%S')
+        name = os.path.basename(payload_filePath) + time.strftime('-%Y-%m-%dT%H:%M:%S')
         LOG.info('Using {} as payload name.'.format(name))
         options.payload_name = name
     if len(options.payload_name) > MAX_NAME_LEN:
@@ -79,7 +106,7 @@ def main(options):
         return 1
 
     if not options.manifest_name:
-        name = os.path.basename(options.payload.name) + time.strftime('-%Y-%m-%dT%H:%M:%S-manifest')
+        name = os.path.basename(payload_filePath) + time.strftime('-%Y-%m-%dT%H:%M:%S-manifest')
         LOG.info('Using {} as manifest name.'.format(name))
         options.manifest_name = name
 
@@ -89,14 +116,14 @@ def main(options):
                 size=MAX_NAME_LEN, base=options.manifest_name[:MAX_NAME_LEN],
                 overflow=options.manifest_name[MAX_NAME_LEN:]))
         return 1
-    campaign_name = options.payload.name + time.strftime('-%Y-%m-%dT%H:%M:%S-campaign')
+    campaign_name = os.path.basename(payload_filePath) + time.strftime('-%Y-%m-%dT%H:%M:%S-campaign')
     if len(campaign_name) > MAX_NAME_LEN:
         LOG.critical(
             'Campaign name is too long. Maximum length is {size}. ("{base}" <- {size}. overflow -> "{overflow}")'.format(
                 size=MAX_NAME_LEN, base=campaign_name[:MAX_NAME_LEN],
                 overflow=campaign_name[MAX_NAME_LEN:]))
         return 1
-    query_name = options.payload.name + time.strftime('-%Y-%m-%dT%H:%M:%S-filter')
+    query_name = payload_filePath + time.strftime('-%Y-%m-%dT%H:%M:%S-filter')
     if len(query_name) > MAX_NAME_LEN:
         LOG.critical(
             'Filter name is too long. Maximum length is {size}. ("{base}" <- {size}. overflow -> "{overflow}")'.format(
@@ -119,7 +146,7 @@ def main(options):
         try:
             payload = api.add_firmware_image(
                             name = options.payload_name,
-                        datafile = options.payload.name,
+                        datafile = payload_filePath,
                         **kwArgs)
         except mbed_cloud.exceptions.CloudApiException as e:
             # TODO: Produce a better failuer message
@@ -135,11 +162,11 @@ def main(options):
             raise e
 
         LOG.info("Created new firmware at {}".format(payload.url))
-        options.payload.seek(0)
         # create a manifest
         create_opts = copy.copy(options)
         create_opts.uri = payload.url
         create_opts.payload = options.payload
+
         if not (hasattr(create_opts, "output_file") and create_opts.output_file):
             try:
                 manifest_file = open(os.path.join(tempdirname,'manifest'),'wb')
@@ -152,7 +179,7 @@ def main(options):
                 handled = True
                 raise e
         try:
-            rc = create.main(create_opts)
+            rc = create_v1(create_opts, manifestInput)
         except IOError as e:
             LOG.critical("Failed to create manifest with:")
             print(e)
@@ -200,7 +227,7 @@ def main(options):
         LOG.info('Campaign successfully created. Current state: %r' % (campaign.state))
         LOG.info('Campaign successfully created. Filter result: %r' % (campaign.device_filter))
 
-        LOG.info("Starting the update campign...")
+        LOG.info("Starting the update campaign...")
 
         # By default a new campaign is created with the 'draft' status. We can manually start it.
         try:

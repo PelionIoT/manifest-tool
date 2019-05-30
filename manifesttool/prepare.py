@@ -19,7 +19,7 @@
 import logging, sys
 LOG = logging.getLogger(__name__)
 
-from manifesttool import create
+from manifesttool.v1.create import main as create_v1
 from urllib3.exceptions import MaxRetryError
 import copy
 import time
@@ -27,6 +27,8 @@ import tempfile
 import os
 import os.path
 import shutil
+import json
+from manifesttool import defaults
 
 
 MAX_NAME_LEN = 128 # The update API has a maximum name length of 128, but this is not queriable.
@@ -39,10 +41,10 @@ def main_wrapped(options):
         from mbed_cloud.update import UpdateAPI
         import mbed_cloud.exceptions
     except:
-        LOG.critical('manifest-tool update commands require installation of the Mbed Cloud SDK:'
+        LOG.critical('manifest-tool update commands require installation of the Pelion Device Management SDK:'
                      ' https://github.com/ARMmbed/mbed-cloud-sdk-python')
         return 1
-    LOG.debug('Preparing an update on Mbed Cloud')
+    LOG.debug('Preparing an update on Pelion Device Management')
     # upload a firmware
     api = None
     try:
@@ -58,8 +60,29 @@ def main_wrapped(options):
         LOG.critical('API key is required to connect to the Update Service. It can be added using manifest-tool init -a'
                      ' <api key> or by manually editing .mbed_cloud_config.json')
         return 1
+
+    manifestInput = {
+        'applyImmediately' : True
+    }
+
+    try:
+        if os.path.exists(defaults.config):
+            with open(defaults.config) as f:
+                manifestInput.update(json.load(f))
+        if not options.input_file.isatty():
+            content = options.input_file.read()
+            if content and len(content) >= 2: #The minimum size of a JSON file is 2: '{}'
+                manifestInput.update(json.loads(content))
+    except ValueError as e:
+        LOG.critical("JSON Decode Error: {}".format(e))
+        return 1
+
+    payload_filePath = manifestInput.get("payloadFile", None)
+    if options.payload:
+        payload_filePath = options.payload.name
+
     if not options.payload_name:
-        name = os.path.basename(options.payload.name) + time.strftime('-%Y-%m-%dT%H:%M:%S')
+        name = os.path.basename(payload_filePath) + time.strftime('-%Y-%m-%dT%H:%M:%S')
         LOG.info('Using {} as payload name.'.format(name))
         options.payload_name = name
     if len(options.payload_name) > MAX_NAME_LEN:
@@ -70,7 +93,7 @@ def main_wrapped(options):
         return 1
 
     if not options.manifest_name:
-        name = os.path.basename(options.payload.name) + time.strftime('-%Y-%m-%dT%H:%M:%S-manifest')
+        name = os.path.basename(payload_filePath) + time.strftime('-%Y-%m-%dT%H:%M:%S-manifest')
         LOG.info('Using {} as manifest name.'.format(name))
         options.manifest_name = name
 
@@ -87,7 +110,7 @@ def main_wrapped(options):
     try:
         payload = api.add_firmware_image(
                         name = options.payload_name,
-                    datafile = options.payload.name,
+                    datafile = payload_filePath,
                     **kwArgs)
     except mbed_cloud.exceptions.CloudApiException as e:
         # TODO: Produce a better failuer message
@@ -101,7 +124,6 @@ def main_wrapped(options):
         return 1
 
     LOG.info("Created new firmware at {}".format(payload.url))
-    options.payload.seek(0)
     # create a manifest
     create_opts = copy.copy(options)
     create_opts.uri = payload.url
@@ -111,7 +133,7 @@ def main_wrapped(options):
         manifest_file = open(os.path.join(tempdirname,'manifest'),'wb')
         create_opts.output_file = manifest_file
 
-    rc = create.main(create_opts)
+    rc = create_v1(create_opts, manifestInput)
     create_opts.output_file.close()
     if rc:
         return rc

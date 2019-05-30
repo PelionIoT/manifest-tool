@@ -1,24 +1,20 @@
 # -*- coding: utf-8 -*-
-# ----------------------------------------------------------------------------
-# Copyright 2016-2017 ARM Limited or its affiliates
+#----------------------------------------------------------------------------
+#   The confidential and proprietary information contained in this file may
+#   only be used by a person authorised under and to the extent permitted
+#   by a subsisting licensing agreement from ARM Limited or its affiliates.
 #
-# SPDX-License-Identifier: Apache-2.0
+#          (C) COPYRIGHT 2016 ARM Limited or its affiliates.
+#              ALL RIGHTS RESERVED
 #
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
+#   This entire notice must be reproduced on all copies of this file
+#   and copies of this file may only be made by a person if such person is
+#   permitted to do so under the terms of a subsisting license agreement
+#   from ARM Limited or its affiliates.
+#----------------------------------------------------------------------------
 #
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-# ----------------------------------------------------------------------------
-#
-# This file has been generated using asn1ate (v <unknown>) from './ASN.1/v1/manifest-1.0.0'
-# Last Modified on 2017-11-21 17:47:43
+# This file has been generated using asn1ate (v <unknown>) from 'ASN.1/v1/manifest-1.0.0'
+# Last Modified on 2019-03-18 12:08:08.480914
 from pyasn1.type import univ, char, namedtype, namedval, tag, constraint, useful
 
 
@@ -120,7 +116,7 @@ class PayloadDescription(univ.Sequence):
 
 PayloadDescription.componentType = namedtype.NamedTypes(
     namedtype.NamedType('format', univ.Choice(componentType=namedtype.NamedTypes(
-        namedtype.NamedType('enum', univ.Enumerated(namedValues=namedval.NamedValues(('undefined', 0), ('raw-binary', 1), ('cbor', 2), ('hex-location-length-data', 3), ('elf', 4)))),
+        namedtype.NamedType('enum', univ.Enumerated(namedValues=namedval.NamedValues(('undefined', 0), ('raw-binary', 1), ('cbor', 2), ('hex-location-length-data', 3), ('elf', 4), ('bsdiff-stream', 5)))),
         namedtype.NamedType('objectId', univ.ObjectIdentifier())
     ))
     ),
@@ -140,6 +136,8 @@ PayloadDescription.componentType = namedtype.NamedTypes(
     ),
     namedtype.NamedType('storageIdentifier', char.UTF8String()),
     namedtype.NamedType('reference', ResourceReference()),
+    namedtype.OptionalNamedType('installedSize', univ.Integer()),
+    namedtype.OptionalNamedType('installedDigest', univ.OctetString()),
     namedtype.OptionalNamedType('version', char.UTF8String())
 )
 
@@ -157,12 +155,14 @@ Manifest.componentType = namedtype.NamedTypes(
     namedtype.NamedType('deviceId', UUID()),
     namedtype.NamedType('nonce', univ.OctetString()),
     namedtype.NamedType('vendorInfo', univ.OctetString()),
+    namedtype.OptionalNamedType('precursorDigest', univ.OctetString()),
     namedtype.OptionalNamedType('applyPeriod', univ.Sequence(componentType=namedtype.NamedTypes(
         namedtype.NamedType('validFrom', univ.Integer()),
         namedtype.NamedType('validTo', univ.Integer())
     ))
     ),
     namedtype.NamedType('applyImmediately', univ.Boolean()),
+    namedtype.OptionalNamedType('priority', univ.Integer()),
     namedtype.NamedType('encryptionMode', univ.Choice(componentType=namedtype.NamedTypes(
         namedtype.NamedType('enum', univ.Enumerated(namedValues=namedval.NamedValues(('invalid', 0), ('aes-128-ctr-ecc-secp256r1-sha256', 1), ('none-ecc-secp256r1-sha256', 2), ('none-none-sha256', 3), ('none-psk-aes-128-ccm-sha256', 4), ('aes-128-ccm-psk-sha256', 5)))),
         namedtype.NamedType('objectId', univ.ObjectIdentifier())
@@ -197,5 +197,3 @@ SignedResource.componentType = namedtype.NamedTypes(
     namedtype.NamedType('resource', Resource()),
     namedtype.NamedType('signature', ResourceSignature())
 )
-
-

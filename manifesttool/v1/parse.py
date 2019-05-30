@@ -31,8 +31,8 @@ class json_decoder(object):
     def decode(self, data, schema):
         return (json.dumps(data),)
 
-def parse(options):
-    data = options.input_file.read()
+def parse(options, prefix):
+    data = prefix + options.input_file.read()
     LOG.debug('Read {} bytes of encoded data. Will try to decode...'.format(len(data)))
 
     decoded_data = {

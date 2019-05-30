@@ -1,21 +1,4 @@
--- -*- coding: utf-8 -*-
--- ----------------------------------------------------------------------------
--- Copyright 2017 ARM Limited or its affiliates
---
--- SPDX-License-Identifier: Apache-2.0
---
--- Licensed under the Apache License, Version 2.0 (the "License");
--- you may not use this file except in compliance with the License.
--- You may obtain a copy of the License at
---
---     http://www.apache.org/licenses/LICENSE-2.0
---
--- Unless required by applicable law or agreed to in writing, software
--- distributed under the License is distributed on an "AS IS" BASIS,
--- WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
--- See the License for the specific language governing permissions and
--- limitations under the License.
--- ----------------------------------------------------------------------------
+
 -- Manifest definition file in ASN.1 (v. 1.0.0)
 ManifestSchema DEFINITIONS IMPLICIT TAGS ::= BEGIN
 
@@ -65,7 +48,7 @@ ManifestSchema DEFINITIONS IMPLICIT TAGS ::= BEGIN
   PayloadDescription ::= SEQUENCE {
       format      CHOICE {
           enum    ENUMERATED {
-              undefined(0), raw-binary(1), cbor(2), hex-location-length-data(3), elf(4)
+              undefined(0), raw-binary(1), cbor(2), hex-location-length-data(3), elf(4), bsdiff-stream(5)
           },
           objectId    OBJECT IDENTIFIER
       },
@@ -82,12 +65,14 @@ ManifestSchema DEFINITIONS IMPLICIT TAGS ::= BEGIN
       } OPTIONAL,
       storageIdentifier UTF8String,
       reference    ResourceReference,
+      installedSize INTEGER OPTIONAL,
+      installedDigest OCTET STRING OPTIONAL,
       version     UTF8String OPTIONAL
   }
 
   Manifest ::= SEQUENCE {
       manifestVersion     ENUMERATED {
-        v1(1)
+        v1(1),
       },
       description UTF8String OPTIONAL,
       timestamp   INTEGER,
@@ -96,11 +81,13 @@ ManifestSchema DEFINITIONS IMPLICIT TAGS ::= BEGIN
       deviceId    UUID,
       nonce       OCTET STRING,
       vendorInfo      OCTET STRING,
+      precursorDigest OCTET STRING OPTIONAL,
       applyPeriod SEQUENCE {
           validFrom     INTEGER,
           validTo       INTEGER
       } OPTIONAL,
       applyImmediately    BOOLEAN,
+      priority     INTEGER OPTIONAL,
       encryptionMode  CHOICE {
           enum    ENUMERATED {
               invalid(0),
@@ -114,7 +101,7 @@ ManifestSchema DEFINITIONS IMPLICIT TAGS ::= BEGIN
       },
       aliases         SEQUENCE OF ResourceAlias,
       dependencies    SEQUENCE OF ResourceReference,
-      payload        PayloadDescription OPTIONAL
+      payload         PayloadDescription OPTIONAL
   }
 
   SignedResource ::= SEQUENCE {

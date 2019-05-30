@@ -127,10 +127,10 @@ def add(options):
     cert = x509.load_der_x509_certificate(options.certificate.read(), default_backend())
     # Make sure the certificate uses SHA256.
     if not isinstance(cert.signature_hash_algorithm, hashes.SHA256):
-        LOG.critical("In ({file}): Only SHA256 certificates are supported by the Mbed Cloud Update client at this time.".format(file=options.certificate.name))
+        LOG.critical("In ({file}): Only SHA256 certificates are supported by the Device Management Update client at this time.".format(file=options.certificate.name))
         return 1
     if not isinstance(cert.public_key().curve, ec.SECP256R1):
-        LOG.critical("In ({file}): Only secp256r1 (prime256v1) certificates are supported by the Mbed Cloud Update client at this time.".format(file=options.certificate.name))
+        LOG.critical("In ({file}): Only secp256r1 (prime256v1) certificates are supported by the Device Management Update client at this time.".format(file=options.certificate.name))
         return 1
 
     fp = bytes(cert.fingerprint(hashes.SHA256()))

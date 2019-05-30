@@ -1,10 +1,10 @@
 ## Update manifest format specification
 
-This document explains the v1 manifest format. 
+This document explains the v1 manifest format.
 
 ### Forward-looking features
 
-There are several forward-looking features and fields in this document that are not implemented in the manifest tool or the Mbed Cloud Update Client. We created these features for advanced use cases, so the manifest format would not require significant revisions after deployment.
+There are several forward-looking features and fields in this document that are not implemented in the manifest tool or the Device Management Update Client. We created these features for advanced use cases, so the manifest format would not require significant revisions after deployment.
 
 ### Manifest Format v1.0.0
 
@@ -72,7 +72,7 @@ ResourceSignature ::= SEQUENCE {
 
 If the receiving actor recognizes any fingerprint in the `certificates` list, the actor can use this fingerprint to build up a chain of trust to the first fingerprint in the list, which is the one the actor must use to verify the manifest signature. The actor builds the chain of trust by fetching certificates from the URLs listed in the `certificates` list and then verifying the signature on each fetched certificate, starting with the last certificate in the list that the actor doesn't trust and ending with the certificate the actor uses to verify the manifest signature.
 
-<span class="notes">**Note:** Certificate delegation (verifying a certificate that is signed by a trusted public key) is a forward-looking feature that Mbed Cloud Update Client does not support. You can implement it by overriding the certificate fetcher in the Mbed Cloud Update Client (`arm_uc_certificateStorer`).</span>
+<span class="notes">**Note:** Certificate delegation (verifying a certificate that is signed by a trusted public key) is a forward-looking feature that Device Management Update Client does not support. You can implement it by overriding the certificate fetcher in the Device Management Update Client (`arm_uc_certificateStorer`).</span>
 
 #### ResourceReferences
 
@@ -92,7 +92,7 @@ ResourceReference ::= SEQUENCE {
 
 #### Resource aliases
 
-<span class="notes">**Note:** This is a forward-looking feature that the manifest tool and Mbed Cloud Update Client do not support.</span>
+<span class="notes">**Note:** This is a forward-looking feature that the manifest tool and Device Management Update Client do not support.</span>
 
 In complex environments, where you create a manifest that uses the `dependencies` list, you can use the `aliases` list to change where the target device looks to find a payload.
 
@@ -133,11 +133,13 @@ Manifest ::= SEQUENCE {
     deviceId    UUID,
     nonce       OCTET STRING,
     vendorInfo      OCTET STRING,
+    precursorDigest OCTET STRING OPTIONAL,
     applyPeriod SEQUENCE {
         validFrom     INTEGER,
         validTo       INTEGER
     } OPTIONAL,
     applyImmediately    BOOLEAN,
+    priority     INTEGER OPTIONAL,
     encryptionMode  CHOICE {
         enum    ENUMERATED {
             invalid(0),
@@ -173,6 +175,8 @@ PayloadDescription ::= SEQUENCE {
     } OPTIONAL,
     storageIdentifier UTF8String,
     reference    ResourceReference,
+    installedSize INTEGER OPTIONAL,
+    installedDigest OCTET STRING OPTIONAL,
     version     UTF8String OPTIONAL
 }
 ```
@@ -185,24 +189,28 @@ Below are the field desriptions, organized by type:
 *   `description` - A free-text description of the update. Do not use this for validation or application of the manifest or payload.
 *   `vendorId` - An RFC4122 UUID, identifying the vendor of the target device or software module in a modular system. The target must match this identifier if the manifest author has placed it in the manifest.
 *   `classId` - An RFC4122 UUID, identifying the kind, model or version of device or software module. The target must match this identifier if the manifest author has placed it in the manifest.
-*   `deviceId` - A RFC4122 UUID, uniquely identifying the target device. The target must match this identifier if the manifest author has placed it in the manifest. **Note:** The current Mbed Cloud Update Client does not support Device IDs.
+*   `deviceId` - A RFC4122 UUID, uniquely identifying the target device. The target must match this identifier if the manifest author has placed it in the manifest. **Note:** The current Device Management Update Client does not support Device IDs.
 *   `timestamp` - The creation timestamp of the manifest. This provides rollback protection for the root manifest for a given tree.
     *   This must be always increasing. It is forbidden for a device to install a payload with a version older or equal than its current version.
     *   If you require a rollback to an older payload version for stability purposes, you need to create a new update manifest for the old payload.
 *   `nonce` - A 128-bit random field. The manifest tool provides this to ensure that the signing algorithm is safe from timing side-channel attacks.
 *   `vendorInfo` - You can use this field to implement installation checks or installation instructions that are specific to your application. This is for extensions specific to narrow circumstances (for example, a door vendor might have a flag for "don't apply this update unless you're currently locked"). We recommend DER encoding because this allows the vendor to reuse the update client's general purpose DER parser.
-*   `applyImmediately` - This flag tells the target device to apply the manifest as soon as possible. If not set, the target device MUST not apply this update unless another manifest depends on the update. **Note:** The current Mbed Cloud Update Client release does not support this functionality. It ignores `applyImmediately`.
-*   `validFrom` and `validTo` - Times between which it is acceptable for the target device to apply this update. Outside of these times, the target device MUST not apply this manifest (even if other manifests depend on it). **Note:** The current Mbed Cloud Update Client release does not support this functionality. It ignores `validFrom` and `validTo`.
-*   `dependencies` - References other manifests (other data types are an error). When a device applies this manifest, it must simultaneously apply all the manifests that this list references. **Note:** The current Mbed Cloud Update Client release does not support this functionality.
+*   `precursorDigest` - This field is used in delta updates to specify the image that must already be present on the device for the delta update to produce the correct result.
+*   `applyImmediately` - This flag tells the target device to apply the manifest as soon as possible. If not set, the target device MUST not apply this update unless another manifest depends on the update. **Note:** The current Device Management Update Client release does not support this functionality. It ignores `applyImmediately`.
+*   `validFrom` and `validTo` - Times between which it is acceptable for the target device to apply this update. Outside of these times, the target device MUST not apply this manifest (even if other manifests depend on it). **Note:** The current Device Management Update Client release does not support this functionality. It ignores `validFrom` and `validTo`.
+*   `priority` - The importance of the update. This is an integer that is provided to an application-specific authorisation function. 0 typically means "mandatory" and increasing values have lower priority.
+*   `dependencies` - References other manifests (other data types are an error). When a device applies this manifest, it must simultaneously apply all the manifests that this list references. **Note:** The current Device Management Update Client release does not support this functionality.
 *   `payload` - Describes a payload for an IoT device to apply. See below for subproperties.
-*   `aliases` - Allows a manifest to provide an alternate location for obtaining any payload or other manifest references. See [Resource aliases] for more information. **Note:** The current Mbed Cloud Update Client release does not support this functionality.
+*   `aliases` - Allows a manifest to provide an alternate location for obtaining any payload or other manifest references. See [Resource aliases] for more information. **Note:** The current Device Management Update Client release does not support this functionality.
 
 ##### `PayloadDescription` properties
 
-*   `format` - Either an enum (for compactness) or an ObjectID. If the target device does not understand this format, it will not apply the update.
+*   `format` - Either an enum (for compactness) or an ObjectID. If the target device does not understand this format, it will not apply the update. Current supported values are Raw Binary (1) and Stream-structured bsdiff with LZ4 compression (5).
 *   `reference` - The hash (and optionally location or size) of the payload.
 *   `version` - A human-readable (for UIs only, not used for validity checks) description of the payload version.
 *   `storageIdentifier` - An identifier for the location of the payload.
+*   `installedDigest` - Used in non-raw-binary updates to specify the result of applying an update. The digest in `reference` specifies the digest of the downloaded object. For non-raw-binary payloads, a second digest is needed to ensure that the result of any processing applied to the resource results in the correct payload image.
+*   `installedSize` - Used in non-raw-binary updates to specify the size of an image after any processing is applied.
 
 #### Encryption
 
@@ -211,7 +219,7 @@ Below are the field desriptions, organized by type:
 
 ##### Encryption Keys
 
-<span class="notes">**Note:** The current Mbed Cloud Update Client release does not support this functionality.</span>
+<span class="notes">**Note:** The current Device Management Update Client release does not support this functionality.</span>
 
 Encryption keys are always symmetric keys. A manifest author can choose to wrap encryption keys with other encryption keys, which means a target device can require multiple encryption keys to decrypt a payload.
 

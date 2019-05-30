@@ -4,7 +4,6 @@
 
 The manifest tool creates and parses manifest files. You can use it as a command-line utility or Python package.
 
-
 ### Installation
 
 The manifest tool is compatible both with Python 2.7.11 and later and with Python 3.5.1 and later.
@@ -39,9 +38,18 @@ There are 4 options for installing the manifest tool, but all use `pip`:
 
 See [Debugging Installation](#debugging-installation) if these steps do not work.
 
+### Set up the Device Management Python SDK (optional)
+
+You can use the SDKs to automate uploading your manifest to Device Management (as detailed below); this requires installing the SDKs. If you do not want to install the SDKs, use the Update service API or Device Management Portal to upload the manifest.
+
+Install the the Python SDK directly from GitHub:
+```
+    $ pip install git+https://github.com/ARMmbed/mbed-cloud-sdk-python.git
+```
+
 ### Workflow
 
-The update client workflow has three stages:
+The Update client workflow has three stages:
 
 1. Send a payload to an update medium, for example a web service, a removable storage device or a broadcast system.
 1. Create a manifest for that payload. The manifest includes the hash and size of the payload along with its URI on the update medium.
@@ -49,7 +57,7 @@ The update client workflow has three stages:
 
 ### Quick Start
 
-In a new project that will support the update client, run the following command:
+In a new project that will support the Update client, run the following command:
 
 ```
 $ manifest-tool init -d "<company domain name>" -m "<product model identifier>" -a "<Device Management API Key>" -S "<Device Management Alternative API address>"
@@ -76,7 +84,7 @@ The default settings include:
 
 If you do not want to enter the subject information for your certificate (country, state, city, organization and so on), add the `-q` flag to the command above.
 
-<span class="notes">**Note:** The certificate created in `manifest-tool init` is not suitable for production. You should avoid using it except in testing and development. To create a certificate for production purposes, please use an air-gapped computer or a Hardware Security Module. You should conduct a security review on your manifest signing infrastructure, since it is the core of the security guarantees for update client.</span>
+<span class="notes">**Note:** The certificate created in `manifest-tool init` is not suitable for production. You should avoid using it except in testing and development. To create a certificate for production purposes, please use an air-gapped computer or a Hardware Security Module. You should conduct a security review on your manifest signing infrastructure, since it is the core of the security guarantees for Update client.</span>
 
 #### Single-device update
 Once you have run `manifest-tool init`, you can perform updates on a single device by:
@@ -96,7 +104,8 @@ This will perform several actions:
 This allows development with a device for testing purposes.
 
 #### Multidevice update
-If more than one device needs updating, you can use the Device Management portal to create device filters that can include many devices into an update campaign. First, you need a manifest. Once you have run `manifest-tool init`, you can create manifests by:
+
+If more than one device needs updating, you can use Device Management Portal to create device filters that can include many devices into an update campaign. First, you need a manifest. Once you have run `manifest-tool init`, you can create manifests by:
 
 ```
 $ manifest-tool update prepare -p <payload>
@@ -126,26 +135,32 @@ $ sudo apt-get install python-dev
 ```
 
 ### Advanced usage
+
 The manifest tool allows for significantly more flexibility than the model above shows. You can override each of the defaults that `manifest-tool init` sets by using the command-line or an input file. The manifest tool supports a variety of commands. You can print a full list of commands by using `manifest-tool --help`.
 
 
 #### Advanced creation Prerequisites
+
 To create a manifest, you must provide an ECC certificate and private key. The certificate must be an ECC secp256r1 DER encoded certificate. Best practice is for an authority the target device trusts to sign this certificate.
 
-The update client on the target device must have this certificate available, or the certificate must be signed by a certificate that is available on the target device.
+The Update client on the target device must have this certificate available, or the certificate must be signed by a certificate that is available on the target device.
 
 ##### Creating a certificate for production use
+
 To use a certificate in production, please use a Hardware Security Module or an air-gapped computer to create the certificate. You can then use this device to create signatures for manifests. If you use certificate delegation, you can use the HSM or air-gapped computer to sign the delegated certificates. You should perform a security review on your signing infrastructure.
 
 ##### Creating a certificate for development use
+
 **For testing and evaluation only**
 
 Providing a self-signed certificate is adequate for testing purposes. There are many methods for creating a self-signed certificate. The manifest tool provides two commands: `init` and `cert create`, which creates a self-signed certificate. OpenSSL can also produce one, but we do not recommended this on Mac OS X, due to the old version of OpenSSL that ships with it, nor on Windows, because you must install OpenSSL separately.
 
 ###### Creating a self-signed certificate with manifest-tool init
+
 Running `manifest-tool init` in a project for the first time also creates a self-signed certificate. If a certificate already exists in `.update-certificates/default.der`, then no certificate is created. If you already have a certificate and private key, you should pass those in to `manifest-tool init` using the `-c <certificate-file>` and `-k <private key>` arguments.
 
 ###### Creating a self-signed certificate with manifest-tool cert create
+
 The manifest tool provides a certificate creation command, which creates a self-signed certificate:
 
 ```
@@ -204,7 +219,7 @@ OpenSSL reports the fingerprint of the certificate:
 SHA256 Fingerprint=00:01:02:03:04:05:06:07:08:09:0A:0B:0C:0D:0E:0F:10:11:12:13:14:15:16:17:18:19:1A:1B:1C:1D:1E:1F
 ```
 
-When a C byte array is a requirement (for example, in the update client's certificate manager), this must be converted to one, for example by finding all `:` and replacing with `, 0x`.
+When a C byte array is a requirement (for example, in the Update client's certificate manager), this must be converted to one, for example by finding all `:` and replacing with `, 0x`.
 
 ```
 0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0A, 0x0B, 0x0C, 0x0D, 0x0E, 0x0F, 0x10, 0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17, 0x18, 0x19, 0x1A, 0x1B, 0x1C, 0x1D, 0x1E, 0x1F
@@ -236,6 +251,7 @@ Currently, you need manifests to use SHA256 for hashes, ECDSA signatures on the 
 ##### Mode none-ecc-secp256r1-sha256
 
 ###### Minimum requirements for none-ecc-secp256r1-sha256
+
 The minimum requirements for creating a manifest with unencrypted payload are:
 
 * The cryptographic mode to use (none-ecc-secp256r1-sha256, in this case).
@@ -316,6 +332,7 @@ $ manifest-tool create -u <url> -p <payload> -o <manifest file>
 ```
 
 #### Manifest creation input file
+
 If a `.manifest_tool.json` file is present in the current working directory when you run `manifest-tool create`, `manifest-tool update prepare` or `manifest-tool update device`, the manifest tool loads default values from this file. It overrides these values with the contents of the manifest creation input file. Then, it uses any command-line options to override the contents of the manifest creation input file. If you have used `manifest-tool init` to initialize the current working directory and you use `manifest-tool create -p <payload file> -u <url>`, then the input file is optional.
 
 This means that all fields in the manifest creation input file are optional. However, the `.manifest_tool.json` defaults file, the manifest creation input file or the command-line must specify some fields:
@@ -375,6 +392,7 @@ If you wish to use short-hand parameters, you must place them at this level, wit
 The full list of short-hand parameters is available in [Short-hand parameters].
 
 ##### Manifest
+
 The manifest object contains several fields and one subobject.
 
 ```JSON
@@ -383,7 +401,9 @@ The manifest object contains several fields and one subobject.
     "description": "Description of the update",
     "vendorId": <hex representation of the 128-bit RFC4122 GUID that represents the vendor>,
     "classId": <hex representation of the 128-bit RFC4122 GUID that represents the device class>,
+    "precursorDigest" : <hex-encoded imageg hash>,
     "applyImmediately": true,
+    "priority" : <Application-defined integer priority>,
     "encryptionMode": {
         "enum": "none-ecc-secp256r1-sha256"
     },
@@ -394,14 +414,18 @@ The manifest object contains several fields and one subobject.
 * `payload`: See the [Payload] section.
 * `description`: A free-text description of the payload. This should be small.
 * `vendorId`: Hex representation of the 128-bit RFC4122 GUID that represents the vendor.
-* `classId`: Hex representation of the 128-bit RFC4122 GUID that represents the device class that the update targets. Device classes can mean devices of a given type (for example, smart lights) or model numbers. This allows targeting of updates to particular groups of devices based on the attributes they share, where a device class represents each set of attributes. Because of this, each device can have multiple device classes. Device Management Update Client only supports the use of device classes to represent model numbers/revisions.
-* `applyImmediately`: This is always assumed to be true. Device Management Update Client does not currently implement it.
-* `encryptionMode`: Update Client only supports two values:
-    * `none-ecc-secp256r1-sha256`: SHA256 hashing, ECDSA signatures, using the secp256r1 curve. This does not use payload encryption. (Update Client only)
-    * `none-psk-aes-128-ccm-sha256`: SHA256 hashing, manifest digest is authenticated with AES-CCM-128. This does not use payload encryption. (Update Client Lite only)
-* `vendorInfo`: You can place proprietary information in this field. We recommend DER encoding because this allows you to reuse the update client's general purpose DER parser.
+* `classId`: Hex representation of the 128-bit RFC4122 GUID that represents the device class that the update targets. Device classes can mean devices of a given type (for example, smart lights) or model numbers. This allows targeting of updates to particular groups of devices based on the attributes they share, where a device class represents each set of attributes. Because of this, each device can have multiple device classes. Device Management Update client only supports the use of device classes to represent model numbers/revisions.
+*   `precursorDigest` - You can use this field in delta updates to specify the image that must already be present on the device for the delta update to produce the correct result.
+*   `precursorFile` - A path to a local copy of the precursor. The manifest tool uses this file to calculate the `precursorDigest`. This is not needed if you specify the precursor hash.
+* `applyImmediately`: This is always assumed to be true. Device Management Update client does not currently implement it.
+*   `priority` - The importance of the update. You can use this integer field to tell your application how important an update is, so that it can decide whether to use it or not. The meanings of the values of `priority` are application-defined. 0 typically means "mandatory" and increasing values have lower priority.
+* `encryptionMode`: Update client only supports two values:
+    * `none-ecc-secp256r1-sha256`: SHA256 hashing, ECDSA signatures, using the secp256r1 curve. This does not use payload encryption (Update client only).
+    * `none-psk-aes-128-ccm-sha256`: SHA256 hashing, manifest digest is authenticated with AES-CCM-128. This does not use payload encryption (Update Client Lite only).
+* `vendorInfo`: You can place proprietary information in this field. We recommend DER encoding because this allows you to reuse the Update client's general purpose DER parser.
 
 ##### Payload
+
 The payload section describes the payload object.
 
 ```JSON
@@ -421,8 +445,12 @@ The payload section describes the payload object.
 * `size`: The size of the payload.
 * `uri`: The URI from which the target devices should acquire the payload.
 * `file`: A path to a local copy of the payload. The manifest tool uses this file to calculate the payload hash and payload size. This is not needed if you specify the payload hash and size in the input file.
+* `installedDigest`: You can use this field with delta updates to specify the result of applying an update. The digest in `reference` specifies the digest of the downloaded object. For delta updates, a second digest is needed to ensure that the result of any processing applied to the resource results in the correct payload image.
+* `installedSize`: You can use this field in delta updates to specify the size of an image after the delta update processing is applied.
+* `installedFile`: You can use this field to specify a path to a local copy of the desired result of a delta update. The manifest tool uses this file to calculate the `installedDigest` and `installedFile`. This is not needed if you specify `installedDigest` and `installedFile` in the input file.
 
 ##### Signature block
+
 Use the signature block to select the certificate the device should use to verify the signature of the manifest.
 
 ```JSON
@@ -441,7 +469,7 @@ Use the signature block to select the certificate the device should use to verif
 }
 ```
 
-* `certificates`: A list of URI/fingerprint pairs. The first certificate in the list must match the private key that you provied to the manifest tool to sign the manifest, supplied through the `-k` command-line option. Each certificate must sign the certificate before it in the list. The last certificate in the list should be the root of trust in the device and can have an empty URI. Instead of a `fingerprint`, you can provide a `file` and the manifest tool will calculate the fingerprint. Note that Device Management Update Client does not provide a mechanism to fetch certificates in this list. Implementing this feature requires the developer to override `arm_uc_kcm_cert_fetcher`. By default, Device Management Update Client expects to have one certificate and that this certificate must verify all manifests.
+* `certificates`: A list of URI/fingerprint pairs. The first certificate in the list must match the private key that you provied to the manifest tool to sign the manifest, supplied through the `-k` command-line option. Each certificate must sign the certificate before it in the list. The last certificate in the list should be the root of trust in the device and can have an empty URI. Instead of a `fingerprint`, you can provide a `file` and the manifest tool will calculate the fingerprint. Note that Device Management Update client does not provide a mechanism to fetch certificates in this list. Implementing this feature requires the developer to override `arm_uc_kcm_cert_fetcher`. By default, Device Management Update client expects to have one certificate and that this certificate must verify all manifests.
 
 ##### Short-hand parameters
 
@@ -455,6 +483,13 @@ Use the signature block to select the certificate the device should use to verif
 * `classId`: Sets the `classId` in `manifest`.
 * `description`: Sets the `description` in `manifest`
 * `certificates`: Sets the `certificates` in `signature`.
+* `installedSize` : Sets the `installedSize` in `payload`
+* `installedDigest` : Sets the `installedDigest` in `payload`
+* `installedFile` : Sets the `installedFile` in `payload`
+* `priority` : Sets the `priority` in `manifest`
+* `precursorDigest` : Sets the `precursorDigest` in `manifest`
+* `precursorFile` : Sets the `precursorFile` in `manifest`
+
 
 You can also override many of these parameters on the command-line. See `manifest-tool create --help` for more information.
 

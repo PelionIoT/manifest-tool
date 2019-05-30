@@ -53,6 +53,7 @@ setup(
     version=manifesttool.__version__,
     description='Tool/lib to create and parse manifests',
     long_description=open("README.md").read(),
+    long_description_content_type="text/markdown",
     url='https://github.com/ARMmbed/update-client-manifest-manager/manifestTool',
     author='Brendan Moran',
     author_email='brendan.moran@arm.com',

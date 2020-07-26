@@ -1,6 +1,5 @@
-# -*- coding: utf-8 -*-
 # ----------------------------------------------------------------------------
-# Copyright 2016-2017 ARM Limited or its affiliates
+# Copyright 2019 ARM Limited or its affiliates
 #
 # SPDX-License-Identifier: Apache-2.0
 #
@@ -17,24 +16,26 @@
 # limitations under the License.
 # ----------------------------------------------------------------------------
 
-from setuptools import setup, find_packages
-import manifesttool
-import os
+from setuptools import setup, find_packages, Extension
 
-if os.name == 'nt':
-    entry_points={
-        "console_scripts": [
-            "manifest-tool=manifesttool.clidriver:main",
-        ],
-    }
-    scripts = []
-else:
-    platform_deps = []
-    # entry points are nice, but add ~100ms to startup time with all the
-    # pkg_resources infrastructure, so we use scripts= instead on unix-y
-    # platforms:
-    scripts = ['bin/manifest-tool', ]
-    entry_points = {}
+import manifesttool
+
+armbsdiff = Extension(
+    'manifesttool.armbsdiff',
+    sources=[
+        'bsdiff/bsdiff.c',
+        'bsdiff/bsdiff_helper.c',
+        'bsdiff/bsdiff_python.c',
+        'bsdiff/lz4.c',
+        'bsdiff/varint.c'
+    ],
+    include_dirs=['bsdiff'],
+    define_macros=[('LZ4_MEMORY_USAGE', '10')],
+    extra_compile_args=['--std=c99', '-O3']
+)
+
+with open('requirements.txt', 'rt') as fh:
+    pdmfota_requirements = fh.readlines()
 
 setup(
     name='manifest-tool',
@@ -45,9 +46,17 @@ setup(
     url='https://github.com/ARMmbed/manifest-tool',
     author='ARM',
     author_email='support@arm.com',
-    packages=find_packages(exclude=['tests*']),
+    packages=find_packages(exclude=['tests']),
     zip_safe=False,
-    scripts=scripts,
-    entry_points=entry_points,
-    install_requires=open('requirements.txt').read().splitlines()
+    entry_points={
+        "console_scripts": [
+            "manifest-tool=manifesttool.mtool.mtool:entry_point",
+            "manifest-dev-tool=manifesttool.dev_tool.dev_tool:entry_point",
+            "manifest-delta-tool=manifesttool.delta_tool.delta_tool:entry_point"
+        ],
+    },
+    python_requires='>=3.5.0',
+    include_package_data=True,
+    install_requires=pdmfota_requirements,
+    ext_modules=[armbsdiff]
 )

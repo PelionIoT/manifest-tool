@@ -1,2 +1,6 @@
 include README.md
+include changelog.md
 include requirements.txt
+include bsdiff/*.h
+include manifesttool/dev_tool/actions/code_template.txt
+include manifesttool/mtool/manifest-input-schema.json

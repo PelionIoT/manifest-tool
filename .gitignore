@@ -1,0 +1,15 @@
+
+.idea/
+*.pyc
+*.so
+build/
+*.egg-info/
+venv/
+dist/
+.coverage
+htmlcov/
+.tox/
+.python-version
+tests/mtool/test_data/
+.manifest-dev-tool/
+.vscode/

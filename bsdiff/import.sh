@@ -1,3 +1,4 @@
+#!/bin/bash -e
 # ----------------------------------------------------------------------------
 # Copyright 2019 ARM Limited or its affiliates
 #
@@ -16,4 +17,25 @@
 # limitations under the License.
 # ----------------------------------------------------------------------------
 
-__version__ = "2.0.0"
+
+DELTA_TOOL_DIR=${1:?"missing delta-tool directory path"}
+SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
+
+declare -a BSDIFF_FILES=(
+    "$DELTA_TOOL_DIR/bsdiff/bsdiff.c"
+    "$DELTA_TOOL_DIR/bsdiff/bsdiff.h"
+    "$DELTA_TOOL_DIR/bsdiff/bsdiff_helper.c"
+    "$DELTA_TOOL_DIR/bsdiff/bsdiff_helper.h"
+    "$DELTA_TOOL_DIR/bsdiff/common.h"
+    "$DELTA_TOOL_DIR/bsdiff/lz4.c"
+    "$DELTA_TOOL_DIR/bsdiff/lz4.h"
+    "$DELTA_TOOL_DIR/bsdiff/varint.c"
+    "$DELTA_TOOL_DIR/bsdiff/varint.h"
+)
+
+for file in "${BSDIFF_FILES[@]}"
+do
+   cp -v $file $SCRIPT_DIR
+done
+
+echo "Imported from delta-tool at hash: $(git -C $DELTA_TOOL_DIR rev-parse HEAD)" > $SCRIPT_DIR/import_ref.txt

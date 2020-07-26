@@ -16,4 +16,9 @@
 # limitations under the License.
 # ----------------------------------------------------------------------------
 
-__version__ = "2.0.0"
+import enum
+
+
+class PayloadFormat(enum.Enum):
+    RAW = 'raw-binary'
+    PATCH = 'arm-patch-stream'

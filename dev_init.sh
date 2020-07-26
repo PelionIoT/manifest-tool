@@ -1,3 +1,4 @@
+#!/bin/bash -ex
 # ----------------------------------------------------------------------------
 # Copyright 2019 ARM Limited or its affiliates
 #
@@ -16,4 +17,14 @@
 # limitations under the License.
 # ----------------------------------------------------------------------------
 
-__version__ = "2.0.0"
+
+if [[ ! -d venv ]]; then
+virtualenv -p python3 venv
+fi
+
+source venv/bin/activate
+
+pip uninstall manifesttool --yes
+pip install --editable .
+
+pip install -r dev-requirements.txt

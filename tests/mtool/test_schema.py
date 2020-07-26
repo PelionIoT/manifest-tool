@@ -16,4 +16,10 @@
 # limitations under the License.
 # ----------------------------------------------------------------------------
 
-__version__ = "2.0.0"
+from manifesttool.mtool import mtool
+
+
+def test_print_schema():
+    print('Schema:')
+    cmd = ['schema']
+    assert 0 == mtool.entry_point(cmd)

@@ -1,3 +1,4 @@
+#!/usr/bin/env bash -e
 # ----------------------------------------------------------------------------
 # Copyright 2019 ARM Limited or its affiliates
 #
@@ -16,4 +17,15 @@
 # limitations under the License.
 # ----------------------------------------------------------------------------
 
-__version__ = "2.0.0"
+generate() {
+    local input=$1
+    local output=$2
+    echo "asn1ate $input > $output"
+    echo "# ----------------------------------------------------------------------------" > $output
+    cat ../../../LICENSE | sed 's/^/# /' >> $output
+    echo "# ----------------------------------------------------------------------------" >> $output
+    asn1ate $input >> $output
+}
+
+generate v3/manifest_v3.asn v3/manifest_schema_v3.py
+generate v1/manifest-1.0.0 v1/manifest_schema_v1.py

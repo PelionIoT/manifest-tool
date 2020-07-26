@@ -15,5 +15,21 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ----------------------------------------------------------------------------
+from pathlib import Path
 
-__version__ = "2.0.0"
+MTOOL_PATH = Path(__file__).resolve().parent.parent
+
+
+class PrintSchemaAction:
+    @staticmethod
+    def print_schema():
+        schema_file = MTOOL_PATH / 'manifest-input-schema.json'
+        print(schema_file.read_text())
+
+    @staticmethod
+    def register_parser_args(parser):
+        pass
+
+    @classmethod
+    def entry_point(cls, _):
+        cls.print_schema()

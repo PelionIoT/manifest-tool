@@ -15,5 +15,21 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ----------------------------------------------------------------------------
+from pathlib import Path
 
-__version__ = "2.0.0"
+import yaml
+BASE_PATH = Path('.manifest-dev-tool')
+UPDATE_PUBLIC_KEY_CERT = 'dev.cert.der'
+UPDATE_PRIVATE_KEY = 'dev.key.pem'
+DEV_CFG = 'dev.cfg.yaml'
+UPDATE_RESOURCE_C = 'update_default_resources.c'
+CLOUD_CFG = 'dev.cloud_cfg.yaml'
+DEV_README = 'README.txt'
+API_GW = 'https://api.us-east-1.mbedcloud.com'
+UPDATE_VERSION = 'update.version.txt'
+
+PELION_GW_PATH = Path.home() / '.pelion-dev-presets.yaml'
+PELION_GW = None
+if PELION_GW_PATH.is_file():
+    with PELION_GW_PATH.open('rb') as fh:
+        PELION_GW = yaml.safe_load(fh)

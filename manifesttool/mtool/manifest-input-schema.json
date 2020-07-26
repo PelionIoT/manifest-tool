@@ -1,0 +1,101 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Manifest-tool input validator",
+  "description": "This schema is used to validate the input arguments for manifest-tool",
+  "type": "object",
+  "required": [
+    "vendor",
+    "device",
+    "priority",
+    "payload"
+  ],
+  "properties": {
+    "vendor": {
+      "type": "object",
+      "properties": {
+        "domain": {
+          "$ref": "#/definitions/non_empty_string",
+          "description": "Vendor Domain",
+          "pattern": "\\w+(\\.\\w+)+"
+        },
+        "vendor-id": {
+          "$ref": "#/definitions/uuid_hex_string",
+          "description": "Vendor UUID"
+        },
+        "custom-data-path": {
+          "$ref": "#/definitions/non_empty_string",
+          "description": "Path to custom data file  - must be accessible by the manifest-tool"
+        }
+      },
+      "oneOf": [
+        {"required": ["domain"]},
+        {"required": ["vendor-id"]}
+      ]
+    },
+    "device": {
+      "type": "object",
+      "properties": {
+        "model-name": {
+          "$ref": "#/definitions/non_empty_string",
+          "description": "Device model name"
+        },
+        "class-id": {
+          "$ref": "#/definitions/uuid_hex_string",
+          "description": "Device class UUID"
+        }
+      },
+      "oneOf": [
+        {"required": ["model-name"]},
+        {"required": ["class-id"]}
+      ]
+    },
+    "priority": {
+      "description": "Update priority",
+      "type": "integer"
+    },
+    "payload": {
+      "type": "object",
+      "required": [
+        "url",
+        "format",
+        "file-path"
+      ],
+      "properties": {
+        "format": {
+          "description": "Payload format type",
+          "enum": [
+            "raw-binary",
+            "arm-patch-stream"
+          ]
+        },
+        "url": {
+          "$ref": "#/definitions/non_empty_string",
+          "description": "Payload URL in the cloud storage"
+        },
+        "file-path": {
+          "$ref": "#/definitions/non_empty_string",
+          "description": "Path to payload file - must be accessible by the manifest-tool"
+        }
+      }
+    },
+    "component": {
+      "description": "Component name - only relevant for manifest v3",
+      "$ref": "#/definitions/non_empty_string"
+    },
+    "sign-image":{
+      "description": "Do sign installed image - only relevant for manifest v3. Required for devices with PKI image authentication in bootloader",
+      "type": "boolean"
+    }
+  },
+  "definitions": {
+    "non_empty_string": {
+      "type": "string",
+      "minLength": 1
+    },
+    "uuid_hex_string": {
+      "type": "string",
+      "pattern": "[0-9a-fA-F]{32}",
+      "description": "HEX encoded UUID string"
+    }
+  }
+}

@@ -75,6 +75,14 @@ the resulting archive (`tar.gz`) will be found under `dist` directory
 > Note: all the packages are created automatically by running `tox`
 > command.
 
+## manylinux wheels
+PyPi does not allows uploading platform-specific wheel. More details can be 
+found here: [PEP-0513](https://www.python.org/dev/peps/pep-0513/#rationale).  
+
+To create [manylinux](https://github.com/pypa/manylinux) wheel files
+execute following script: `./build_manylinux_wheels.sh`.  
+> Note: this will require `docker` command. Make sure you have installed docker.
+
 ## Dependent packages versions
 Dependent packages version should be tested with both lower and higher
 bound. Tox tests with new virtual env where all the latest versions will

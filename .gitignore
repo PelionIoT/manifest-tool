@@ -13,3 +13,4 @@ htmlcov/
 tests/mtool/test_data/
 .manifest-dev-tool/
 .vscode/
+wheelhouse/

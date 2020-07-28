@@ -21,14 +21,13 @@ import time
 from pathlib import Path
 from typing import Type
 
-import urllib3
 import yaml
-from mbed_cloud.exceptions import CloudApiException
-from mbed_cloud.update import UpdateAPI
+from requests import HTTPError
 
 from manifesttool.dev_tool import defaults
 from manifesttool.dev_tool.actions.create import bump_minor
 from manifesttool.dev_tool.actions.create import create_dev_manifest
+from manifesttool.dev_tool.pelion import pelion
 from manifesttool.mtool.actions import existing_file_path_arg_factory
 from manifesttool.mtool.actions import non_negative_int_arg_factory
 from manifesttool.mtool.actions import semantic_version_arg_factory
@@ -38,15 +37,6 @@ logger = logging.getLogger('manifest-dev-tool-update')
 
 # The update API has a maximum name length of 128, but this is not queryable.
 MAX_NAME_LEN = 128
-
-STOP_STATES = {
-    'autostopped',
-    'conflict',
-    'expired',
-    'manifestremoved',
-    'quotaallocationfailed',
-    'userstopped'
-}
 
 
 def register_parser(parser: argparse.ArgumentParser, schema_version: str):
@@ -154,70 +144,22 @@ def register_parser(parser: argparse.ArgumentParser, schema_version: str):
     )
 
 
-def _upload_manifest(api, manifest_name, manifest_path):
+def _wait(api: pelion.UpdateServiceApi, campaign_id: pelion.ID, timeout):
     try:
-        manifest = api.add_firmware_manifest(
-            name=manifest_name,
-            datafile=manifest_path.as_posix())
-    except CloudApiException:
-        logger.error('Manifest upload failed')
-        raise
-
-    logger.info('Uploaded Manifest ID: %s', manifest.id)
-    return manifest
-
-
-def _create_campaign(
-        api,
-        campaign_name,
-        manifest_cloud,
-        vendor_id,
-        class_id,
-        device_id
-):
-    try:
-        device_filter = {
-            'device_class': {'$eq': class_id},
-            'vendor_id': {'$eq': vendor_id},
-        }
-        if device_id:
-            device_filter['id'] = {'$eq': device_id}
-        campaign = api.add_campaign(
-            name=campaign_name,
-            manifest_id=manifest_cloud.id,
-            device_filter=device_filter,
-        )
-    except CloudApiException:
-        logger.error('Campaign creation failed')
-        raise
-    logger.info('Campaign successfully created ID: %s', campaign.id)
-    logger.info('Current state: %s', campaign.state)
-    logger.debug('Filter result: %s', campaign.device_filter)
-    return campaign
-
-
-def _start_campaign(api, campaign_cloud):
-    try:
-        api.start_campaign(campaign_cloud)
-    except CloudApiException:
-        logger.error('Starting campaign failed')
-        raise
-    logger.info('Started Campaign ID: %s', campaign_cloud.id)
-
-
-def _wait(api, existing_campaign, timeout):
-    try:
-        old_state = api.get_campaign(existing_campaign.id).state
+        # old_state = api.get_campaign(campaign_id).state
+        old_state = api.campaign_get(campaign_id)['state']
         logger.info("Campaign state: %s", old_state)
         current_time = time.time()
         while timeout == 0 or time.time() < current_time + timeout:
-            campaign = api.get_campaign(existing_campaign.id)
-            if old_state != campaign.state:
-                logger.info("Campaign state: %s", campaign.state)
-                old_state = campaign.state
-            if campaign.state in STOP_STATES:
+            curr_state = api.campaign_get(campaign_id)['state']
+            if old_state != curr_state:
+                logger.info("Campaign state: %s", curr_state)
+                old_state = curr_state
+            if api.campaign_is_stopped(curr_state):
                 logger.info(
-                    "Campaign is finished in state: %s", campaign.state)
+                    "Campaign is finished in state: %s", curr_state)
+                devices_updated = api.assert_all_device_updated(campaign_id)
+                logger.info("%d devices successfully updated", devices_updated)
                 return
             time.sleep(1)
         logger.error('Campaign timed out')
@@ -225,7 +167,7 @@ def _wait(api, existing_campaign, timeout):
     except KeyboardInterrupt:
         logger.error('Aborted by user...')
         return
-    except CloudApiException:
+    except HTTPError:
         logger.error('Failed to retrieve campaign status')
         raise
 
@@ -246,24 +188,29 @@ def update(
         sign_image: bool,
         component: str
 ):
-    config = None
     if service_config.is_file():
         with service_config.open('rt') as fh:
             config = yaml.safe_load(fh)
+    else:
+        raise AssertionError('Pelion service configurations (URL and API key) '
+                             'are not provided for assisted campaign '
+                             'management')
 
-    api = UpdateAPI(config)
+    api = pelion.UpdateServiceApi(
+        host=config['host'], api_key=config['api_key'])
     manifest_path = None
-    payload_cloud = None
-    manifest_cloud = None
-    campaign_cloud = None
+    fw_image_id = None
+    manifest_id = None
+    campaign_id = None
     try:
         timestamp = time.strftime('%Y_%m_%d-%H_%M_%S')
-        payload_cloud = _upload_payload(
-            api,
-            payload_name='{timestamp}-{filename}'.format(
+        logger.info('Uploading FW image %s', payload_path.as_posix())
+
+        fw_image_url, fw_image_id = api.fw_upload(
+            fw_name='{timestamp}-{filename}'.format(
                 filename=payload_path.name,
                 timestamp=timestamp),
-            payload_path=payload_path
+            image=payload_path
         )
 
         manifest_data = create_dev_manifest(
@@ -271,7 +218,7 @@ def update(
             manifest_version=manifest_version,
             vendor_data_path=vendor_data,
             payload_path=payload_path,
-            payload_url=payload_cloud.url,
+            payload_url=fw_image_url,
             priority=priority,
             fw_version=fw_version,
             sign_image=sign_image,
@@ -284,61 +231,50 @@ def update(
         manifest_path = payload_path.parent / manifest_name
 
         manifest_path.write_bytes(manifest_data)
-
-        manifest_cloud = _upload_manifest(api, manifest_name, manifest_path)
+        manifest_id = api.manifest_upload(
+            name=manifest_name,
+            manifest=manifest_path
+        )
 
         campaign_name = 'campaign-{timestamp}-{filename}'.format(
             filename=payload_path.name,
             timestamp=timestamp)
 
-        campaign_cloud = _create_campaign(
-            api,
-            campaign_name,
-            manifest_cloud,
-            dev_cfg['vendor-id'],
-            dev_cfg['class-id'],
-            device_id
+        filters = [
+            'device_class__eq={}'.format(dev_cfg['class-id']),
+            'vendor_id__eq={}'.format(dev_cfg['vendor-id']),
+        ]
+        if device_id:
+            filters.append('id__eq={}'.format(device_id))
+        filters_query = '&'.join(filters)
+        campaign_id = api.campaign_create(
+            name=campaign_name,
+            manifest_id=manifest_id,
+            device_filter=filters_query
         )
 
         if do_start:
-            _start_campaign(api, campaign_cloud)
+            api.campaign_start(campaign_id)
 
         if do_wait:
-            _wait(api, campaign_cloud, timeout)
+            _wait(api, campaign_id, timeout)
 
     finally:
         if not skip_cleanup and do_wait:
             try:
                 logger.info('Cleaning up resources.')
-                if campaign_cloud:
-                    logger.info('Deleting campaign %s', campaign_cloud.id)
-                    api.delete_campaign(campaign_cloud.id)
-                if manifest_cloud:
-                    logger.info('Deleting FW manifest %s', manifest_cloud.id)
-                    api.delete_firmware_manifest(manifest_cloud.id)
-                if payload_cloud:
-                    logger.info('Deleting FW image %s', payload_cloud.id)
-                    api.delete_firmware_image(payload_cloud.id)
+                if campaign_id:
+                    api.campaign_stop(campaign_id)
+                    api.campaign_delete(campaign_id)
+                if manifest_id:
+                    api.manifest_delete(manifest_id)
+                if fw_image_id:
+                    api.fw_delete(fw_image_id)
                 if manifest_path and manifest_path.is_file():
                     manifest_path.unlink()
-            except CloudApiException:
+            except HTTPError as ex:
                 logger.error('Failed to cleanup resources')
-
-
-def _upload_payload(api, payload_name, payload_path):
-    try:
-        logger.info('Uploading FW payload %s', payload_path.as_posix())
-        payload = api.add_firmware_image(
-            name=payload_name,
-            datafile=payload_path.as_posix()
-        )
-    except (CloudApiException, urllib3.exceptions.MaxRetryError):
-        logger.error('Payload upload failed')
-        logger.error('Failed to establish connection to API-GW')
-        logger.error('Check API server URL "%s"', api.config["host"])
-        raise
-    logger.info('Uploaded FW payload %s', payload.url)
-    return payload
+                logger.debug('Cleanup exception %s', ex, exc_info=True)
 
 
 def entry_point(

@@ -1,5 +1,14 @@
 # Changelog
 
+## 2.1.0
+- Stop using deprecated `mbed-cloud-sdk` package
+- Introduce support for `upload-jobs` for uploading FW image - allow
+  uploading files bigger than 100MB
+- Assert campaign is started when calling `manifest-dev-tool update
+  --wait-for-completion`
+- Assert all devices targeted by the update campaign were successfully
+  updated when calling `manifest-dev-tool update --wait-for-completion`
+
 ## 2.0.0
 Works with client-lite.
 

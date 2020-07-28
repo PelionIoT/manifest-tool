@@ -17,7 +17,6 @@
 # ----------------------------------------------------------------------------
 
 import pytest
-from mbed_cloud import UpdateAPI
 
 from manifesttool.dev_tool import dev_tool
 from tests import conftest

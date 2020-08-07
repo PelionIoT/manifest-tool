@@ -290,7 +290,7 @@ Parses and validates existing manifest files.
 
 ```shell
 $ manifest-tool parse \
-  --manifest my.manifest.bin \
+  my.manifest.bin \
   --private-key my.priv.key.pem
 ----- Manifest dump start -----
 Manifest:

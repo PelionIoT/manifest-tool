@@ -146,7 +146,7 @@ describing the update type.
     * To generate a private key, run:
 
         ```shell
-        $ openssl ecparam -genkey -name prime256v1 -outform PEM -out my.pkey.pem
+        $ openssl ecparam -genkey -name prime256v1 -outform PEM -out my.priv.key.pem
         ```
 
   *   To generate a public key in uncompressed point format (X9.62), use
@@ -208,7 +208,7 @@ describing the update type.
 
     ```shell
     manifest-tool create \
-        --config my.config.yml \
+        --config my.config.yaml \
         --key my.priv.key.pem \
         --fw-version 1.2.3 \
         --output my.manifest.bin
@@ -231,18 +231,18 @@ schema V1 and assume the public key is packaged in a x.509 certificate.
     * To generate a private key, run:
 
         ```shell
-        $ openssl ecparam -genkey -name prime256v1 -outform PEM -out my.pkey.pem
+        $ openssl ecparam -genkey -name prime256v1 -outform PEM -out my.priv.key.pem
         ```
     * To generate a public key x.509 certificate, run:
 
         ```shell
         $ openssl req -new -sha256 \
-              -key my.pkey.pem \
+              -key my.priv.key.pem \
               -inform PEM \
               -out my.csr.csr
         $ openssl req -x509 -sha256 \
               -days 7300 \
-              -key my.pkey.pem \
+              -key my.priv.key.pem \
               -in my.csr.csr \
               -outform der \
               -out my.x509.certificate.der

@@ -566,7 +566,7 @@ The command:
 
   ```shell
   manifest-dev-tool update \
-      --payload-path my_mew_fw.bin \
+      --payload-path my_new_fw.bin \
       --fw-version 1.2.3 \
       --wait-for-completion
   ```
@@ -582,7 +582,7 @@ v1-format manifest.
 
   ```shell
   manifest-dev-tool update-v1 \
-      --payload-path my_mew_fw.bin \
+      --payload-path my_new_fw.bin \
       --wait-for-completion
   ```
 

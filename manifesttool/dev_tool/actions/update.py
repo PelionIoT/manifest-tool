@@ -80,7 +80,7 @@ def register_parser(parser: argparse.ArgumentParser, schema_version: str):
             '--component-name',
             default='MAIN',
             metavar='NAME',
-            help='Component name to be udpated. Must correspond to existing '
+            help='Component name to be updated. Must correspond to existing '
                  'components name on targeted devices'
         )
         optional.add_argument(
@@ -128,8 +128,8 @@ def register_parser(parser: argparse.ArgumentParser, schema_version: str):
         type=non_negative_int_arg_factory,
         help='Timeout in seconds. '
              'Only relevant in case --wait-for-completion was provided. '
-             '[Default: 360sec]',
-        default=360
+             '[Default: 0 - wait-forever]',
+        default=0
     )
     pdm_group.add_argument(
         '-n', '--no-cleanup',
@@ -152,6 +152,7 @@ def register_parser(parser: argparse.ArgumentParser, schema_version: str):
         action='help',
         help='show this help message and exit'
     )
+
 
 def _upload_manifest(api, manifest_name, manifest_path):
     try:
@@ -209,7 +210,7 @@ def _wait(api, existing_campaign, timeout):
         old_state = api.get_campaign(existing_campaign.id).state
         logger.info("Campaign state: %s", old_state)
         current_time = time.time()
-        while time.time() < current_time + timeout:
+        while timeout == 0 or time.time() < current_time + timeout:
             campaign = api.get_campaign(existing_campaign.id)
             if old_state != campaign.state:
                 logger.info("Campaign state: %s", campaign.state)

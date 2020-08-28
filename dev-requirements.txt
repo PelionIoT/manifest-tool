@@ -8,3 +8,4 @@ pycodestyle
 coverage
 wheel
 bandit
+requests-mock

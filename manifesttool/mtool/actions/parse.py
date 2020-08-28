@@ -121,7 +121,7 @@ class ParseAction:
         logging.info(
             '\n----- Manifest dump start -----\n'
             '%s----- Manifest dump end -----',
-            yaml.dump(dom)
+            yaml.dump(dom, default_flow_style=False)
 
         )
 

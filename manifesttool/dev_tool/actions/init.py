@@ -18,7 +18,6 @@
 import argparse
 import datetime
 import logging
-import re
 import time
 import uuid
 from pathlib import Path
@@ -52,12 +51,32 @@ def uuid_factory(value: str) -> uuid.UUID:
             '"{}" is a malformed hexadecimal UUID string'.format(value)
         ) from exc
 
+
+class DeprecateStoreTrueAction(argparse.Action):  # pylint: disable=R0903
+    def __init__(self,
+                 option_strings,
+                 dest,
+                 required=False,
+                 help=None):  # pylint: disable=W0622
+        super().__init__(
+            option_strings=option_strings,
+            dest=dest,
+            nargs=0,
+            const=True,
+            default=False,
+            required=required,
+            help=help)
+
+    def __call__(self, parser, namespace, values, option_string=None):
+        logger.warning(
+            '%s option is deprecated and has no effect', option_string)
+        setattr(namespace, self.dest, self.const)
+
 def register_parser(parser: argparse.ArgumentParser):
     parser.add_argument(
         '-f', '--force',
-        action='store_true',
-        help='Overwrite credentials and configuration files if found. '
-             '[Default: False]'
+        action=DeprecateStoreTrueAction,
+        help='Deprecated. Has no effect. Will be removed in future versions'
     )
 
     parser.add_argument(

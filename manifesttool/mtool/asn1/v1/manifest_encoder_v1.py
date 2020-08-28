@@ -124,11 +124,11 @@ class ManifestAsnCodecV1(ManifestAsnCodecBase):
         if version:
             try:
                 version_number = int(version)
-            except ValueError:
+            except ValueError as ex:
                 raise AssertionError(
                     'invalid version {} - version must be '
                     'a valid positive integer'.format(version)
-                )
+                ) from ex
         else:
             version_number = int(time.time())
         self.dom['resource']['manifest']['timestamp'] = version_number

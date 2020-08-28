@@ -161,8 +161,8 @@ class ManifestAsnCodecBase(abc.ABC):
         if 'format' in input_cfg['payload']:
             try:
                 payload_format = PayloadFormat(input_cfg['payload']['format'])
-            except KeyError:
-                raise AssertionError('unknown payload-format')
+            except KeyError as ex:
+                raise AssertionError('unknown payload-format') from ex
             self.set_payload_format(str(payload_format.value))
         else:
             raise AssertionError('payload-format element not found')

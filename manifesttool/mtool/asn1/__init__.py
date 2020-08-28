@@ -54,5 +54,6 @@ class StoreManifestVersion(argparse.Action):
         try:
             setattr(namespace, self.dest,
                     ManifestVersion.from_string(prospective))
-        except KeyError:
-            raise argparse.ArgumentTypeError('invalid manifest schema version')
+        except KeyError as ex:
+            raise argparse.ArgumentTypeError(
+                'invalid manifest schema version') from ex

@@ -105,7 +105,7 @@ class UpdateServiceApi:
         :param chunk: bytes to be processed
         :return: base64 encoded MD5 digest
         """
-        return base64.b64encode(hashlib.md5(chunk).digest()).decode()
+        return base64.b64encode(hashlib.md5(chunk).digest()).decode()  # nosec
 
     @staticmethod
     def _print_upload_progress(current: int, total: int):

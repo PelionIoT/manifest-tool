@@ -168,7 +168,7 @@ def _wait(api: pelion.UpdateServiceApi, campaign_id: pelion.ID, timeout):
         logger.error('Aborted by user...')
         return
     except HTTPError:
-        logger.error('Failed to retrieve campaign status')
+        logger.error('Failed to retrieve campaign state')
         raise
 
 
@@ -188,13 +188,7 @@ def update(
         sign_image: bool,
         component: str
 ):
-    if service_config.is_file():
-        with service_config.open('rt') as fh:
-            config = yaml.safe_load(fh)
-    else:
-        raise AssertionError('Pelion service configurations (URL and API key) '
-                             'are not provided for assisted campaign '
-                             'management')
+    config = load_service_config(service_config)
 
     api = pelion.UpdateServiceApi(
         host=config['host'], api_key=config['api_key'])
@@ -275,6 +269,17 @@ def update(
             except HTTPError as ex:
                 logger.error('Failed to cleanup resources')
                 logger.debug('Cleanup exception %s', ex, exc_info=True)
+
+
+def load_service_config(service_config):
+    if service_config.is_file():
+        with service_config.open('rt') as fh:
+            config = yaml.safe_load(fh)
+    else:
+        raise AssertionError('Pelion service configurations (URL and API key) '
+                             'are not provided for assisted campaign '
+                             'management')
+    return config
 
 
 def entry_point(

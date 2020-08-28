@@ -24,7 +24,7 @@ from tests import conftest
 
 
 def test_cli(tmp_path):
-    c_source = tmp_path /'update_default_resources.c'
+    c_source = tmp_path / 'update_default_resources.c'
     cache_dir = tmp_path / defaults.BASE_PATH.as_posix()
     dev_cfg = cache_dir / defaults.DEV_CFG
     cert = cache_dir / defaults.UPDATE_PUBLIC_KEY_CERT
@@ -58,10 +58,10 @@ def test_cli(tmp_path):
     with conftest.working_directory(tmp_path):
         assert 0 == dev_tool.entry_point(cmd + ['--api-url', 'https://some.url.arm.com'])
 
-    assert c_source_digest == digest_file(c_source)
-    assert cert_digest == digest_file(cert)
-    assert key_digest == digest_file(key)
-    assert dev_cfg_digest == digest_file(dev_cfg)
+    assert c_source_digest != digest_file(c_source)
+    assert cert_digest != digest_file(cert)
+    assert key_digest != digest_file(key)
+    assert dev_cfg_digest != digest_file(dev_cfg)
     assert api_cfg.is_file()
 
     with conftest.working_directory(tmp_path):

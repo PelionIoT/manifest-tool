@@ -39,12 +39,18 @@ SCRIPT_DIR = Path(__file__).resolve().parent
 logger = logging.getLogger('manifest-dev-tool-init')
 
 
-def _domain_factory(domain):
-    if not re.match(r'^\S+\.\S+$', domain):
+def uuid_factory(value: str) -> uuid.UUID:
+    """
+    Construct UUID from a string command line argument argument
+    :param value: input string
+    :return: UUID
+    """
+    try:
+        return uuid.UUID(hex=value)
+    except ValueError as exc:
         raise argparse.ArgumentTypeError(
-            'invalid vendor domain - {}'.format(domain))
-    return domain
-
+            '"{}" is a malformed hexadecimal UUID string'.format(value)
+        ) from exc
 
 def register_parser(parser: argparse.ArgumentParser):
     parser.add_argument(
@@ -88,6 +94,19 @@ def register_parser(parser: argparse.ArgumentParser):
         default=defaults.UPDATE_RESOURCE_C
     )
 
+    parser.add_argument(
+        '--vendor-id',
+        help='Custom vendor UUID. [Default: random]',
+        type=uuid_factory,
+        default=uuid.uuid4()
+    )
+    parser.add_argument(
+        '--class-id',
+        help='Custom class UUID. [Default: random]',
+        type=uuid_factory,
+        default=uuid.uuid4()
+    )
+
 
 def chunks(arr, num_of_elements):
     for i in range(0, len(arr), num_of_elements):
@@ -108,8 +127,7 @@ def generate_update_default_resources_c(
         vendor_id: uuid.UUID,
         class_id: uuid.UUID,
         private_key_file: Path,
-        certificate_file: Path,
-        do_overwrite: bool
+        certificate_file: Path
 ):
     """
     Generate update resources C source file for developer convenience.
@@ -119,12 +137,7 @@ def generate_update_default_resources_c(
     :param class_id: class UUID
     :param private_key_file: private key file
     :param certificate_file: update certificate file
-    :param do_overwrite: do overwrite existing file
     """
-
-    if c_source.is_file() and not do_overwrite:
-        logger.info('%s - exists', c_source)
-        return
 
     vendor_id_str = pretty_print(vendor_id.bytes)
     class_id_str = pretty_print(class_id.bytes)
@@ -155,38 +168,18 @@ def generate_update_default_resources_c(
 
 
 def generate_credentials(
-        key_file,
-        certificate_file,
-        do_overwrite,
-        cred_valid_time
+        key_file: Path,
+        certificate_file: Path,
+        cred_valid_time: int
 ):
     """
     Generate developer credentials
 
-    :param key_file: Path - .pem signing key file
-    :param certificate_file: Path - .der public key certificate file
-    :param do_overwrite: bool - if True - overwrite existing credentials
-    :param cred_valid_time: int - x.509 certificate validity period
-    :return True when credentials were changed or generated, False otherwise
+    :param key_file - .pem signing key file
+    :param certificate_file - .der public key certificate file
+    :param cred_valid_time - x.509 certificate validity period
     """
 
-    if not do_overwrite:
-        if key_file.is_file() and certificate_file.is_file():
-            logger.info('credentials exists')
-            return False
-
-        if key_file.is_file() != certificate_file.is_file():
-            raise AssertionError(
-                'Illegal state key pair is incomplete - execute again with '
-                'force flag. \n'
-                '\t{k_file} - {k_status}\n'
-                '\t{c_file} - {c_status}'.format(
-                    k_file=key_file.as_posix(),
-                    k_status='ok' if key_file.is_file() else 'missing',
-                    c_file=certificate_file.as_posix(),
-                    c_status='ok' if certificate_file.is_file() else 'missing'
-                )
-            )
     try:
         logger.info('generating dev-credentials')
         key = ec.generate_private_key(ec.SECP256R1(), default_backend())
@@ -271,27 +264,15 @@ def generate_credentials(
         if certificate_file.is_file():
             certificate_file.unlink()
         raise
-    return True
 
 
 def generate_developer_config(
         key_file: Path,
         certificate_file: Path,
-        config,
-        do_overwrite
+        config: Path,
+        vendor_id: uuid.UUID,
+        class_id: uuid.UUID
 ):
-    if config.is_file() and not do_overwrite:
-        logger.info('developer config exists')
-        with config.open() as fh:
-            cfg_data = yaml.safe_load(fh)
-        return (
-            False,
-            uuid.UUID(cfg_data['vendor-id']),
-            uuid.UUID(cfg_data['class-id'])
-        )
-
-    vendor_id = uuid.uuid4()
-    class_id = uuid.uuid4()
 
     cfg_data = {
         'key_file': key_file.as_posix(),
@@ -305,7 +286,6 @@ def generate_developer_config(
         yaml.dump(cfg_data, fh)
 
     logger.info('generated developer config file %s', config)
-    return True, vendor_id, class_id
 
 
 def generate_service_config(api_key: str, api_url: str, api_config_path: Path):
@@ -333,18 +313,21 @@ def entry_point(args):
     cache_dir = args.cache_dir
     cache_dir.mkdir(parents=True, exist_ok=True)
 
-    is_credentials_updated = generate_credentials(
+    vendor_id = args.vendor_id
+    class_id = args.class_id
+
+    generate_credentials(
         key_file=cache_dir / defaults.UPDATE_PRIVATE_KEY,
         certificate_file=cache_dir / defaults.UPDATE_PUBLIC_KEY_CERT,
-        do_overwrite=args.force,
         cred_valid_time=365 * 20  # years
     )
 
-    is_cfg_updated, vendor_id, class_id = generate_developer_config(
+    generate_developer_config(
         key_file=cache_dir / defaults.UPDATE_PRIVATE_KEY,
         certificate_file=cache_dir / defaults.UPDATE_PUBLIC_KEY_CERT,
         config=cache_dir / defaults.DEV_CFG,
-        do_overwrite=args.force
+        vendor_id=vendor_id,
+        class_id=class_id
     )
 
     generate_update_default_resources_c(
@@ -352,8 +335,7 @@ def entry_point(args):
         vendor_id=vendor_id,
         class_id=class_id,
         private_key_file=cache_dir / defaults.UPDATE_PRIVATE_KEY,
-        certificate_file=cache_dir / defaults.UPDATE_PUBLIC_KEY_CERT,
-        do_overwrite=is_credentials_updated or is_cfg_updated
+        certificate_file=cache_dir / defaults.UPDATE_PUBLIC_KEY_CERT
     )
     api_key = args.api_key
     if not api_key and hasattr(args, 'gw_preset') and args.gw_preset:
@@ -370,8 +352,7 @@ def entry_point(args):
     )
 
     cache_fw_version_file = cache_dir / defaults.UPDATE_VERSION
-    if not cache_fw_version_file.is_file() or args.force:
-        cache_fw_version_file.write_text('0.0.1')
+    cache_fw_version_file.write_text('0.0.1')
 
     (cache_dir / defaults.DEV_README).write_text(
         'Files in this directory are autogenerated by "manifest-dev-tool init"'

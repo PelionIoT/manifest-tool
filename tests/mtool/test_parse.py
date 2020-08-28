@@ -48,7 +48,6 @@ def happy_day_data(
     generate_credentials(
         key_file=key_file,
         certificate_file=certificate_file,
-        do_overwrite=False,
         cred_valid_time=8
     )
     fw_file = tmp_path / 'fw.bin'
@@ -191,7 +190,6 @@ def test_parse_and_verify_bad_signature(tmp_path, happy_day_data):
     generate_credentials(
         key_file=key_file,
         certificate_file=certificate_file,
-        do_overwrite=False,
         cred_valid_time=8
     )
     with pytest.raises(AssertionError) as e:

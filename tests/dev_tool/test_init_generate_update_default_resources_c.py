@@ -27,7 +27,6 @@ def test_generate_update_default_resources_c_happy_day(tmp_path):
     generate_credentials(
         key_file=key_file,
         certificate_file=certificate_file,
-        do_overwrite=False,
         cred_valid_time=8
     )
     c_source = tmp_path / 'my_source.c'
@@ -40,7 +39,6 @@ def test_generate_update_default_resources_c_happy_day(tmp_path):
         class_id=class_id,
         private_key_file=key_file,
         certificate_file=certificate_file,
-        do_overwrite=False
     )
     assert c_source.is_file()
     gen_data = c_source.read_text()

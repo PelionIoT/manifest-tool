@@ -25,30 +25,8 @@ def test_happy_day(tmp_path):
     generate_credentials(
         key_file=tmp_path / 'dev.key.pem',
         certificate_file=tmp_path / 'dev.cert.der',
-        do_overwrite=False,
         cred_valid_time=8
     )
-
-
-def test_happy_not_overwriting_keys(tmp_path):
-    key_file = tmp_path / 'dev.key.pem'
-    certificate_file = tmp_path / 'dev.cert.der'
-    generate_credentials(
-        key_file=key_file,
-        certificate_file=certificate_file,
-        do_overwrite=False,
-        cred_valid_time=8
-    )
-    key_digest = digest_file(key_file)
-    cert_digest = digest_file(certificate_file)
-    generate_credentials(
-        key_file=key_file,
-        certificate_file=certificate_file,
-        do_overwrite=False,
-        cred_valid_time=8
-    )
-    assert key_digest == digest_file(key_file)
-    assert cert_digest == digest_file(certificate_file)
 
 
 def test_overwriting_keys(tmp_path):
@@ -57,7 +35,6 @@ def test_overwriting_keys(tmp_path):
     generate_credentials(
         key_file=key_file,
         certificate_file=certificate_file,
-        do_overwrite=False,
         cred_valid_time=8
     )
     key_digest = digest_file(key_file)
@@ -65,27 +42,7 @@ def test_overwriting_keys(tmp_path):
     generate_credentials(
         key_file=key_file,
         certificate_file=certificate_file,
-        do_overwrite=True,
         cred_valid_time=8
     )
     assert key_digest != digest_file(key_file)
     assert cert_digest != digest_file(certificate_file)
-
-
-def test_bad_state(tmp_path):
-    key_file = tmp_path / 'dev.key.pem'
-    certificate_file = tmp_path / 'dev.cert.der'
-    generate_credentials(
-        key_file=key_file,
-        certificate_file=certificate_file,
-        do_overwrite=False,
-        cred_valid_time=8
-    )
-    key_file.unlink()
-    with pytest.raises(AssertionError):
-        generate_credentials(
-            key_file=key_file,
-            certificate_file=certificate_file,
-            do_overwrite=False,
-            cred_valid_time=8
-        )

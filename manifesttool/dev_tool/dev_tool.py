@@ -103,14 +103,18 @@ def get_parser():
 
 
 def entry_point(argv=sys.argv[1:]):  # pylint: disable=dangerous-default-value
-    parser = get_parser()
-    args = parser.parse_args(argv)
-
     logging.basicConfig(
         stream=sys.stdout,
         format='%(asctime)s %(levelname)s %(message)s',
-        level=logging.DEBUG if args.debug else logging.INFO
+        level=logging.INFO
     )
+    parser = get_parser()
+    args = parser.parse_args(argv)
+
+    if args.debug:
+        root = logging.getLogger()
+        root.setLevel(logging.DEBUG)
+
     try:
         action = DevActions(args.action)
 

@@ -15,6 +15,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ----------------------------------------------------------------------------
+import uuid
 
 import pytest
 
@@ -35,11 +36,14 @@ from tests import conftest
 def test_cli_developer(happy_day_data, action):
 
     dev_cfg = happy_day_data['tmp_path'] / defaults.DEV_CFG
+    class_id = uuid.uuid4()
+    vendor_id = uuid.uuid4()
     generate_developer_config(
         key_file=happy_day_data['key_file'],
         certificate_file=happy_day_data['certificate_file'],
         config=dev_cfg,
-        do_overwrite=True
+        class_id = class_id,
+        vendor_id = vendor_id
     )
 
     output_manifest = happy_day_data['tmp_path'] / 'manifest.bin'

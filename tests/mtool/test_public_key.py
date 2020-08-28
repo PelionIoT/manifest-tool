@@ -45,7 +45,6 @@ def text_fixture(
     generate_credentials(
         key_file=key_file,
         certificate_file=certificate_file,
-        do_overwrite=False,
         cred_valid_time=8
     )
 

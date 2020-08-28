@@ -17,6 +17,7 @@
 # ----------------------------------------------------------------------------
 import contextlib
 import os
+import uuid
 from pathlib import Path
 
 import pytest
@@ -39,7 +40,6 @@ def data_generator(tmp_path_factory, size):
     dev_init.generate_credentials(
         key_file=key_file,
         certificate_file=certificate_file,
-        do_overwrite=False,
         cred_valid_time=8
     )
     bsdiff_version = armbsdiff.get_version().encode('utf-8')
@@ -58,12 +58,16 @@ def data_generator(tmp_path_factory, size):
         threshold=60
     )
 
+    class_id = uuid.uuid4()
+    vendor_id = uuid.uuid4()
+
     dev_cfg = tmp_path / 'dev.cfg.yaml'
     dev_init.generate_developer_config(
         key_file=key_file,
         certificate_file=certificate_file,
         config=dev_cfg,
-        do_overwrite=True
+        class_id=class_id,
+        vendor_id=vendor_id
     )
 
     api_config_path = tmp_path / 'dev.cloud_cfg.yaml'

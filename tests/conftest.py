@@ -58,7 +58,7 @@ def data_generator(tmp_path_factory, size):
         threshold=60
     )
 
-    dev_cfg = tmp_path / 'dev.manifest_cfg.yaml'
+    dev_cfg = tmp_path / 'dev.cfg.yaml'
     dev_init.generate_developer_config(
         key_file=key_file,
         certificate_file=certificate_file,
@@ -66,7 +66,7 @@ def data_generator(tmp_path_factory, size):
         do_overwrite=True
     )
 
-    api_config_path = tmp_path / 'service_cfg.json'
+    api_config_path = tmp_path / 'dev.cloud_cfg.yaml'
     dev_init.generate_service_config(
         api_key='sdsdadadadsdadasdadsadasdas',
         api_url=defaults.API_GW,

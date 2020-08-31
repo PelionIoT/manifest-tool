@@ -8,6 +8,13 @@
   --wait-for-completion`
 - Assert all devices targeted by the update campaign were successfully
   updated when calling `manifest-dev-tool update --wait-for-completion`
+- Add an option to specify custom vendor and class IDs to 
+  `manifest-dev-tool init` command. Check the `--help` for details
+- Fixed `manifest-tool parse` output formatting - improves readability
+- Deprecate `-f/--force` flags in `manifest-dev-tool init`. The default 
+  behavior will always reinitialize the environment. The flag is still 
+  supported but has no effect and deprecation warning message will be 
+  emitted.
 
 ## 2.0.0
 Works with client-lite.

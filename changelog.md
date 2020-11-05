@@ -5,13 +5,13 @@ Works with client-lite.
 
 Key differences from previous version:
 
-|                                   | Manifest 1.5.2             | Manifest 2.0.0                                                              |
-|:----------------------------------|:---------------------------|:----------------------------------------------------------------------------|
-| Supported manifest schema version | `v1`                       | `v1` and `v3`                                                               |
-| Delta update                      | Supported                  | Supported                                                                   |
-| Component update                  | Not supported              | Supported                                                                   |
-| PDMC                              | Supported 4.5.0 or earlier | `v1` support covers PDMC, `v3` support is only available on Client Lite     |
-| Client Lite                       | Supported                  | Supports both `v1` (by default) and `v3` and can be configured at build time|
+|                                   | Manifest-tool <= 1.4.8     | Manifest-tool>=1.5.0       | Manifest >= 2.0.0                                                           |
+|:----------------------------------|:---------------------------|:---------------------------|:----------------------------------------------------------------------------|
+| Supported manifest schema version | `v1`                       | `v1`                       | `v1` and `v3`                                                               |
+| Delta update                      | Not Supported              | Supported                  | Supported                                                                   |
+| Component update                  | Not supported              | Not supported              | Supported                                                                   |
+| PDMC                              | Supported 3.4.0 or earlier | Supported 3.4.0 or later   | `v1` support covers PDMC, `v3` support is only available on Client Lite     |
+| Client Lite                       | Supported                  | Supported                  | Supports both `v1` (by default) and `v3` and can be configured at build time|
 
 **Changes:**
 

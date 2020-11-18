@@ -43,9 +43,9 @@ setup(
     description='Tool/lib to create and parse manifests',
     long_description=open("README.md").read(),
     long_description_content_type="text/markdown",
-    url='https://github.com/ARMmbed/manifest-tool',
+    url='https://github.com/PelionIoT/manifest-tool',
     author='ARM',
-    author_email='support@arm.com',
+    author_email='iotsupport@arm.com',
     packages=find_packages(exclude=['tests']),
     zip_safe=False,
     entry_points={

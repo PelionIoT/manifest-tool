@@ -39,13 +39,9 @@ FW_CAMPAIGN_STOP = '/v3/update-campaigns/{id}/stop'
 FW_CAMPAIGN_START = '/v3/update-campaigns/{id}/start'
 FW_CAMPAIGN_DEV_METADATA = '/v3/update-campaigns/{id}/campaign-device-metadata'
 
-CAMPAIGN_TERMINATING_STATES = [
-    'autostopped',
-    'conflict',
-    'expired',
-    'manifestremoved',
-    'quotaallocationfailed',
-    'userstopped'
+CAMPAIGN_ACTIVE_PHASES = [
+    'starting',
+    'active'
 ]
 
 # must be greater than 5MB - AWS limitation
@@ -55,7 +51,7 @@ LOG = logging.getLogger('pelion')
 
 URL = NewType('URL', str)
 ID = NewType('ID', str)
-State = NewType('State', str)
+Phase = NewType('Phase', str)
 
 class UpdateServiceApi:
     def __init__(self, host: URL, api_key: str):
@@ -327,15 +323,29 @@ class UpdateServiceApi:
         :param campaign_id: campaign ID
         """
         try:
+            # check campaign phase and skip if it not active
+            curr_phase = self.campaign_get(campaign_id)['phase']
+            if not self.campaign_is_active(curr_phase):
+                return
+            # send request to stop
             response = requests.post(
                 self._url(FW_CAMPAIGN_STOP, id=campaign_id),
                 headers=self._headers()
             )
             response.raise_for_status()
+            curr_phase = self.campaign_get(campaign_id)['phase']
+            # The campaign is stopping. wait a minute for it to finish
+            retries = 60
+            while curr_phase == 'stopping' and retries > 0:
+                time.sleep(1)
+                curr_phase = self.campaign_get(campaign_id)['phase']
+                retries -= 1
+            if retries == 0:
+                LOG.debug('Stopping Campaign timed out')
             LOG.info('Stopped campaign %s', campaign_id)
         except requests.HTTPError as ex:
             # ignore error from stop campaign as it may already be stopped
-            LOG.debug("Failed stopping campaign - %s", ex, exc_info=True)
+            LOG.debug("Failed stopping campaign - %s", ex)
 
     def campaign_start(self, campaign_id: ID):
         """
@@ -364,7 +374,7 @@ class UpdateServiceApi:
         except requests.HTTPError:
             LOG.error('Failed to start campaign %s', campaign_id)
             raise
-        LOG.info('Created Campaign ID: %s', campaign_id)
+        LOG.info('Started Campaign ID: %s', campaign_id)
 
     def campaign_get(self, campaign_id: ID) -> dict:
         """
@@ -398,14 +408,13 @@ class UpdateServiceApi:
         return response.json()['data']
 
     @staticmethod
-    def campaign_is_stopped(state: State):
+    def campaign_is_active(phase: Phase) -> Phase:
         """
-        Helper function for understanding if updatge campaign reached one if
-        terminating states
-        :param state: current update campaign state
-        :return: True if update campaign has reached of o terminating states
+        Helper function for understanding if update campaign is in active phase
+        :param phase: current update campaign phase
+        :return: True if update campaign phase is starting or active
         """
-        return state in CAMPAIGN_TERMINATING_STATES
+        return phase in CAMPAIGN_ACTIVE_PHASES
 
     def assert_all_device_updated(self, campaign_id: ID) -> int:
         """

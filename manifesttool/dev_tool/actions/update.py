@@ -146,16 +146,17 @@ def register_parser(parser: argparse.ArgumentParser, schema_version: str):
 
 def _wait(api: pelion.UpdateServiceApi, campaign_id: pelion.ID, timeout):
     try:
-        # old_state = api.get_campaign(campaign_id).state
         old_state = api.campaign_get(campaign_id)['state']
         logger.info("Campaign state: %s", old_state)
         current_time = time.time()
         while timeout == 0 or time.time() < current_time + timeout:
-            curr_state = api.campaign_get(campaign_id)['state']
+            curr_campaign = api.campaign_get(campaign_id)
+            curr_state = curr_campaign['state']
+            curr_phase = curr_campaign['phase']
             if old_state != curr_state:
                 logger.info("Campaign state: %s", curr_state)
                 old_state = curr_state
-            if api.campaign_is_stopped(curr_state):
+            if not api.campaign_is_active(curr_phase):
                 logger.info(
                     "Campaign is finished in state: %s", curr_state)
                 devices_updated = api.assert_all_device_updated(campaign_id)
@@ -164,9 +165,6 @@ def _wait(api: pelion.UpdateServiceApi, campaign_id: pelion.ID, timeout):
             time.sleep(1)
         logger.error('Campaign timed out')
         raise AssertionError('Campaign timed out')
-    except KeyboardInterrupt:
-        logger.error('Aborted by user...')
-        return
     except HTTPError:
         logger.error('Failed to retrieve campaign state')
         raise
@@ -253,6 +251,8 @@ def update(
         if do_wait:
             _wait(api, campaign_id, timeout)
 
+    except KeyboardInterrupt:
+        logger.error('Aborted by user...')
     finally:
         if not skip_cleanup and do_wait:
             try:

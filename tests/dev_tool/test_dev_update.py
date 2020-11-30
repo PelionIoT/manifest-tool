@@ -16,6 +16,7 @@
 # limitations under the License.
 # ----------------------------------------------------------------------------
 import urllib
+from typing import Optional, Union
 
 import pytest
 
@@ -23,16 +24,109 @@ from manifesttool.dev_tool import dev_tool
 from manifesttool.dev_tool.pelion.pelion import *
 from tests import conftest
 
+
+# phase to state:
+# draft -> draft
+# starting -> scheduled
+# starting -> allocating_quota
+# starting -> allocated_quota
+# stopped -> quota_allocation_failed
+# starting -> checking_manifest
+# starting -> checked_manifest
+# starting -> device_fetch
+# starting -> device_copy
+# starting -> device_copy_complete
+# starting -> device_check
+# active -> publishing
+# active -> deploying
+# archived -> deployed
+# stopping -> stopping
+# stopped -> firmware_manifest_removed
+# stopped -> expired
+# stopped -> auto_stopped
+# stopped -> user_stopped
+# stopped -> conflict
+# archived -> user_archived
+
+
 def api_url(api, **kwargs):
     if kwargs:
         return urllib.parse.urljoin(
             'https://api.us-east-1.mbedcloud.com', api.format(**kwargs))
     return urllib.parse.urljoin('https://api.us-east-1.mbedcloud.com', api)
 
+class CampaignFsm:
+
+    CAMPAIGN_STATUSES = [
+        ('draft', 'draft'),
+        ('starting', 'scheduled'),
+        ('active', 'publishing'),
+        ('stopping', 'stopping'),
+        ('stopped', 'auto_stopped')
+    ]
+
+    PHASE_DRAFT = 0
+    PHASE_ACTIVE = 2
+
+    def __init__(self, campaign_id: int, last_phase_in_test: Optional[int] = None):
+        self.campaign_id = campaign_id
+        self.current_idx = 0
+        if last_phase_in_test is not None:
+            self.last_idx = last_phase_in_test
+        else:
+            self.last_idx = len(self.CAMPAIGN_STATUSES) - 1
+
+    def next_phase(self) -> Tuple[Phase, str]:
+        if self.current_idx < self.last_idx:
+            self.current_idx += 1
+        # return Phase, State
+        return self.CAMPAIGN_STATUSES[self.current_idx]
+
+    def create(self):
+        self.current_idx = 0
+
+    def start(self):
+        self.current_idx = 1 if self.last_idx > 0 else 0
+
+    def stop(self):
+        self.current_idx = len(self.CAMPAIGN_STATUSES) - 1
+
+
+class CampaignContainer:
+    
+    def __init__(self):
+        self.campaign = None
+
+    def set(self, campaign: Union[CampaignFsm, None]):
+        self.campaign = campaign
+
+    def get(self) -> CampaignFsm:
+        assert self.campaign
+        return self.campaign
+
+
+g_curr_campaign = CampaignContainer()
+
+def campaign_create_callback(_request, _context):
+    g_curr_campaign.get().create()
+    return {'id': g_curr_campaign.get().campaign_id}
+
+def campaign_start_callback(_request, _context):
+    g_curr_campaign.get().start()
+
+def campaign_stop_callback(_request, _context):
+    g_curr_campaign.get().stop()
+
+def campaign_get_callback(_request, _context):
+    phase, state = g_curr_campaign.get().next_phase()
+    return {'phase': phase, 'state': state, 'autostop_reason': 'NA'}
+
+def campaign_delete_callback(_request, _context):
+    g_curr_campaign.set(None)
+
 def mock_update_apis(
         requests_mock,
-        state='autostopped',
-        phase='active',
+        last_phase_in_test=None,
         deployment_state='deployed',
         http_status_code=200
 ):
@@ -101,39 +195,40 @@ def mock_update_apis(
     # -------------------------------------------------------------------------
     campaign_id = 963
 
+    g_curr_campaign.set(CampaignFsm(campaign_id, last_phase_in_test))
+
     # Campaign create
     requests_mock.post(
         api_url(FW_CAMPAIGNS),
-        json={'id': campaign_id},
+        json=campaign_create_callback,
         status_code=http_status_code
     )
 
     # Campaign delete
     requests_mock.delete(
         api_url(FW_CAMPAIGN, id=campaign_id),
+        json=campaign_delete_callback,
         status_code=http_status_code
     )
 
     # Campaign stop
     requests_mock.post(
         api_url(FW_CAMPAIGN_STOP, id=campaign_id),
+        json=campaign_stop_callback,
         status_code=http_status_code
     )
 
     # Campaign start
     requests_mock.post(
         api_url(FW_CAMPAIGN_START, id=campaign_id),
+        json=campaign_start_callback,
         status_code=http_status_code
     )
 
     # Campaign get metadata
     requests_mock.get(
         api_url(FW_CAMPAIGN, id=campaign_id),
-        json={
-            'phase': phase,
-            'state': state,
-            'autostop_reason': 'some conflict'
-        },
+        json=campaign_get_callback,
         status_code=http_status_code
     )
 
@@ -202,9 +297,9 @@ def test_cli_update_delta_happy_day(happy_day_data, action, requests_mock):
 )
 def test_cli_update_full_timeout(happy_day_data, action, requests_mock):
     """
-    Campaign timeout case - campaign never reaches autostopped state
+    Campaign timeout case - campaign never reaches stopped phase
     """
-    mock_update_apis(requests_mock, state='scheduled')
+    mock_update_apis(requests_mock, last_phase_in_test=CampaignFsm.PHASE_ACTIVE)
     with pytest.raises(AssertionError) as exc_info:
         _common(
             happy_day_data,
@@ -226,7 +321,7 @@ def test_cli_update_conflict(happy_day_data, action, requests_mock):
     """
     Campaign conflict - campaign will be created in draft state
     """
-    mock_update_apis(requests_mock, phase='draft')
+    mock_update_apis(requests_mock, last_phase_in_test=CampaignFsm.PHASE_DRAFT)
     with pytest.raises(AssertionError) as exc_info:
         _common(
             happy_day_data,
@@ -234,7 +329,7 @@ def test_cli_update_conflict(happy_day_data, action, requests_mock):
             happy_day_data['fw_file']
         )
     assert 'Campaign not started' in exc_info.value.args[0]
-    assert 'some conflict' in exc_info.value.args[0]
+    assert 'NA' in exc_info.value.args[0]
 
 @pytest.mark.parametrize(
     'action',

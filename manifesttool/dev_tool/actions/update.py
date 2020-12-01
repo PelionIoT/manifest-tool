@@ -105,18 +105,18 @@ def register_parser(parser: argparse.ArgumentParser, schema_version: str):
     pdm_group.add_argument(
         '-s', '--start-campaign',
         action='store_true',
-        help='Start campaign automatically.'
+        help='Start update campaign automatically.'
     )
     pdm_group.add_argument(
         '-w', '--wait-for-completion',
         dest='wait',
         action='store_true',
-        help='Wait for campaign to finish and cleanup created resources.'
+        help='Start update campaign automatically, wait for it to finish and cleanup created resources.'
     )
     pdm_group.add_argument(
         '-t', '--timeout',
         type=non_negative_int_arg_factory,
-        help='Timeout in seconds. '
+        help='Wait timeout in seconds. '
              'Only relevant in case --wait-for-completion was provided. '
              '[Default: 0 - wait-forever]',
         default=0
@@ -124,7 +124,7 @@ def register_parser(parser: argparse.ArgumentParser, schema_version: str):
     pdm_group.add_argument(
         '-n', '--no-cleanup',
         action='store_true',
-        help='Skip created service resources cleanup. '
+        help='Skip cleaning up created resources. '
              'Only relevant in case --wait-for-completion was provided.'
     )
 

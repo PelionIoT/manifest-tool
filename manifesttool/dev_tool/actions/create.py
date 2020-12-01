@@ -41,13 +41,13 @@ def register_parser(parser: argparse.ArgumentParser, schema_version: str):
 
     required.add_argument(
         '-u', '--payload-url',
-        help='Payload URL as seen by device.',
+        help='Address from which the device downloads the candidate payload.',
         required=True
     )
 
     required.add_argument(
         '-p', '--payload-path',
-        help='Payload file local path - for digest calculation.',
+        help='Local path to the candidate payload file.',
         type=existing_file_path_arg_factory,
         required=True
     )

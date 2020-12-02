@@ -26,7 +26,7 @@ UPDATE_RESOURCE_C = 'update_default_resources.c'
 CLOUD_CFG = 'dev.cloud_cfg.yaml'
 DEV_README = 'README.txt'
 API_GW = 'https://api.us-east-1.mbedcloud.com'
-UPDATE_VERSION = 'update.version.txt'
+UPDATE_VERSION = 'update.version.yaml'
 
 PELION_GW_PATH = Path.home() / '.pelion-dev-presets.yaml'
 PELION_GW = None

@@ -191,13 +191,23 @@ def entry_point(
     with (cache_dir / defaults.DEV_CFG).open('rt') as fh:
         dev_cfg = yaml.safe_load(fh)
 
+    component_name = getattr(args, 'component_name', None)
     cache_fw_version_file = cache_dir / defaults.UPDATE_VERSION
     fw_version = args.fw_version
     if 'v1' not in manifest_version.get_name():
+        if cache_fw_version_file.is_file():
+            with cache_fw_version_file.open('rt') as fh:
+                cached_versions = yaml.load(fh)
+        else:
+            cached_versions = dict()
         if not fw_version:
-            fw_version = cache_fw_version_file.read_text()
+            fw_version = cached_versions.get(component_name, '0.0.1')
             fw_version = bump_minor(fw_version)
-        cache_fw_version_file.write_text(fw_version)
+
+        cached_versions[component_name] = fw_version
+
+        with cache_fw_version_file.open('wt') as fh:
+            yaml.dump(cached_versions, fh)
         logger.info('FW version: %s', fw_version)
     else:
         assert fw_version is not None

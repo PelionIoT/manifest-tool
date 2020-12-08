@@ -197,7 +197,7 @@ def entry_point(
     if 'v1' not in manifest_version.get_name():
         if cache_fw_version_file.is_file():
             with cache_fw_version_file.open('rt') as fh:
-                cached_versions = yaml.load(fh)
+                cached_versions = yaml.safe_load(fh)
         else:
             cached_versions = dict()
         if not fw_version:

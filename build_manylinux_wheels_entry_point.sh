@@ -28,9 +28,6 @@ function repair_wheel {
     fi
 }
 
-# Install a system packages
-yum install -y libffi-devel
-
 # Compile wheels
 for PYBIN in /opt/python/cp3*/bin; do
     echo '------------------------------------------------------------'
@@ -41,7 +38,7 @@ for PYBIN in /opt/python/cp3*/bin; do
 done
 
 # Bundle external shared libraries into the wheels
-for whl in wheelhouse/*.whl; do
+for whl in wheelhouse/*$PLAT.whl; do
     repair_wheel "$whl"
 done
 

@@ -20,7 +20,6 @@ import argparse
 import binascii
 import collections
 import logging
-from typing import Optional
 
 import yaml
 from pyasn1.error import PyAsn1Error
@@ -90,9 +89,9 @@ class ParseAction:
     def do_parse(
             cls,
             manifest_data: bytes,
-            certificate_data: Optional[bytes],
-            public_key_data: Optional[bytes],
-            private_key_data: Optional[bytes]
+            certificate_data: bytes,
+            public_key_data: bytes,
+            private_key_data: bytes
     ):
         dom = None
 

@@ -68,10 +68,10 @@ pip install manifest-tool
 
 **To install the manifest tool from the local source tree, run:**
 
-1. Clone the ARMmbed/manifest-tool repository to your machine:  
+1. Clone the PelionIoT/manifest-tool repository to your machine:  
 
     ```
-    $ git clone git@github.com:ARMmbed/manifest-tool.git ./manifest-tool
+    $ git clone https://github.com/PelionIoT/manifest-tool.git
     ```
 
 1. Run:
@@ -161,7 +161,7 @@ describing the update type.
     Configuration file format:
     ```yaml
     vendor:  # One of "domain" or "vendor-id" fields are expected
-      domain: arm.com  # FW owner domain. Expected to include a dot (".")
+      domain: pelion.com  # FW owner domain. Expected to include a dot (".")
       vendor-id: fa6b4a53d5ad5fdfbe9de663e4d41ffe  # Valid vendor UUID
     device:  # One of "model-name" or "class-id" fields are expected
       model-name: Smart Slippers  # A device model name
@@ -194,7 +194,7 @@ describing the update type.
 
     ```yaml
     vendor:
-      domain: arm.com
+      domain: pelion.com
     device:
       model-name: Smart Flip-flops
     priority: 1
@@ -256,7 +256,7 @@ schema V1 and assume the public key is packaged in a x.509 certificate.
 
     ```yaml
     vendor:
-      domain: arm.com
+      domain: pelion.com
     device:
       model-name: DUT.my.device
     priority: 1
@@ -509,7 +509,7 @@ configuration file.
 
 ```shell
 manifest-dev-tool create \
-    --payload-url http://test.pdmc.arm.com?fileId=1256 \
+    --payload-url http://test.pdmc.pelion.com?fileId=1256 \
     --payload-path new_fw.bin \
     --fw-version 1.2.3 \
     --output update-manifest.bin
@@ -528,7 +528,7 @@ configuration file.
 
 ```shell
 manifest-dev-tool create-v1 \
-    --payload-url http://test.pdmc.arm.com?fileId=1256 \
+    --payload-url http://test.pdmc.pelion.com?fileId=1256 \
     --payload-path new-fw.bin \
     --output update-manifest.bin
 ```
@@ -588,7 +588,7 @@ v1-format manifest.
 
 ### Developer workflow example
 
-1. Clone the https://github.com/ARMmbed/mbed-cloud-client-example
+1. Clone the https://github.com/PelionIoT/mbed-cloud-client-example
    repository.
 2. From within the repository, execute:
 

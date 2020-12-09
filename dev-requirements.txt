@@ -2,7 +2,6 @@ pytest
 pytest-mock
 pytest-cov
 tox
-tox-pyenv
 pylint
 pycodestyle
 coverage

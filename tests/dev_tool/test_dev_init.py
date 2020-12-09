@@ -56,7 +56,7 @@ def test_cli(tmp_path):
     ]
 
     with conftest.working_directory(tmp_path):
-        assert 0 == dev_tool.entry_point(cmd + ['--api-url', 'https://some.url.arm.com'])
+        assert 0 == dev_tool.entry_point(cmd + ['--api-url', 'https://some.url.pelion.com'])
 
     assert c_source_digest != digest_file(c_source)
     assert cert_digest != digest_file(cert)

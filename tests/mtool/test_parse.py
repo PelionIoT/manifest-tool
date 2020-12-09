@@ -56,7 +56,7 @@ def happy_day_data(
     input_cfg = {
         "manifest-version": manifest_version.get_name(),
         "vendor": {
-            "domain": "arm.com",
+            "domain": "pelion.com",
             "custom-data-path": fw_file.as_posix()
 
         },

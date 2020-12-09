@@ -51,7 +51,7 @@ def test_cli_developer(happy_day_data, action):
         '--priority', '100500',
         '--output', output_manifest.as_posix(),
         '--cache-dir', happy_day_data['tmp_path'].as_posix(),
-        '--payload-url', 'https://arm.com/foo.bin?id=67567565576857',
+        '--payload-url', 'https://pelion.com/foo.bin?id=67567565576857',
         '--payload-path', happy_day_data['delta_file'].as_posix(),
         '--vendor-data', dev_cfg.as_posix(),
     ]

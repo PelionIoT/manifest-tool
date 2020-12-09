@@ -49,7 +49,7 @@ def test_create_happy_day_full(
     for manifest_codec in ManifestVersion.list_codecs():
         input_cfg = {
             'vendor': {
-                'domain': 'arm.com'
+                'domain': 'pelion.com'
             },
             'device': {
                 'model-name': 'my-device'
@@ -167,7 +167,7 @@ def test_create_happy_day_delta(
     for manifest_version in ManifestVersion.list_codecs():
         input_cfg = {
             'vendor': {
-                'domain': 'arm.com'
+                'domain': 'pelion.com'
             },
             'device': {
                 'model-name': 'my-device'
@@ -282,7 +282,7 @@ def cli_test_common(happy_day_data, manifest_version, is_delta):
         yaml.dump(
             {
                 'vendor': {
-                    'domain': 'arm.com'
+                    'domain': 'pelion.com'
                 },
                 'device': {
                     'model-name': 'my-device'

@@ -19,35 +19,45 @@
 
 set -e -u -x
 
+# Move to shared dir
+cd /io
+
 function repair_wheel {
     wheel="$1"
     if ! auditwheel show "$wheel"; then
-        echo "Skipping non-platform wheel $wheel"
+        echo "Skipping. No external shared libraries that the wheel depends on"
     else
-        auditwheel repair "$wheel" --plat "$PLAT" -w /io/wheelhouse/
+        auditwheel repair "$wheel" --plat "$PLAT" -w wheelhouse/
+        #  Delete original wheel
+        rm -f "$wheel"
     fi
 }
 
-# Compile wheels
+# Compile wheels to wheelhouse/$PLAT
 for PYBIN in /opt/python/cp3*/bin; do
     echo '------------------------------------------------------------'
     echo "${PYBIN}"
     echo '------------------------------------------------------------'
-    "${PYBIN}/pip" install -r /io/requirements.txt
-    "${PYBIN}/pip" wheel /io/ --no-deps -w wheelhouse/
+    "${PYBIN}/pip" install -r requirements.txt
+    "${PYBIN}/pip" wheel . --no-deps -w wheelhouse/$PLAT
 done
 
 # Bundle external shared libraries into the wheels
-for whl in wheelhouse/*$PLAT.whl; do
+for whl in wheelhouse/$PLAT/*-linux_x86_64.whl; do
     repair_wheel "$whl"
 done
+
+# Remove wheelhouse/$PLAT if it's empty
+if [ -z "$(ls -A wheelhouse/$PLAT)" ]; then
+    rm -rf "wheelhouse/$PLAT"
+fi
 
 # Install packages and test
 for PYBIN in /opt/python/cp3*/bin; do
     echo '------------------------------------------------------------'
     echo "${PYBIN}"
     echo '------------------------------------------------------------'
-    "${PYBIN}/pip" install manifest-tool --no-index -f /io/wheelhouse
+    "${PYBIN}/pip" install manifest-tool --no-index -f wheelhouse/
     "${PYBIN}/manifest-tool" --version
     "${PYBIN}/manifest-dev-tool" --version
     "${PYBIN}/manifest-delta-tool" --version

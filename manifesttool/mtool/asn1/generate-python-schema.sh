@@ -1,6 +1,6 @@
 #!/usr/bin/env bash -e
 # ----------------------------------------------------------------------------
-# Copyright 2019 ARM Limited or its affiliates
+# Copyright 2019-2020 Pelion
 #
 # SPDX-License-Identifier: Apache-2.0
 #

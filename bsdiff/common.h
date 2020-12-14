@@ -1,5 +1,5 @@
 // ----------------------------------------------------------------------------
-// Copyright 2019 ARM Ltd.
+// Copyright 2019-2020 Pelion
 //
 // SPDX-License-Identifier: Apache-2.0
 //

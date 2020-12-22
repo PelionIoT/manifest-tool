@@ -55,14 +55,14 @@ def api_url(api, **kwargs):
             'https://api.us-east-1.mbedcloud.com', api.format(**kwargs))
     return urllib.parse.urljoin('https://api.us-east-1.mbedcloud.com', api)
 
-class CampaignFsm:
 
+class CampaignFsm:
     CAMPAIGN_STATUSES = [
-        ('draft', 'draft'),
-        ('starting', 'scheduled'),
-        ('active', 'publishing'),
-        ('stopping', 'stopping'),
-        ('stopped', 'auto_stopped')
+        (Phase('draft'), 'draft'),
+        (Phase('starting'), 'scheduled'),
+        (Phase('active'), 'publishing'),
+        (Phase('stopping'), 'stopping'),
+        (Phase('stopped'), 'auto_stopped')
     ]
 
     PHASE_DRAFT = 0
@@ -93,7 +93,7 @@ class CampaignFsm:
 
 
 class CampaignContainer:
-    
+
     def __init__(self):
         self.campaign = None
 
@@ -107,22 +107,28 @@ class CampaignContainer:
 
 g_curr_campaign = CampaignContainer()
 
+
 def campaign_create_callback(_request, _context):
     g_curr_campaign.get().create()
     return {'id': g_curr_campaign.get().campaign_id}
 
+
 def campaign_start_callback(_request, _context):
     g_curr_campaign.get().start()
 
+
 def campaign_stop_callback(_request, _context):
     g_curr_campaign.get().stop()
+
 
 def campaign_get_callback(_request, _context):
     phase, state = g_curr_campaign.get().next_phase()
     return {'phase': phase, 'state': state, 'autostop_reason': 'NA'}
 
+
 def campaign_delete_callback(_request, _context):
     g_curr_campaign.set(None)
+
 
 def mock_update_apis(
         requests_mock,
@@ -232,18 +238,80 @@ def mock_update_apis(
         status_code=http_status_code
     )
 
+    # Campaign statistics
+    requests_mock.get(
+        api_url(FW_CAMPAIGN_STATISTICS, id=campaign_id),
+        json={
+            'data': [
+                {
+                    'id': 'fail',
+                    'campaign_id': str(campaign_id),
+                    'summary_status': 'FAIL',
+                    'count': 2 if deployment_state != 'deployed' else 0,
+                    'created_at': 'NA',
+                    'object': 'summary_status'
+                },
+                {
+                    'id': 'info',
+                    'campaign_id': str(campaign_id),
+                    'summary_status': 'INFO',
+                    'count': 0,
+                    'created_at': 'NA',
+                    'object': 'summary_status'
+                },
+                {
+                    'id': 'skipped',
+                    'campaign_id': str(campaign_id),
+                    'summary_status': 'SKIPPED',
+                    'count': 0,
+                    'created_at': 'NA',
+                    'object': 'summary_status'
+                },
+                {
+                    'id': 'success',
+                    'campaign_id': str(campaign_id),
+                    'summary_status': 'SUCCESS',
+                    'count': 2 if deployment_state == 'deployed' else 0,
+                    'created_at': 'NA',
+                    'object': 'summary_status'
+                }
+            ]
+        },
+        status_code=http_status_code
+    )
+
     # Campaign devices
     requests_mock.get(
         api_url(FW_CAMPAIGN_DEV_METADATA, id=campaign_id),
         json={
             'data': [
                 {
+                    'campaign': str(campaign_id),
+                    'created_at': 'NA',
                     'deployment_state': deployment_state,
-                    'device_id': 'xxxx-device-id-xxxx'
+                    'description': '',
+                    'device_id': 'xxxx-device-id-xxxx',
+                    'etag': 'NA',
+                    'id': 'NA',
+                    'mechanism': 'connector',
+                    'mechanism_url': '',
+                    'name': 'xxxx-device-id-xxxx',
+                    'object': 'update-campaign-device-metadata',
+                    'updated_at': 'NA'
                 },
                 {
+                    'campaign': str(campaign_id),
+                    'created_at': 'NA',
                     'deployment_state': deployment_state,
-                    'device_id': 'yyyy-device-id-yyyy'
+                    'description': '',
+                    'device_id': 'yyyy-device-id-yyyy',
+                    'etag': 'NA',
+                    'id': 'NA',
+                    'mechanism': 'connector',
+                    'mechanism_url': '',
+                    'name': 'yyyy-device-id-yyyy',
+                    'object': 'update-campaign-device-metadata',
+                    'updated_at': 'NA'
                 }
             ]
         },
@@ -331,6 +399,7 @@ def test_cli_update_conflict(happy_day_data, action, requests_mock):
     assert 'Campaign not started' in exc_info.value.args[0]
     assert 'NA' in exc_info.value.args[0]
 
+
 @pytest.mark.parametrize(
     'action',
     [
@@ -350,6 +419,6 @@ def test_cli_update_failed_device(happy_day_data, action, requests_mock):
             action,
             happy_day_data['fw_file']
         )
-    assert 'Failed to update following devices' in exc_info.value.args[0]
+    assert 'Failed to update 2 devices' in exc_info.value.args[0]
     assert 'xxxx-device-id-xxxx' in exc_info.value.args[0]
     assert 'yyyy-device-id-yyyy' in exc_info.value.args[0]

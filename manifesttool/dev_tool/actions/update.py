@@ -112,7 +112,7 @@ def register_parser(parser: argparse.ArgumentParser, schema_version: str):
         dest='wait',
         action='store_true',
         help='Start update campaign automatically, '
-              'wait for it to finish and cleanup created resources.'
+             'wait for it to finish and cleanup created resources.'
     )
     pdm_group.add_argument(
         '-t', '--timeout',
@@ -160,8 +160,6 @@ def _wait(api: pelion.UpdateServiceApi, campaign_id: pelion.ID, timeout):
             if not api.campaign_is_active(curr_phase):
                 logger.info(
                     "Campaign is finished in state: %s", curr_state)
-                devices_updated = api.assert_all_device_updated(campaign_id)
-                logger.info("%d devices successfully updated", devices_updated)
                 return
             time.sleep(1)
         logger.error('Campaign timed out')
@@ -169,6 +167,63 @@ def _wait(api: pelion.UpdateServiceApi, campaign_id: pelion.ID, timeout):
     except HTTPError:
         logger.error('Failed to retrieve campaign state')
         raise
+
+def _print_summary(summary: dict):
+    logger.info("----------------------------")
+    logger.info("    Campaign Summary ")
+    logger.info("----------------------------")
+    logger.info(" Successfully updated:   %d",
+                summary.get('success') if summary.get('success') else 0)
+    logger.info(" Failed to update:       %d",
+                summary.get('fail') if summary.get('fail') else 0)
+    logger.info(" Skipped:                %d",
+                summary.get('skipped') if summary.get('skipped') else 0)
+    logger.info(" Pending:                %d",
+                summary.get('info') if summary.get('info') else 0)
+    logger.info(" Total in this campaign: %d", sum(summary.values()))
+
+
+def _finalize(api: pelion.UpdateServiceApi,
+              do_cleanup: bool,
+              campaign_id: pelion.ID,
+              manifest_id: pelion.ID,
+              fw_image_id: pelion.ID,
+              manifest_path: Path):
+    summary = []
+    failed_devices = []
+    try:
+        if campaign_id:
+            # stop the campaign if it's still active
+            api.campaign_stop(campaign_id)
+            # get summary and failed devices
+            statistics = api.campaign_statistics(campaign_id)
+            summary = {s['id']: s['count'] for s in statistics}
+            if summary.get('fail') and summary.get('fail') > 0:
+                devices_state = api.campaign_device_metadata(campaign_id)
+                failed_devices = [d['device_id'] for d in devices_state
+                                  if d['deployment_state'] != 'deployed']
+        if do_cleanup:
+            logger.info('Cleaning up resources...')
+            if campaign_id:
+                api.campaign_delete(campaign_id)
+            if manifest_id:
+                api.manifest_delete(manifest_id)
+            if fw_image_id:
+                api.fw_delete(fw_image_id)
+            if manifest_path and manifest_path.is_file():
+                manifest_path.unlink()
+    except HTTPError as ex:
+        logger.error('Failed to finalize update campaign')
+        logger.debug('Exception %s', ex, exc_info=True)
+
+    # print campaign summary
+    if summary:
+        _print_summary(summary)
+        if failed_devices:
+            # assert if not all devices were updated
+            raise AssertionError(
+                'Failed to update {} devices: {}'.format(
+                    len(failed_devices), ', '.join(failed_devices)))
 
 
 def update(
@@ -181,7 +236,7 @@ def update(
         do_wait: bool,
         do_start: bool,
         timeout: int,
-        skip_cleanup: bool,
+        do_cleanup: bool,
         service_config: Path,
         fw_version: str,
         sign_image: bool,
@@ -255,21 +310,13 @@ def update(
     except KeyboardInterrupt:
         logger.error('Aborted by user...')
     finally:
-        if not skip_cleanup and do_wait:
-            try:
-                logger.info('Cleaning up resources.')
-                if campaign_id:
-                    api.campaign_stop(campaign_id)
-                    api.campaign_delete(campaign_id)
-                if manifest_id:
-                    api.manifest_delete(manifest_id)
-                if fw_image_id:
-                    api.fw_delete(fw_image_id)
-                if manifest_path and manifest_path.is_file():
-                    manifest_path.unlink()
-            except HTTPError as ex:
-                logger.error('Failed to cleanup resources')
-                logger.debug('Cleanup exception %s', ex, exc_info=True)
+        if do_wait:
+            _finalize(api,
+                      do_cleanup,
+                      campaign_id,
+                      manifest_id,
+                      fw_image_id,
+                      manifest_path)
 
 
 def load_service_config(service_config):
@@ -328,7 +375,7 @@ def entry_point(
         do_start=args.start_campaign or args.wait,
         do_wait=args.wait,
         timeout=args.timeout,
-        skip_cleanup=args.no_cleanup,
+        do_cleanup=not args.no_cleanup,
         service_config=cache_dir / defaults.CLOUD_CFG,
         fw_version=fw_version,
         sign_image=getattr(args, 'sign_image', False),

@@ -37,6 +37,7 @@ FW_CAMPAIGNS = '/v3/update-campaigns'
 FW_CAMPAIGN = '/v3/update-campaigns/{id}'
 FW_CAMPAIGN_STOP = '/v3/update-campaigns/{id}/stop'
 FW_CAMPAIGN_START = '/v3/update-campaigns/{id}/start'
+FW_CAMPAIGN_STATISTICS = '/v3/update-campaigns/{id}/statistics'
 FW_CAMPAIGN_DEV_METADATA = '/v3/update-campaigns/{id}/campaign-device-metadata'
 
 CAMPAIGN_ACTIVE_PHASES = [
@@ -389,6 +390,20 @@ class UpdateServiceApi:
         response.raise_for_status()
         return response.json()
 
+    def campaign_statistics(self, campaign_id: ID) -> List[dict]:
+        """
+        Get campaign statistics
+
+        :param campaign_id: campaign ID
+        :return: List of statistics for a campaign
+        """
+        response = requests.get(
+            self._url(FW_CAMPAIGN_STATISTICS, id=campaign_id),
+            headers=self._headers()
+        )
+        response.raise_for_status()
+        return response.json()['data']
+
     def campaign_device_metadata(self, campaign_id: ID) -> List[dict]:
         """
         Get metadata for devices participating in update campaign
@@ -408,29 +423,10 @@ class UpdateServiceApi:
         return response.json()['data']
 
     @staticmethod
-    def campaign_is_active(phase: Phase) -> Phase:
+    def campaign_is_active(phase: Phase) -> bool:
         """
         Helper function for understanding if update campaign is in active phase
         :param phase: current update campaign phase
         :return: True if update campaign phase is starting or active
         """
         return phase in CAMPAIGN_ACTIVE_PHASES
-
-    def assert_all_device_updated(self, campaign_id: ID) -> int:
-        """
-        Helper function for asserting all device participating in the update
-        campaign were successfully updated
-        :param campaign_id: campaign ID
-        """
-        device_meta = self.campaign_device_metadata(campaign_id)
-        failed_devices = []
-        for device in device_meta:
-            if device['deployment_state'] != 'deployed':
-                failed_devices.append(device['device_id'])
-        if failed_devices:
-            raise AssertionError(
-                'Failed to update following devices: {}'.format(
-                    ', '.join(failed_devices)
-                )
-            )
-        return len(device_meta)

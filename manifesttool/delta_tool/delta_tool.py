@@ -184,10 +184,11 @@ def get_parser():
     required.add_argument(
         '-o', '--output',
         type=Path,
-        help='Output delta file name. Note additional configuration file with '
-             'same name but with different extension will be generated. '
+        help='Output delta file name.'
+             'NOTE: Additional configuration file with '
+             'same name but with \'.yaml\' extension will be generated. '
              'Both files are required by the manifest-tool. Only the '
-             'output file - specified by this argument should be uploaded '
+             'output file specified by this argument should be uploaded '
              'to Pelion storage.',
         required=True
     )

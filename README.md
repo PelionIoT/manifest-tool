@@ -24,7 +24,7 @@ Device Management supports:
 
 * Full updates - Deliver new firmware and install it on the device.
 * Delta updates - The manifest tool executes a diff algorithm that
-  produces a small delta patch file. The nano client constructs a new
+  produces a small delta patch file. The client constructs a new
   firmware image based on the delta patch file and the firmware
   currently present on the device. This technique saves traffic
   bandwidth.
@@ -39,18 +39,17 @@ The `manifest-tool` Python package includes these command line tools:
 
 ## Installing the manifest tool
 
-We recommend installing the `manifest-tool` Python package in a
-[Python virtual environment](#creating-a-virtual-environment).
+We recommend installing the `manifest-tool` Python package in a isolated
+[Python virtual environment](https://virtualenv.pypa.io).
 
-### Installing from PyPi
+
+### Installing the manifest tool from [PyPi](https://pypi.org/project/manifest-tool/)
 
 **Prerequisites:**
 
 * [Python 3.5 or higher](https://www.python.org/downloads/).
 * [pip (Python Package Installer)](https://pip.pypa.io/en/stable/).
 * Internet connectivity
-
-**To install the manifest tool from [PyPi](https://pypi.org/), run:**
 
 ```
 pip install manifest-tool
@@ -64,44 +63,15 @@ pip install manifest-tool
 * [pip (Python Package Installer)](https://pip.pypa.io/en/stable/).
 * Native toolchain:
     * GCC/Clang for Linux/MacOS.
-    * Microsoft Visual Studio 2017 or later for Windows.
+    * [Microsoft Build Tools for Visual Studio 2019](https://www.visualstudio.com/downloads/#build-tools-for-visual-studio-2019) for Windows or different version sutibule to your Python version as describe [here](https://wiki.python.org/moin/WindowsCompilers).
 
-**To install the manifest tool from the local source tree, run:**
-
-1. Clone the PelionIoT/manifest-tool repository to your machine:  
-
-    ```
-    $ git clone https://github.com/PelionIoT/manifest-tool.git
-    ```
-
-1. Run:
-
-    ```
-    $ pip install <manifest-tool>
-    ```
-
-    Where `<manifest-tool>` is the path to the local source tree.
-
-<span class="notes">**Note:** Run `$ pip install -e <manifest-tool>` to install the package in Python setuptools development mode. For more information, please see the [setuptools development mode documentation](https://setuptools.readthedocs.io/en/latest/setuptools.html#development-mode).</span>
-
-### Creating a virtual environment
-
-The `virtualenv` tool creates isolated Python environments, which are
-useful in overcoming Python package collision issues when you work on
-multiple projects. For more information, please see the
-[Python documentation](https://docs.python.org/tutorial/venv.html).
-
-**To create a virtual environment, run:**
-
-```shell
-$ virtualenv -p python3 venv  
+```
+$ git clone https://github.com/PelionIoT/manifest-tool.git
+$ pip install <path to manifest-tool's local source tree>
 ```
 
-**To activate the virtual environment in the current shell, run:**
+<span class="notes">**Note:** Run `$ pip install --editable <manifest-tool>` to install the package in Python setuptools development mode. For more information, please see the [setuptools development mode documentation](https://setuptools.readthedocs.io/en/latest/setuptools.html#development-mode).</span>
 
-```shell
-$ source venv/bin/activate
-```
 
 ## Using the manifest tool
 
@@ -111,7 +81,6 @@ This section explains how to use the CLI tools included in the
 - [manifest-tool](#manifest-tool)
 - [manifest-delta-tool](#manifest-delta-tool)
 - [manifest-dev-tool](#manifest-dev-tool)
-- [Developer workflow example](#developer-workflow-example)
 
 ### manifest-tool
 
@@ -153,8 +122,7 @@ describing the update type.
       the [`manifest-tool public-key`](#manifest-tool-public-key)
       command.
 
-* Upload the new firmware binary to a server that the device you want to
-  update can reach, and obtain the URL for the uploaded firmware binary.
+* Upload the new firmware binary to a server which your devices have access to, and obtain the URL for the uploaded firmware binary.
 
 * A configuration file in JSON or YAML format.
 
@@ -456,9 +424,11 @@ arguments.
 $ manifest-delta-tool -c current_fw.bin -n new_fw.bin -o delta-patch.bin
 ```
 
-<span class="notes">**Note 1:** Compression block size has a direct impact on the amount of memory required by the device receiving the update. The device requires twice the amount of RAM in runtime to decompress and apply the patch.</span>
+<span class="notes">**Note 1:** Additional configuration file with same name but with `.yaml` extension will be generated. Both files are required by the manifest-tool. Only the output file specified by `--output` argument should be uploaded to Pelion storage.</span>
 
-<span class="notes">**Note 2:** Compression block must be aligned with network (COAP/HTTP) buffer size used for download. Misalignment in sizes may result in device failure to process the delta patch file.</span>
+<span class="notes">**Note 2:** Compression block size has a direct impact on the amount of memory required by the device receiving the update. The device requires twice the amount of RAM in runtime to decompress and apply the patch.</span>
+
+<span class="notes">**Note 3:** Compression block must be aligned with network (COAP/HTTP) buffer size used for download. Misalignment in sizes may result in device failure to process the delta patch file.</span>
 
 ### manifest-dev-tool
 
@@ -486,18 +456,18 @@ Use `manifest-dev-tool` for development flows only.
 
 Initializes the developer environment:
 * Creates an update private key and a public key certificate.
-* Generates a `fota_dev_resources.c` file with symbols that allow
+* Generates a `update_default_resources.c` file with symbols that allow
   bypassing the provisioning step in the developer flow.
 * Creates configuration files, which you use when you run the
   [`manifest-dev-tool create`](#manifest-dev-tool-create) and
   [`manifest-dev-tool update`](#manifest-dev-tool-update) commands.
 
-<span class="notes">**Note:** Only use the credentials the `manifest-dev-tool` tool generates in the development flow.</span>
+<span class="notes">**Note:** Use the credentials generated by `manifest-dev-tool init` in the development stage only.</span>
 
 **Example**
 
 ```shell
-manifest-dev-tool init --force -a [API key from Device Management Portal]
+manifest-dev-tool init -a [Access key from Device Management Portal]
 ```
 
 #### `manifest-dev-tool create`
@@ -515,7 +485,7 @@ manifest-dev-tool create \
     --output update-manifest.bin
 ```
 
-<span class="notes">**Note:** To run a delta update, create the file specified in the `--payload-path` argument using the [`manifest-delta-tool`](#manifest-delta-tool) command. The file has the same name but a `.yaml` suffix (in the example, `new-fw.yaml` instead of `new-fw.bin`).</span>
+<span class="notes">**Note:** To run a delta update, specifiy the [`manifest-delta-tool`](#manifest-delta-tool) output in the `--payload-path` argument and make sure the `.yaml` output with the same name sit next to that output file.</span>
 
 <span class="notes">**Note:** Add the `--sign-image` argument to update a device with a secure bootloader, which requires an image signature.</span>
 
@@ -533,32 +503,31 @@ manifest-dev-tool create-v1 \
     --output update-manifest.bin
 ```
 
-<span class="notes">**Note:** To run a delta update, create the file specified in the `--payload-path` argument using the [`manifest-delta-tool`](#manifest-delta-tool) command. The file has the same name but a `.yaml` suffix (in the example, `new-fw.yaml` instead of `new-fw.bin`).</span>
+<span class="notes">**Note:** To run a delta update, specifiy the [`manifest-delta-tool`](#manifest-delta-tool) output in the `--payload-path` argument and make sure the `.yaml` output with the same name sit next to that output file.</span>
 
 #### `manifest-dev-tool update`
 
 Same as [`manifest-dev-tool create`](#manifest-dev-tool-create) but also
 lets you interact with Device Management Portal to run a full update
-campaign on a single device.
+campaign.
 
 The command:
 
 1. Uploads the payload to Device Management Portal and obtains the URL.
-2. Creates a manifest file with the URL from the previous step and
+1. Creates a manifest file with the URL from the previous step and
    obtains a manifest URL.
-3. Creates an update campaign with the manifest URL from the previous
+1. Creates an update campaign with the manifest URL from the previous
    step.
-4. Starts the update campaign if you pass the `--start-campaign` or
+1. Starts the update campaign if you pass the `--start-campaign` or
    `--wait-for-completion` argument.
-5. If you pass the `--wait-for-completion` argument, the tool waits for
+1. If you pass the `--wait-for-completion` argument, the tool waits for
    campaign completion for the time period specified by `--timeout` or
    until the campaign reaches one of its terminating states in Device
    Management Portal (`expired`, `userstopped`, or
    `quotaallocationfailed`).
-6. If you pass the `--wait-for-completion` argument without the
+1. If you pass the `--wait-for-completion` argument without the
    `--no-cleanup` flag, the tool removes the uploaded test resources
-   from Device Management Portal before exiting. When you terminate the
-   tool, the tool skips the cleanup step.
+   from Device Management Portal before exiting.
 
 <span class="notes">**Note:** [`manifest-dev-tool init`](#manifest-dev-tool-init) creates the directory you specify in `--cache-dir`.</span>
 
@@ -590,30 +559,28 @@ v1-format manifest.
 
 1. Clone the https://github.com/PelionIoT/mbed-cloud-client-example
    repository.
-2. From within the repository, execute:
+1. From within the repository, execute:
 
     ```
-    manifest-dev-tool init --force -a $MY_API_KEY
+    manifest-dev-tool init -a $MY_API_KEY
     ```
-    The tool generates and compiles a `fota_dev_resources.c` file.
-
-1. Flash the bootloader and firmware to the device.
-1. Create a firmware update candidate.
-
-    OR
-
+    The tool initializes the developer environment and generates a `update_default_resources.c` file.
+1. Build the firmware image for your device.
+1. Flash the firmware to the device.
+1. Wait for the device to register in the cloud.
+1. Make some changes to the source of the firmware application.
+1. Build the firmware update candidate for your device.
+    - To test delta update, create delta patch:
     Create a delta-patch:
     ```
     manifest-delta-tool -c curr_fw.bin -n new_fw.bin -o delta.bin
-    ```
-
-1. Issue an update:
+1. Issue an update campaign:
 
     ```
     manifest-dev-tool update --payload-path
     new_fw.bin --wait-for-completion
     ```
-   For a delta update, the payload is `delta.bin`.
+   For a delta update, the `--payload-path` is `delta.bin`.
 
 ## Troubleshooting
 

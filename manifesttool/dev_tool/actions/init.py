@@ -90,15 +90,15 @@ def register_parser(parser: argparse.ArgumentParser):
 
     service = parser.add_argument_group(
         'optional arguments (Pelion Device Management service configuration)')
-    if defaults.PELION_GW:
-        service.add_argument(
-            '-p', '--gw-preset',
-            help='API GW preset name specify GW URL and API key',
-            choices=defaults.PELION_GW.keys()
-        )
     service.add_argument(
-        '-a', '--api-key',
-        help='API key for for accessing Pelion Device Management service.'
+        '-p', '--gw-preset',
+        help='API GW name as present in {} which specify '
+             'a GW URL and Access key'.format(defaults.PELION_GW_PATH),
+        choices=defaults.PELION_GW.keys() if defaults.PELION_GW else []
+    )
+    service.add_argument(
+        '-a', '--access-key', '--api-key',
+        help='Access key for for accessing Pelion Device Management service.'
     )
     service.add_argument(
         '-u', '--api-url',
@@ -356,7 +356,7 @@ def entry_point(args):
         private_key_file=cache_dir / defaults.UPDATE_PRIVATE_KEY,
         certificate_file=cache_dir / defaults.UPDATE_PUBLIC_KEY_CERT
     )
-    api_key = args.api_key
+    api_key = args.access_key
     if not api_key and hasattr(args, 'gw_preset') and args.gw_preset:
         api_key = defaults.PELION_GW[args.gw_preset].get('api_key')
 

@@ -3,6 +3,8 @@
 ## Pyenv - https://github.com/pyenv/pyenv
 `pyenv` helps to manage different Python installations side by side.
 
+<span class="notes">**Note:** Currentlly, not in use.</span>
+
 Example:
 ```shell
 $ pyenv install 3.8.0
@@ -95,3 +97,20 @@ When issuing a new release:
 We must freeze upper bound versions to the version which were tested at
 the release creation time.
 
+## Publish release
+1. Bump the packege [version](./manifesttool/__init__.py).
+1. Run `tox` on Windows, Linux and Mac.
+1. Run `build_manylinux_wheels.sh` on Linux.
+1. Create release on GitHub.
+1. Gather wheels and tar.gz into one dist folder:
+    - On Linux - `wheelhouse` folder
+    - On Mac and Windows - `dist` folder
+1. Install `twine`: `pip install twine`.
+1. Publish to https://test.pypi.org and check:
+    ```
+    twine upload -r testpypi dist/*
+    ```
+1. Publish to https://pypi.org:
+    ```
+    twine upload dist/*
+    ```

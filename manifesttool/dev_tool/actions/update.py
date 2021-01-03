@@ -176,7 +176,8 @@ def update(
         service_config: Path,
         fw_version: str,
         sign_image: bool,
-        component: str
+        component: str,
+        short_url: bool
 ):
     config = load_service_config(service_config)
 
@@ -190,7 +191,7 @@ def update(
         timestamp = time.strftime('%Y_%m_%d-%H_%M_%S')
         logger.info('Uploading FW image %s', payload_path.as_posix())
 
-        fw_image_url, fw_image_id = api.fw_upload(
+        fw_image_url, short_image_url, fw_image_id = api.fw_upload(
             fw_name='{timestamp}-{filename}'.format(
                 filename=payload_path.name,
                 timestamp=timestamp),
@@ -202,7 +203,7 @@ def update(
             manifest_version=manifest_version,
             vendor_data_path=vendor_data,
             payload_path=payload_path,
-            payload_url=fw_image_url,
+            payload_url=short_image_url if short_url else fw_image_url,
             priority=priority,
             fw_version=fw_version,
             sign_image=sign_image,
@@ -315,5 +316,6 @@ def entry_point(
         service_config=cache_dir / defaults.CLOUD_CFG,
         fw_version=fw_version,
         sign_image=getattr(args, 'sign_image', False),
-        component=component_name
+        component=component_name,
+        short_url=hasattr(args, 'use_short_url') and args.use_short_url
     )

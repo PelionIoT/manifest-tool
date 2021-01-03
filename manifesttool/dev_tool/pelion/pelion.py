@@ -120,7 +120,7 @@ class UpdateServiceApi:
             '=' * count, increments, progress)
         print(text, end='\n' if progress == 100 else '')
 
-    def fw_upload(self, fw_name: str, image: Path) -> Tuple[URL, ID]:
+    def fw_upload(self, fw_name: str, image: Path) -> Tuple[URL, str, ID]:
         """
         Upload FW image
         :param fw_name: update candidate image name as will appear on Pelion
@@ -146,9 +146,10 @@ class UpdateServiceApi:
                     if not chunk:
                         break
             LOG.debug('FW upload job %s completed', job_id)
-            fw_image_url, fw_image_id = self._get_fw_image_meta(job_id)
+            fw_image_url, short_image_url, fw_image_id = \
+                self._get_fw_image_meta(job_id)
             LOG.info('Uploaded FW image %s', fw_image_url)
-            return fw_image_url, fw_image_id
+            return fw_image_url, short_image_url, fw_image_id
         except requests.HTTPError:
             LOG.error('FW image upload failed')
             raise
@@ -174,7 +175,7 @@ class UpdateServiceApi:
         )
         response.raise_for_status()
 
-    def _get_fw_image_meta(self, job_id: ID) -> Tuple[URL, ID]:
+    def _get_fw_image_meta(self, job_id: ID) -> Tuple[URL, str, ID]:
         """
         Helper function for extracting uploaded image URL and ID
         :param job_id: upload job ID
@@ -190,7 +191,8 @@ class UpdateServiceApi:
             headers=self._headers())
         response.raise_for_status()
         url = response.json()['datafile']
-        return url, image_id
+        short_url = response.json()['short_datafile']
+        return url, short_url, image_id
 
     def _delete_upload_job(self, job_id: ID):
         """

@@ -86,6 +86,12 @@ def register_parser(parser: argparse.ArgumentParser,
                  'Must correspond to an existing component '
                  'name on target devices.'
         )
+        if is_update_parser:
+            optional.add_argument(
+                '-u', '--use-short-url',
+                action='store_true',
+                help='Use a short candidate payload URL in the manifest.'
+            )
         optional.add_argument(
             '-m', '--sign-image',
             action='store_true',

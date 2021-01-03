@@ -170,7 +170,10 @@ def mock_update_apis(
     # FW image - get URL
     requests_mock.get(
         api_url(FW_IMAGE, id=firmware_image_id),
-        json={'datafile': 'https://my-fw.url.com'},
+        json={
+            'datafile': 'https://my-fw.url.com/fw_image.bin',
+            'short_datafile': '/fw/fw_image.bin',
+        },
         status_code=http_status_code
     )
     # FW image - delete

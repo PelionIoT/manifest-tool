@@ -345,14 +345,24 @@ def _common(happy_day_data, action, payload_path):
         ['update-v1']
     ]
 )
-def test_cli_update_delta_happy_day(happy_day_data, action, requests_mock):
+def test_cli_update_delta_happy_day(happy_day_data, action, requests_mock, caplog):
     mock_update_apis(requests_mock)
 
-    assert 0 == _common(
+    assert _common(
         happy_day_data,
         action,
         happy_day_data['delta_file']
-    )
+    ) == 0
+    assert caplog.messages[-8:] == [
+        '----------------------------',
+        '    Campaign Summary ',
+        '----------------------------',
+        ' Successfully updated:   2',
+        ' Failed to update:       0',
+        ' Skipped:                0',
+        ' Pending:                0',
+        ' Total in this campaign: 2'
+    ]
 
 
 @pytest.mark.parametrize(
@@ -363,19 +373,17 @@ def test_cli_update_delta_happy_day(happy_day_data, action, requests_mock):
         ['update-v1']
     ]
 )
-def test_cli_update_full_timeout(happy_day_data, action, requests_mock):
+def test_cli_update_full_timeout(happy_day_data, action, requests_mock, caplog):
     """
     Campaign timeout case - campaign never reaches stopped phase
     """
     mock_update_apis(requests_mock, last_phase_in_test=CampaignFsm.PHASE_ACTIVE)
-    with pytest.raises(AssertionError) as exc_info:
-        _common(
-            happy_day_data,
-            action,
-            happy_day_data['fw_file']
-        )
-    assert exc_info.value.args[0] == 'Campaign timed out'
-
+    assert _common(
+        happy_day_data,
+        action,
+        happy_day_data['fw_file']
+    ) == 1
+    assert caplog.messages[-1] == 'Campaign timed out'
 
 @pytest.mark.parametrize(
     'action',
@@ -385,19 +393,17 @@ def test_cli_update_full_timeout(happy_day_data, action, requests_mock):
         ['update-v1']
     ]
 )
-def test_cli_update_conflict(happy_day_data, action, requests_mock):
+def test_cli_update_conflict(happy_day_data, action, requests_mock, caplog):
     """
     Campaign conflict - campaign will be created in draft state
     """
     mock_update_apis(requests_mock, last_phase_in_test=CampaignFsm.PHASE_DRAFT)
-    with pytest.raises(AssertionError) as exc_info:
-        _common(
-            happy_day_data,
-            action,
-            happy_day_data['fw_file']
-        )
-    assert 'Campaign not started' in exc_info.value.args[0]
-    assert 'NA' in exc_info.value.args[0]
+    assert _common(
+        happy_day_data,
+        action,
+        happy_day_data['fw_file']
+    ) == 1
+    assert caplog.messages[-1] == 'Campaign not started - check filter and campaign state.\nReason: NA'
 
 
 @pytest.mark.parametrize(
@@ -408,17 +414,24 @@ def test_cli_update_conflict(happy_day_data, action, requests_mock):
         ['update-v1']
     ]
 )
-def test_cli_update_failed_device(happy_day_data, action, requests_mock):
+def test_cli_update_failed_device(happy_day_data, action, requests_mock, caplog):
     """
     Campaign conflict - campaign will be created in draft state
     """
     mock_update_apis(requests_mock, deployment_state='failed')
-    with pytest.raises(AssertionError) as exc_info:
-        _common(
-            happy_day_data,
-            action,
-            happy_day_data['fw_file']
-        )
-    assert 'Failed to update 2 devices' in exc_info.value.args[0]
-    assert 'xxxx-device-id-xxxx' in exc_info.value.args[0]
-    assert 'yyyy-device-id-yyyy' in exc_info.value.args[0]
+    assert _common(
+        happy_day_data,
+        action,
+        happy_day_data['fw_file']
+    ) == 1
+    assert caplog.messages[-9:] == [
+        '----------------------------',
+        '    Campaign Summary ',
+        '----------------------------',
+        ' Successfully updated:   0',
+        ' Failed to update:       2',
+        ' Skipped:                0',
+        ' Pending:                0',
+        ' Total in this campaign: 2',
+        'Failed to update 2 devices: xxxx-device-id-xxxx, yyyy-device-id-yyyy'
+    ]

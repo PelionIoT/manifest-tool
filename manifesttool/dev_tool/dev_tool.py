@@ -134,8 +134,6 @@ def entry_point(argv=sys.argv[1:]):  # pylint: disable=dangerous-default-value
         else:
             raise AssertionError('unknown action')
     except Exception as ex:  # pylint: disable=broad-except
-        if args.debug:
-            raise
         logger.error(
             str(ex),
             exc_info=args.debug

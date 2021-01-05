@@ -26,11 +26,11 @@ from requests import HTTPError
 
 from manifesttool.dev_tool import defaults
 from manifesttool.dev_tool.actions.create import bump_minor
+from manifesttool.dev_tool.actions.create \
+    import register_parser as register_create_parser
 from manifesttool.dev_tool.actions.create import create_dev_manifest
 from manifesttool.dev_tool.pelion import pelion
-from manifesttool.mtool.actions import existing_file_path_arg_factory
 from manifesttool.mtool.actions import non_negative_int_arg_factory
-from manifesttool.mtool.actions import semantic_version_arg_factory
 from manifesttool.mtool.asn1 import ManifestAsnCodecBase
 
 logger = logging.getLogger('manifest-dev-tool-update')
@@ -41,84 +41,35 @@ MAX_NAME_LEN = 128
 
 def register_parser(parser: argparse.ArgumentParser, schema_version: str):
 
-    required = parser.add_argument_group('required arguments')
-    optional = parser.add_argument_group('optional arguments')
+    register_create_parser(parser, schema_version, True)
 
-    required.add_argument(
-        '-p', '--payload-path',
-        help='Payload local path - for digest calculation.',
-        type=existing_file_path_arg_factory,
-        required=True
+    pdm_group = parser.add_argument_group(
+        'optional arguments (Tool\'s campaign management)'
     )
-
-    if schema_version == 'v1':
-        optional.add_argument(
-            '-v', '--fw-version',
-            type=non_negative_int_arg_factory,
-            help='FW version to be set in manifest. '
-                 '[Default: current timestamp]',
-            default=int(time.time())
-        )
-    else:
-        optional.add_argument(
-            '-v', '--fw-version',
-            type=semantic_version_arg_factory,
-            help='FW version to be set in manifest in Semantic '
-                 'Versioning Specification format.'
-        )
-        optional.add_argument(
-            '--component-name',
-            default='MAIN',
-            metavar='NAME',
-            help='Component name to be updated. Must correspond to existing '
-                 'components name on targeted devices'
-        )
-        optional.add_argument(
-            '-m', '--sign-image',
-            action='store_true',
-            help='Sign image. Should be used when bootloader on a device '
-                 'expects signed FW image.'
-        )
-
-    optional.add_argument(
-        '-r', '--priority',
-        type=non_negative_int_arg_factory,
-        help='Update priority >=0. [Default: 0]',
-        metavar='INT',
-        default=0
-    )
-
-    optional.add_argument(
-        '-d', '--vendor-data',
-        help='Vendor custom data - to be passed to a device.',
-        type=existing_file_path_arg_factory
-    )
-
-    pdm_group = parser.add_argument_group('optional PDM portal arguments')
 
     pdm_group.add_argument(
         '-i', '--device-id',
-        help='Device ID for for targeting a specific device in '
+        help='Device ID for targeting a specific device in '
              'update campaign filter.'
     )
 
     pdm_group.add_argument(
         '-s', '--start-campaign',
         action='store_true',
-        help='Start update campaign automatically.'
+        help='Create and start update campaign automatically.'
     )
     pdm_group.add_argument(
         '-w', '--wait-for-completion',
         dest='wait',
         action='store_true',
-        help='Start update campaign automatically, '
-             'wait for it to finish and cleanup created resources.'
+        help='Create and start update campaign automatically, '
+             'wait for it to finish, and clean up created resources.'
     )
     pdm_group.add_argument(
         '-t', '--timeout',
         type=non_negative_int_arg_factory,
         help='Wait timeout in seconds. '
-             'Only relevant in case --wait-for-completion was provided. '
+             'Only relevant if --wait-for-completion was provided. '
              '[Default: 0 - wait-forever]',
         default=0
     )
@@ -126,22 +77,7 @@ def register_parser(parser: argparse.ArgumentParser, schema_version: str):
         '-n', '--no-cleanup',
         action='store_true',
         help='Skip cleaning up created resources. '
-             'Only relevant in case --wait-for-completion was provided.'
-    )
-
-    optional.add_argument(
-        '--cache-dir',
-        help='Tool cache directory. '
-             'Must match the directory used by "init" command',
-        type=Path,
-        default=defaults.BASE_PATH
-    )
-
-    optional.add_argument(
-        '-h',
-        '--help',
-        action='help',
-        help='show this help message and exit'
+             'Only relevant if --wait-for-completion was provided.'
     )
 
 

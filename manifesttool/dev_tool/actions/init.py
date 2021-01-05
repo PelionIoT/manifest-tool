@@ -74,6 +74,12 @@ class DeprecateStoreTrueAction(argparse.Action):  # pylint: disable=R0903
 
 def register_parser(parser: argparse.ArgumentParser):
     parser.add_argument(
+        '-h',
+        '--help',
+        action='help',
+        help='Show this help message and exit.'
+    )
+    parser.add_argument(
         '-f', '--force',
         action=DeprecateStoreTrueAction,
         help='Deprecated. Has no effect. Will be removed in future versions'
@@ -81,8 +87,8 @@ def register_parser(parser: argparse.ArgumentParser):
 
     parser.add_argument(
         '--cache-dir',
-        help='Cache directory for preserving the state between "init" '
-             'and "update" or "create" command invocations. '
+        help='Tool\'s cache directory for preserving the state between '
+             '"init", "create" and "update" command invocations. '
              '[Default: {}]'.format(defaults.BASE_PATH),
         type=Path,
         default=defaults.BASE_PATH
@@ -92,22 +98,23 @@ def register_parser(parser: argparse.ArgumentParser):
         'optional arguments (Pelion Device Management service configuration)')
     service.add_argument(
         '-p', '--gw-preset',
-        help='API GW name as present in {} which specify '
-             'a GW URL and Access key'.format(defaults.PELION_GW_PATH),
+        help='The preset name defined in {}, '
+             ' which specifies a URL and '
+             'access key.'.format(defaults.PELION_GW_PATH),
         choices=defaults.PELION_GW.keys() if defaults.PELION_GW else []
     )
     service.add_argument(
         '-a', '--access-key', '--api-key',
-        help='Access key for for accessing Pelion Device Management service.'
+        help='Access key for accessing a Pelion Device Management API.'
     )
     service.add_argument(
         '-u', '--api-url',
-        help='Pelion Device Management API gateway URL. '
+        help='Pelion Device Management API URL. '
     )
 
     parser.add_argument(
         '-g', '--generated-resource',
-        help='Generated update resource C file. '
+        help='Generated update resource C filename. '
              '[Default: {}]'.format(defaults.UPDATE_RESOURCE_C),
         type=Path,
         default=defaults.UPDATE_RESOURCE_C
@@ -115,13 +122,13 @@ def register_parser(parser: argparse.ArgumentParser):
 
     parser.add_argument(
         '--vendor-id',
-        help='Custom vendor UUID. [Default: random]',
+        help='Set custom vendor UUID. [Default: random UUID]',
         type=uuid_factory,
         default=uuid.uuid4()
     )
     parser.add_argument(
         '--class-id',
-        help='Custom class UUID. [Default: random]',
+        help='Set custom class UUID. [Default: random UUID]',
         type=uuid_factory,
         default=uuid.uuid4()
     )

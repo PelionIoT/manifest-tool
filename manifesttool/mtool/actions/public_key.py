@@ -25,16 +25,27 @@ from manifesttool.mtool.actions import existing_file_path_arg_factory
 class PublicKeyAction:
     @staticmethod
     def register_parser_args(parser: argparse.ArgumentParser):
-        parser.add_argument(
-            'key',
-            help='Private key PEM file',
-            type=existing_file_path_arg_factory
+        required = parser.add_argument_group('required arguments')
+        optional = parser.add_argument_group('optional arguments')
+
+        required.add_argument(
+            'private_key',
+            help='Path to a private key PEM file.',
+            type=existing_file_path_arg_factory,
         )
 
-        parser.add_argument(
+        required.add_argument(
             '-o', '--out',
-            help='Output public key in uncompressed point format (X9.62)',
-            type=Path
+            help='Output public key filename.',
+            type=Path,
+            required=True
+        )
+
+        optional.add_argument(
+            '-h',
+            '--help',
+            action='help',
+            help='Show this help message and exit.'
         )
 
     @classmethod
@@ -45,5 +56,5 @@ class PublicKeyAction:
 
     @classmethod
     def entry_point(cls, args):
-        private_key_bytes = cls.get_key(args.key.read_bytes())
+        private_key_bytes = cls.get_key(args.private_key.read_bytes())
         args.out.write_bytes(private_key_bytes)

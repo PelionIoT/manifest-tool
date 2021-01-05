@@ -28,7 +28,14 @@ class PrintSchemaAction:
 
     @staticmethod
     def register_parser_args(parser):
-        pass
+        optional = parser.add_argument_group('optional arguments')
+
+        optional.add_argument(
+            '-h',
+            '--help',
+            action='help',
+            help='Show this help message and exit.'
+        )
 
     @classmethod
     def entry_point(cls, _):

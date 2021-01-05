@@ -42,46 +42,50 @@ class DevActions(enum.Enum):
 
 def get_parser():
     parser = argparse.ArgumentParser(
-        description='FOTA developer flow helper'
+        description='Developer tool to simplify creating and '
+                    'running update campaigns.',
+        add_help=False
     )
 
-    actions_parser = parser.add_subparsers(dest='action')
+    actions_parser = parser.add_subparsers(title='Commands', dest='action')
     actions_parser.required = True
 
     init_parser = actions_parser.add_parser(
         DevActions.INIT.value,
-        help='Create a Pelion Device management update certificate.'
+        help='Initialize the developer environment.',
+        description='Initialize the developer environment.',
+        add_help=False
     )
     init.register_parser(init_parser)
 
     create_parser = actions_parser.add_parser(
         DevActions.CREATE.value,
-        help='Helper tool for creating a manifest using manifest schema '
-             'version v3.',
+        help='Create a manifest.',
+        description='Create a manifest.',
         add_help=False
     )
     create.register_parser(create_parser, ManifestAsnCodecV3.get_name())
 
     create_parser = actions_parser.add_parser(
         DevActions.CREATE_V1.value,
-        help='Helper tool for creating a manifest using manifest schema '
-             'version v1.',
+        help='Create a V1 schema manifest.',
+        description='Create a V1 schema manifest.',
         add_help=False
     )
     create.register_parser(create_parser, ManifestAsnCodecV1.get_name())
 
     update_parser = actions_parser.add_parser(
         DevActions.UPDATE.value,
-        help='Perform Pelion Device management update operations using '
-             'manifest schema version v3.',
+        help='Create and run update campaign.',
+        description='Create and run update campaign.',
         add_help=False
     )
     update.register_parser(update_parser, ManifestAsnCodecV3.get_name())
 
     update_parser = actions_parser.add_parser(
         DevActions.UPDATE_V1.value,
-        help='Perform Pelion Device management update operations using '
-             'manifest schema version v1',
+        help='Create and run V1 schema update campaign.',
+        description='Create and run V1 schema update campaign.',
         add_help=False
     )
     update.register_parser(update_parser, ManifestAsnCodecV1.get_name())
@@ -89,14 +93,20 @@ def get_parser():
     parser.add_argument(
         '--debug',
         action='store_true',
-        help='Show exception info on error.'
+        help='Use debug logging level and print exception info upon exiting.',
     )
 
     parser.add_argument(
+        '-h',
+        '--help',
+        action='help',
+        help='Show this help message and exit.'
+    )
+    parser.add_argument(
         '--version',
         action='version',
-        version='Manifest-Tool version {}'.format(__version__)
-
+        version='Manifest-Tool version {}'.format(__version__),
+        help='Show program\'s version number and exit.'
     )
 
     return parser

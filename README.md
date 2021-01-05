@@ -130,24 +130,32 @@ describing the update type.
     ```yaml
     vendor:  # One of "domain" or "vendor-id" fields are expected
       domain: pelion.com  # FW owner domain. Expected to include a dot (".")
+                          # Will be used to generate a vendor UUID
+      # or
       vendor-id: fa6b4a53d5ad5fdfbe9de663e4d41ffe  # Valid vendor UUID
+
     device:  # One of "model-name" or "class-id" fields are expected
       model-name: Smart Slippers  # A device model name
-      vendor-id: fa6b4a53d5ad5fdfbe9de663e4d41ffe  # Valid device-class UUID
+                                  # Will be used to generate a device-class UUID
+      # or
+      class-id: 327c726ac6e54f7a82fbf1d3beda80f0  # Valid device-class UUID
 
     priority: 1  #  Update priority as will be passed to authorization callback
                  #  implemented by application on a device side
+
     payload:
       url: http://some-url.com/files?id=1234  # File storage URL for devices to
                                               # acquire the FW candidate
       file-path: ./my.fw.bin  # Update candidate local file - for digest
                               # calculation & signing
       format: raw-binary  # one of following:
-                          #  raw-binary - for full image update
-                          #  arm-patch-stream - for differential update
-    component: MAIN  # [Optional] Component name - only relevant for manifest v3 format.
+                          #  raw-binary - for full image update campaigns
+                          #  arm-patch-stream - for delta update campaigns
+
+    component: MAIN  # [Optional] The name of the component to be updated - only relevant for manifest v3 format.
                      # If omitted "MAIN" component name will be used for updating
                      # the main application image
+
     sign-image: True  # [Optional] Boolean field accepting True/False values - only
                       # relevant for manifest v3 format.
                       # When Set to True - 64 Bytes raw signature over the installed
@@ -286,119 +294,10 @@ manifest tool input configuration.
 ```shell
 $ manifest-tool schema
 ```
-Output:
-
-```json
-{
-  "$schema": "http://json-schema.org/draft-07/schema#",
-  "title": "Manifest-tool input validator",
-  "description": "This schema is used to validate the input arguments for manifest-tool",
-  "type": "object",
-  "required": [
-    "vendor",
-    "device",
-    "priority",
-    "payload"
-  ],
-  "properties": {
-    "vendor": {
-      "type": "object",
-      "properties": {
-        "domain": {
-          "$ref": "#/definitions/non_empty_string",
-          "description": "Vendor Domain",
-          "pattern": "\\w+(\\.\\w+)+"
-        },
-        "vendor-id": {
-          "$ref": "#/definitions/uuid_hex_string",
-          "description": "Vendor UUID"
-        },
-        "custom-data-path": {
-          "$ref": "#/definitions/non_empty_string",
-          "description": "Path to custom data file  - must be accessible by the manifest-tool"
-        }
-      },
-      "oneOf": [
-        {"required": ["domain"]},
-        {"required": ["vendor-id"]}
-      ]
-    },
-    "device": {
-      "type": "object",
-      "properties": {
-        "model-name": {
-          "$ref": "#/definitions/non_empty_string",
-          "description": "Device model name"
-        },
-        "class-id": {
-          "$ref": "#/definitions/uuid_hex_string",
-          "description": "Device class UUID"
-        }
-      },
-      "oneOf": [
-        {"required": ["model-name"]},
-        {"required": ["class-id"]}
-      ]
-    },
-    "priority": {
-      "description": "Update priority",
-      "type": "integer"
-    },
-    "payload": {
-      "type": "object",
-      "required": [
-        "url",
-        "format",
-        "file-path"
-      ],
-      "properties": {
-        "format": {
-          "description": "Payload format type",
-          "enum": [
-            "raw-binary",
-            "arm-patch-stream"
-          ]
-        },
-        "url": {
-          "$ref": "#/definitions/non_empty_string",
-          "description": "Payload URL in the cloud storage"
-        },
-        "file-path": {
-          "$ref": "#/definitions/non_empty_string",
-          "description": "Path to payload file - must be accessible by the manifest-tool"
-        }
-      }
-    },
-    "component": {
-      "description": "Component name - only relevant for manifest v3",
-      "$ref": "#/definitions/non_empty_string"
-    },
-    "sign-image":{
-      "description": "Do sign installed image - only relevant for manifest v3. Required for devices with PKI image authentication in bootloader",
-      "type": "boolean"
-    }
-  },
-  "definitions": {
-    "non_empty_string": {
-      "type": "string",
-      "minLength": 1
-    },
-    "uuid_hex_string": {
-      "type": "string",
-      "pattern": "[0-9a-fA-F]{32}",
-      "description": "HEX encoded UUID string"
-    }
-  }
-}
-```
-
-<span class="notes">**Note:** This schema is an example captured for manifest-tool version 2.0. Make sure to execute the `manifest-tool schema` command on your machine to get the up-to-date schema for your installed tool version.</span>
 
 #### `manifest-tool public-key`
 
-Creates a public key file containing a key in uncompressed point format
-(X9.62). Provisioning this file to the device enables the device to
-verify the manifest signature.
+Create a public key file in uncompressed point format. Provisioning this file to the device enables the device to verify the manifest signature.
 
 **Example**
 
@@ -464,7 +363,7 @@ Initializes the developer environment:
 
 <span class="notes">**Note 1:** Use the credentials generated by `manifest-dev-tool init` in the development stage only.</span>
 
-<span class="notes"> **Note 2:** You can keep your access key in `.pelion-dev-presets.yaml` file in your home directory root and select it's using `--gw-preset` option.</span>
+<span class="notes"> **Note 2:** You can keep your access key in the `.pelion-dev-presets.yaml` file in your home directory and pass it using the `--gw-preset` option.</span>
 
   **Example of `.pelion-dev-presets.yaml`:**
   ```yaml
@@ -476,7 +375,7 @@ Initializes the developer environment:
       api_key: ak_SOME_OTHER_VERY_SECRET_API_KEY
   ```
 
-  To obtain an access key and API host URL, in Device Management Portal, click **Access Management** > **Access keys** > **New access key**. Limit the access to the `.pelion-dev-presets.yaml` file to your user only.
+  To obtain an access key and API host URL, in Device Management Portal, click **Access Management** > **Access keys** > **New access key**. Limit access to the `.pelion-dev-presets.yaml` file to your user only.
 
 **Example**
 

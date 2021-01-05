@@ -48,7 +48,7 @@ class CreateAction:
         required.add_argument(
             '-c',
             '--config',
-            help='Manifest tool configuration file.',
+            help='Path to the manifest tool configuration file.',
             metavar='YAML',
             type=argparse.FileType('rb'),
             required=True
@@ -57,47 +57,47 @@ class CreateAction:
         required.add_argument(
             '-k',
             '--key',
-            help='Signing key in PEM format.',
+            help='Path to the PEM format private key file.',
             metavar='KEY',
             type=argparse.FileType('rb'),
             required=True
         )
 
-        required.add_argument(
-            '-o',
-            '--output',
-            help='Output manifest.',
-            type=argparse.FileType('wb'),
-            required=True
-        )
         if schema_version == 'v1':
             optional.add_argument(
                 '-v', '--fw-version',
                 type=non_negative_int_arg_factory,
-                help='FW version to be set in manifest. '
-                     '[Default: current timestamp]',
+                help='Version number (integer) of the candidate image. '
+                     'Default: current epoch time.',
                 default=int(time.time())
             )
             required.add_argument(
                 '--update-certificate',
                 type=existing_file_path_arg_factory,
-                help='Update Certificate file path.',
+                help='Path to the update certificate file.',
                 required=True
             )
         else:
             required.add_argument(
                 '-v', '--fw-version',
                 type=semantic_version_arg_factory,
-                help='FW version to be set in manifest in Semantic '
-                     'Versioning Specification format.',
+                help='Version number of the candidate image in SemVer format.',
                 required=True
             )
+
+        required.add_argument(
+            '-o',
+            '--output',
+            help='Output manifest filename.',
+            type=argparse.FileType('wb'),
+            required=True
+        )
 
         optional.add_argument(
             '-h',
             '--help',
             action='help',
-            help='show this help message and exit'
+            help='Show this help message and exit.'
         )
 
     @staticmethod

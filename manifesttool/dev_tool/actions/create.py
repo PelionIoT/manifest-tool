@@ -34,16 +34,20 @@ from manifesttool.mtool.payload_format import PayloadFormat
 logger = logging.getLogger('manifest-dev-tool-create')
 
 
-def register_parser(parser: argparse.ArgumentParser, schema_version: str):
+def register_parser(parser: argparse.ArgumentParser,
+                    schema_version: str,
+                    is_update_parser: bool = False):
 
     required = parser.add_argument_group('required arguments')
     optional = parser.add_argument_group('optional arguments')
 
-    required.add_argument(
-        '-u', '--payload-url',
-        help='Address from which the device downloads the candidate payload.',
-        required=True
-    )
+    if not is_update_parser:
+        required.add_argument(
+            '-u', '--payload-url',
+            help='Address from which the device downloads '
+                 'the candidate payload.',
+            required=True
+        )
 
     required.add_argument(
         '-p', '--payload-path',
@@ -52,39 +56,41 @@ def register_parser(parser: argparse.ArgumentParser, schema_version: str):
         required=True
     )
 
-    required.add_argument(
-        '-o', '--output',
-        help='Output manifest.',
-        type=argparse.FileType('wb'),
-        required=True
-    )
+    if not is_update_parser:
+        required.add_argument(
+            '-o', '--output',
+            help='Output manifest filename.',
+            type=argparse.FileType('wb'),
+            required=True
+        )
+
     if schema_version == 'v1':
         optional.add_argument(
             '-v', '--fw-version',
             type=non_negative_int_arg_factory,
-            help='FW version to be set in manifest. '
-                 '[Default: current timestamp]',
+            help='Version number (integer) of the candidate image. '
+                 'Default: current epoch time.',
             default=int(time.time())
         )
     else:
         optional.add_argument(
             '-v', '--fw-version',
             type=semantic_version_arg_factory,
-            help='FW version to be set in manifest in Semantic '
-                 'Versioning Specification format.'
+            help='Version number of the candidate image in SemVer format.'
         )
         optional.add_argument(
             '--component-name',
             default='MAIN',
             metavar='NAME',
-            help='Component name to be udpated. Must correspond to existing '
-                 'components name on targeted devices'
+            help='The name of the component to be udpated. '
+                 'Must correspond to an existing component '
+                 'name on target devices.'
         )
         optional.add_argument(
             '-m', '--sign-image',
             action='store_true',
-            help='Sign image. Should be used when bootloader on a device '
-                 'expects signed FW image.'
+            help='Sign image. Use only when the bootloader on a device '
+                 'expects a signed FW image.'
         )
     optional.add_argument(
         '-r', '--priority',
@@ -96,14 +102,15 @@ def register_parser(parser: argparse.ArgumentParser, schema_version: str):
 
     optional.add_argument(
         '-d', '--vendor-data',
-        help='Vendor custom data file - to be passed to a device.',
+        help='Path to a vendor custom data file - to be passed to '
+             'the target devices.',
         type=existing_file_path_arg_factory
     )
 
     optional.add_argument(
         '--cache-dir',
-        help='Tool cache directory. '
-             'Must match the directory used by "init" command',
+        help='Tool\'s cache directory. '
+             'Must match the directory used by the "init" command.',
         type=Path,
         default=defaults.BASE_PATH
     )
@@ -112,7 +119,7 @@ def register_parser(parser: argparse.ArgumentParser, schema_version: str):
         '-h',
         '--help',
         action='help',
-        help='show this help message and exit'
+        help='Show this help message and exit.'
     )
 
 

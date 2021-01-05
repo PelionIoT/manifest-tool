@@ -53,27 +53,28 @@ class ParseAction:
 
         required.add_argument(
             'manifest',
-            help='Manifest file.',
+            help='Path to the manifest file.',
             type=argparse.FileType('rb')
         )
 
         key_or_cert_group = optional.add_mutually_exclusive_group()
         key_or_cert_group.add_argument(
             '-c', '--certificate',
-            help='Certificate holding signing public key. '
-                 'If provided certificate signature will be validated.',
+            help='Path to a certificate file to validate '
+                 'the manifest signature.',
             type=argparse.FileType('rb')
         )
         key_or_cert_group.add_argument(
             '-p', '--public-key',
-            help='Public key in uncompressed point format (X9.62). '
-                 'If provided certificate signature will be validated.',
+            help='Path to a public key file, '
+                 'containing a key in uncompressed point format, '
+                 'to validate the manifest signature.',
             type=argparse.FileType('rb')
         )
         key_or_cert_group.add_argument(
             '-k', '--private-key',
-            help='Private key PEM file. '
-                 'If provided certificate signature will be validated.',
+            help='Path to a private key PEM file '
+                 'to validate the manifest signature.',
             type=argparse.FileType('rb')
         )
 
@@ -81,7 +82,7 @@ class ParseAction:
             '-h',
             '--help',
             action='help',
-            help='show this help message and exit'
+            help='Show this help message and exit.'
         )
 
     # pylint: disable=too-many-branches

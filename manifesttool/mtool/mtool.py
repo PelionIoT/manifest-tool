@@ -42,34 +42,44 @@ class Actions(enum.Enum):
 
 def get_parser():
     parser = argparse.ArgumentParser(
-        description='Manifest tool for creating, signing and verifying '
-                    'Pelion Device management update certificates'
+        description='Tool for creating, signing and verifying '
+                    'manifest files for running Pelion Device '
+                    'management update campaigns.',
+        add_help=False
     )
 
     parser.add_argument(
+        '-h',
+        '--help',
+        action='help',
+        help='Show this help message and exit.'
+    )
+    parser.add_argument(
         '--version',
         action='version',
-        version='Manifest-Tool version {}'.format(__version__)
-
+        version='Manifest-Tool version {}'.format(__version__),
+        help='Show program\'s version number and exit.'
     )
 
     parser.add_argument(
         '-q', '--quiet',
         action='store_true',
-        help='Suppress information prints. Error prints only.'
+        help='Print error logs only.'
     )
 
     parser.add_argument(
         '--debug',
         action='store_true',
-        help='Show exception info on error.'
+        help='Print exception info upon exiting.'
     )
 
-    actions_parser = parser.add_subparsers(dest='action')
+    actions_parser = parser.add_subparsers(title='Commands', dest='action')
     actions_parser.required = True
+
     create_parser = actions_parser.add_parser(
         Actions.CREATE.value,
-        help='Create a Pelion Device management update certificate',
+        help='Create a manifest.',
+        description='Create a manifest.',
         add_help=False
     )
     CreateAction.register_parser_args(
@@ -77,7 +87,8 @@ def get_parser():
 
     create_parser = actions_parser.add_parser(
         Actions.CREATE_V1.value,
-        help='Create a Pelion Device management update certificate',
+        help='Create a V1 schema manifest.',
+        description='Create a V1 schema manifest.',
         add_help=False
     )
     CreateAction.register_parser_args(
@@ -85,22 +96,31 @@ def get_parser():
 
     verify_parser = actions_parser.add_parser(
         Actions.PARSE.value,
-        help='Parse and verify Pelion Device management update certificate',
+        help='Parse and verify a manifest against the input '
+             'validation schema.',
+        description='Parse and verify a manifest against the input '
+                    'validation schema.',
         add_help=False
     )
     ParseAction.register_parser_args(verify_parser)
 
     schema_parser = actions_parser.add_parser(
         Actions.SCHEMA.value,
-        help='Print input validation schema'
+        help='Print the input validation schema.',
+        description='Print the input validation schema.',
+        add_help=False
     )
     PrintSchemaAction.register_parser_args(schema_parser)
 
-    schema_parser = actions_parser.add_parser(
+    public_key_parser = actions_parser.add_parser(
         Actions.PUB_KEY.value,
-        help='Get Uncompressed Public key in binary form'
+        help='Create a public key file containing a key in '
+             'uncompressed point format.',
+        description='Create a public key file containing a key in '
+                    'uncompressed point format.',
+        add_help=False
     )
-    PublicKeyAction.register_parser_args(schema_parser)
+    PublicKeyAction.register_parser_args(public_key_parser)
 
     return parser
 

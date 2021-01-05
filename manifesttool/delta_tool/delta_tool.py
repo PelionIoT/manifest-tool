@@ -160,8 +160,8 @@ def generate_delta(
 
 def get_parser():
     parser = argparse.ArgumentParser(
-        description='Tool for generating delta-updates to be used with '
-                    'Pelion-FOTA',
+        description='Generate delta patch files to be used for '
+                    'delta update campaigns.',
         add_help=False
     )
     required = parser.add_argument_group('required arguments')
@@ -170,38 +170,38 @@ def get_parser():
     required.add_argument(
         '-c', '--current-fw',
         type=_existing_file_path_factory,
-        help='Currently installed on device firmware image for delta update '
+        help='Path to the currently installed firmware image for delta update '
              'calculation.',
         required=True
     )
     required.add_argument(
         '-n', '--new-fw',
         type=_existing_file_path_factory,
-        help='New firmware image to be installed on device.',
+        help='Path to the candidate image.',
         required=True
     )
 
     required.add_argument(
         '-o', '--output',
         type=Path,
-        help='Output delta file name.'
-             'NOTE: Additional configuration file with '
-             'same name but with \'.yaml\' extension will be generated. '
-             'Both files are required by the manifest-tool. Only the '
-             'output file specified by this argument should be uploaded '
-             'to Pelion storage.',
+        help='Output delta patch filename. '
+             'NOTE: The delta tool generates an additional '
+             'configuration file with the same name but with a \'.yaml\' '
+             'extension. The manifest tool needs both files, '
+             'but only this output file must '
+             'be uploaded to Pelion storage.',
         required=True
     )
 
     optional.add_argument(
         '-b', '--block-size',
         type=_block_size_factory,
-        help='Compression block size to pass to arm-bsdiff engine.'
-             'Greater block size will provide better compression, but '
-             'requires more memory on device side.'
-             ' Default is 512. Minimum is 128. '
-             ' NOTE: This value MUST be aligned with network (COAP/HTTP) '
-             'buffer size used for download',
+        help='Compression block size algorithm. '
+             'A greater size provides better '
+             'compression, but consumes more memory on the device. '
+             'Default is 512 bytes. Minimum is 128 bytes. '
+             'NOTE: This value MUST be aligned with the '
+             'network (COAP/HTTP) buffer size used for download.',
         default=512
     )
 
@@ -211,35 +211,37 @@ def get_parser():
     size_group.add_argument(
         '-t', '--threshold',
         type=int,
-        choices=range(30, 100, 10),
+        choices=range(30, 100),
+        metavar="[30-100]",
         default=60,
-        help='A threshold in percents that will trigger a warning while '
-             'comparing patch files size to the new FW size.'
+        help='The ratio of the delta patch size compared to the '
+             'candidate image size above which to raise an exception. '
+             'Default is 60.'
     )
     size_group.add_argument(
         '--skip-size-check',
         action='store_false',
         dest='threshold',
-        help='Skip size validations after delta update generation.'
+        help='Skip threshold validations.'
     )
 
     optional.add_argument(
         '--debug',
         action='store_true',
-        help='Show exception info on error.'
-    )
-    optional.add_argument(
-        '--version',
-        action='version',
-        version='Manifest-Tool version {}'.format(__version__)
-
+        help='Print exception info upon exiting.'
     )
 
     optional.add_argument(
         '-h',
         '--help',
         action='help',
-        help='show this help message and exit'
+        help='Show this help message and exit.'
+    )
+    optional.add_argument(
+        '--version',
+        action='version',
+        version='Manifest-Tool version {}'.format(__version__),
+        help='Show program\'s version number and exit.'
     )
 
     return parser

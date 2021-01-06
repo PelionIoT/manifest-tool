@@ -1,5 +1,13 @@
 # Changelog
 
+## 2.1.1
+- Changes to the `manifest-dev-tool update` command:
+  - Add `--use-short-url` option. Using this option decreases manifest size.
+    **Note:** The device must be configured to use CoAP.
+  - Add `--gw-preset` option, which enables presetting an access key in a `.pelion-dev-presets.yaml` file in the home directory.
+  - Print campaign summary on tool exit.
+- Improve the tool help and the `README.md`.
+
 ## 2.1.0
 - Stop using deprecated `mbed-cloud-sdk` package
 - Introduce support for `upload-jobs` for uploading FW image - allow

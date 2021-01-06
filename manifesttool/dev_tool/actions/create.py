@@ -90,7 +90,8 @@ def register_parser(parser: argparse.ArgumentParser,
             optional.add_argument(
                 '-u', '--use-short-url',
                 action='store_true',
-                help='Use a short candidate payload URL in the manifest.'
+                help='Use a short candidate payload URL in the manifest. '
+                     'Note: the device must be configured to use CoAP.'
             )
         optional.add_argument(
             '-m', '--sign-image',

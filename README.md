@@ -122,7 +122,7 @@ describing the update type.
       the [`manifest-tool public-key`](#manifest-tool-public-key)
       command.
 
-* Upload the new firmware binary to a server which your devices have access to, and obtain the URL for the uploaded firmware binary.
+* Upload the new firmware binary to a server that your devices can access, and obtain the URL for the uploaded firmware binary.
 
 * A configuration file in JSON or YAML format.
 
@@ -164,6 +164,7 @@ describing the update type.
                       # expects to work with signed images (e.g. secure-boot)
                       # When omitted False value is assumed
     ```
+
 **Example**
 
 * For this configuration file, called `my.config.yaml`:
@@ -226,21 +227,11 @@ schema V1 and assume the public key is packaged in a x.509 certificate.
 
         <span class="notes">**Note:** Device Management FOTA treats the x.509 certificate as a container **ONLY** and does not enforce its validity - expiration, chain of trust, and so on - although it may be validated by other Device Management components. For production, we recommend creating a certificate with a lifespan greater than the product's expected lifespan (for example, 20 years).</span>
 
+* Upload the new firmware binary to a server that your devices can access, and obtain the URL for the uploaded firmware binary.
+
+* A configuration file in JSON or YAML format (same as [`manifest-tool create`](#manifest-tool-create)).
+
 **Example**
-
-* For this configuration file, called `my.config.yaml`:
-
-    ```yaml
-    vendor:
-      domain: pelion.com
-    device:
-      model-name: DUT.my.device
-    priority: 1
-    payload:
-      url: http://some-url.com/files?id=1234
-      file-path: ./my.fw.bin
-      format: raw-binary
-    ```
 
 * Run:
 
@@ -380,10 +371,10 @@ Initializes the developer environment:
 **Example**
 
 ```shell
-manifest-dev-tool init --access-key [Access key from Device Management Portal]
+manifest-dev-tool init --access-key [Device Management access key]
 ```
 Or
-```
+```shell
 manifest-dev-tool init --gw-preset usa
 ```
 

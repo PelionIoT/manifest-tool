@@ -193,7 +193,7 @@ describing the update type.
 
 #### `manifest-tool create-v1`
 
-Older versions of Device Management FOTA update client use manifest
+Older versions of Device Management update client use manifest
 schema V1 and assume the public key is packaged in a x.509 certificate.
 
 **Prerequisites**
@@ -225,7 +225,7 @@ schema V1 and assume the public key is packaged in a x.509 certificate.
               -out my.x509.certificate.der
         ```
 
-        <span class="notes">**Note:** Device Management FOTA treats the x.509 certificate as a container **ONLY** and does not enforce its validity - expiration, chain of trust, and so on - although it may be validated by other Device Management components. For production, we recommend creating a certificate with a lifespan greater than the product's expected lifespan (for example, 20 years).</span>
+        <span class="notes">**Note:** Device Management update client treats the x.509 certificate as a container **ONLY** and does not enforce its validity - expiration, chain of trust, and so on - although it may be validated by other Device Management components. For production, we recommend creating a certificate with a lifespan greater than the product's expected lifespan (for example, 20 years).</span>
 
 * Upload the new firmware binary to a server that your devices can access, and obtain the URL for the uploaded firmware binary.
 
@@ -463,7 +463,7 @@ v1-format manifest.
       --wait-for-completion
   ```
 
-### Developer workflow example
+### Developer workflow example for mbed-os devices
 
 1. Clone the https://github.com/PelionIoT/mbed-cloud-client-example
    repository.
@@ -474,21 +474,20 @@ v1-format manifest.
     ```
     The tool initializes the developer environment and generates a `update_default_resources.c` file.
 1. Build the firmware image for your device.
-1. Flash the firmware to the device.
+1. Save the `mbed-cloud-client-example_update.bin` file.
+1. Flash the `mbed-cloud-client-example.bin` to the device.
 1. Wait for the device to register in the cloud.
 1. Make some changes to the source of the firmware application.
 1. Build the firmware update candidate for your device.
     - To test delta update, create delta patch:
-    Create a delta-patch:
-    ```
-    manifest-delta-tool -c curr_fw.bin -n new_fw.bin -o delta.bin
+      ```
+      manifest-delta-tool -c <original mbed-cloud-client-example_update.bin> -n <new mbed-cloud-client-example_update.bin> -o delta.bin
+      ```
 1. Issue an update campaign:
 
     ```
-    manifest-dev-tool update --payload-path
-    new_fw.bin --wait-for-completion
+    manifest-dev-tool update --payload-path <new mbed-cloud-client-example_update.bin or delta.bin> --wait-for-completion
     ```
-   For a delta update, the `--payload-path` is `delta.bin`.
 
 ## Troubleshooting
 

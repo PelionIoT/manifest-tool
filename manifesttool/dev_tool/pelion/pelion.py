@@ -25,6 +25,7 @@ from typing import Tuple, NewType, List
 
 import requests
 
+FW_UPLOAD = '/v3/firmware-images'
 FW_UPLOAD_JOBS = '/v3/firmware-images/upload-jobs'
 FW_UPLOAD_JOB = '/v3/firmware-images/upload-jobs/{id}'
 FW_UPLOAD_JOB_CHUNK = '/v3/firmware-images/upload-jobs/{id}/chunks'
@@ -44,6 +45,8 @@ CAMPAIGN_ACTIVE_PHASES = [
     'starting',
     'active'
 ]
+
+FW_UPLOAD_MAX_SMALL_SIZE = int(100 * 1024 * 1024)
 
 # must be greater than 5MB - AWS limitation
 FW_UPLOAD_CHUNK_SIZE = int(6 * 1024 * 1024)
@@ -126,36 +129,19 @@ class UpdateServiceApi:
         :param fw_name: update candidate image name as will appear on Pelion
                portal
         :param image: candidate FW image
-        :return: Tuple of candidate image URL and IDs
+        :return: tuple consisting of uploaded image URL, short image URL and ID
         """
         fw_size = image.stat().st_size
 
-        job_id = None
-        try:
-            with image.open('rb') as fh:
-                job_id = self._create_upload_job(fw_name)
-                self._print_upload_progress(0, fw_size)
-                upload_counter = 0
-                while True:
-                    chunk = fh.read(FW_UPLOAD_CHUNK_SIZE)
-                    upload_counter += len(chunk)
-                    self._upload_image_chunk(chunk, job_id)
-
-                    self._print_upload_progress(upload_counter, fw_size)
-
-                    if not chunk:
-                        break
-            LOG.debug('FW upload job %s completed', job_id)
+        if fw_size < FW_UPLOAD_MAX_SMALL_SIZE:
             fw_image_url, short_image_url, fw_image_id = \
-                self._get_fw_image_meta(job_id)
-            LOG.info('Uploaded FW image %s', fw_image_url)
-            return fw_image_url, short_image_url, fw_image_id
-        except requests.HTTPError:
-            LOG.error('FW image upload failed')
-            raise
-        finally:
-            if job_id:
-                self._delete_upload_job(job_id)
+                self._upload_small_image(fw_name, image)
+        else:
+            fw_image_url, short_image_url, fw_image_id = \
+                self._upload_big_image(fw_name, fw_size, image)
+
+        LOG.info('Uploaded FW image %s', fw_image_url)
+        return fw_image_url, short_image_url, fw_image_id
 
     def _upload_image_chunk(self, chunk: bytes, job_id: ID):
         """
@@ -175,11 +161,66 @@ class UpdateServiceApi:
         )
         response.raise_for_status()
 
+    def _upload_big_image(self, fw_name: str, fw_size: int, image: Path) -> \
+            Tuple[URL, str, ID]:
+        """
+        Helper function for uploading small FW image
+        :param fw_name: fw name as appears on the portal
+        :param image: candidate FW image
+        :return: tuple consisting of uploaded image URL, short image URL and ID
+        """
+        job_id = None
+        try:
+            with image.open('rb') as fh:
+                job_id = self._create_upload_job(fw_name)
+                self._print_upload_progress(0, fw_size)
+                upload_counter = 0
+                while True:
+                    chunk = fh.read(FW_UPLOAD_CHUNK_SIZE)
+                    upload_counter += len(chunk)
+                    self._upload_image_chunk(chunk, job_id)
+                    self._print_upload_progress(upload_counter, fw_size)
+                    if not chunk:
+                        break
+            LOG.debug('FW upload job %s completed', job_id)
+            return self._get_fw_image_meta(job_id)
+        except requests.HTTPError:
+            LOG.error('FW image upload failed')
+            raise
+        finally:
+            if job_id:
+                self._delete_upload_job(job_id)
+
+    def _upload_small_image(self, fw_name: str, image: Path) -> \
+            Tuple[URL, str, ID]:
+        """
+        Helper function for uploading small FW image
+        :param fw_name: fw name as appears on the portal
+        :param image: candidate FW image
+        :return: tuple consisting of uploaded image URL, short image URL and ID
+        """
+        with image.open('rb') as fh:
+            response = requests.post(
+                self._url(FW_UPLOAD),
+                headers=self._headers(),
+                files={
+                    'datafile': (image.name, fh),
+                },
+                data={
+                    'name': fw_name
+                }
+            )
+            response.raise_for_status()
+            fw_image_url = response.json()['datafile']
+            short_image_url = response.json()['short_datafile']
+            fw_image_id = response.json()['id']
+            return fw_image_url, short_image_url, fw_image_id
+
     def _get_fw_image_meta(self, job_id: ID) -> Tuple[URL, str, ID]:
         """
         Helper function for extracting uploaded image URL and ID
         :param job_id: upload job ID
-        :return: tuple consisting of uploaded image URL and ID
+        :return: tuple consisting of uploaded image URL, short image URL and ID
         """
         response = requests.get(
             self._url(FW_UPLOAD_JOB, id=job_id),

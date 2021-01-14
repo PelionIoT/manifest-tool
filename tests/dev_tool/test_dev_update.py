@@ -176,6 +176,18 @@ def mock_update_apis(
         },
         status_code=http_status_code
     )
+
+    # FW one shot upload
+    requests_mock.post(
+        api_url(FW_UPLOAD),
+        json={
+            'datafile': 'https://my-fw.url.com/fw_image.bin',
+            'short_datafile': '/fw/fw_image.bin',
+            'id': firmware_image_id
+        },
+        status_code=http_status_code
+    )
+
     # FW image - delete
     requests_mock.delete(
         api_url(FW_IMAGE, id=firmware_image_id),

@@ -399,12 +399,16 @@ class UpdateServiceApi:
         :param campaign_id: campaign ID
         :return: List of statistics for a campaign
         """
-        response = requests.get(
-            self._url(FW_CAMPAIGN_STATISTICS, id=campaign_id),
-            headers=self._headers()
-        )
-        response.raise_for_status()
-        return response.json()['data']
+        try:
+            response = requests.get(
+                self._url(FW_CAMPAIGN_STATISTICS, id=campaign_id),
+                headers=self._headers()
+            )
+            response.raise_for_status()
+            return response.json()['data']
+        except requests.HTTPError:
+            pass
+        return []
 
     def campaign_device_metadata(self, campaign_id: ID) -> List[dict]:
         """

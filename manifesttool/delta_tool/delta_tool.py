@@ -170,8 +170,8 @@ def get_parser():
     required.add_argument(
         '-c', '--current-fw',
         type=_existing_file_path_factory,
-        help='Path to the currently installed firmware image for delta update '
-             'calculation.',
+        help='Path to the currently installed firmware image, without '
+             'headers, for delta update calculation.',
         required=True
     )
     required.add_argument(

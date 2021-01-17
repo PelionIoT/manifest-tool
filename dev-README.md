@@ -34,10 +34,19 @@ $ manifest-dev-tool --version
 Manifest-Tool version 2.0
 ```
 
+## dev_init.bat
+
+Same as `dev_init.sh` but for Windows
+
 ## pytest
 
-execute `pytest` command to verify no regression was introduced.
+- execute `pytest` command to verify no regression was introduced.
 `pytest` will also generate `htmlcov/index.html` that can be opened in a browser for showing test coverage statistics.
+
+- Example of running only one test:
+  ```
+  pytest tests/dev_tool/test_dev_update.py -o log_cli=true -k test_cli_update_delta_happy_day[action0]
+  ```
 
 ## tox
 
@@ -98,6 +107,7 @@ We must freeze upper bound versions to the version which were tested at
 the release creation time.
 
 ## Publish release
+1. Update `requirements.txt` to dependencies latest version.
 1. Bump the packege [version](./manifesttool/__init__.py).
 1. Run `tox` on Windows, Linux and Mac.
 1. Run `build_manylinux_wheels.sh` on Linux.

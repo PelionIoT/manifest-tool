@@ -184,6 +184,11 @@ def create_dev_manifest(
         update_certificate=Path(dev_cfg['certificate']),
         asn1_codec_class=manifest_version
     )
+    logger.info(
+        'Created manifest in %s schema for %s update campaign',
+        manifest_version.get_name(),
+        'delta' if payload_format == PayloadFormat.PATCH else 'full'
+    )
     return manifest_bin
 
 def bump_minor(sem_ver: str):

@@ -6,6 +6,7 @@
     **Note:** The device must be configured to use CoAP.
   - Add `--gw-preset` option, which enables presetting an access key in a `.pelion-dev-presets.yaml` file in the home directory.
   - Print campaign summary on tool exit.
+  - Upload FW images smaller then 100MB with the `/v3/firmware-images` API
 - Improve the tool help and the `README.md`.
 
 ## 2.1.0

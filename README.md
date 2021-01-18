@@ -47,7 +47,7 @@ We recommend installing the `manifest-tool` Python package in a isolated
 
 **Prerequisites:**
 
-* [Python 3.5 or higher](https://www.python.org/downloads/).
+* [Python 3.6 or higher](https://www.python.org/downloads/).
 * [pip (Python Package Installer)](https://pip.pypa.io/en/stable/).
 * Internet connectivity
 
@@ -59,7 +59,7 @@ pip install manifest-tool
 
 **Prerequisites:**
 
-* [Python 3.5 or later](https://www.python.org/downloads/).
+* [Python 3.6 or later](https://www.python.org/downloads/).
 * [pip (Python Package Installer)](https://pip.pypa.io/en/stable/).
 * Native toolchain:
     * GCC/Clang for Linux/MacOS.

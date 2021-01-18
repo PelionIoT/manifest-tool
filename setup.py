@@ -55,7 +55,7 @@ setup(
             "manifest-delta-tool=manifesttool.delta_tool.delta_tool:entry_point"
         ],
     },
-    python_requires='>=3.5.0',
+    python_requires='>=3.6.0',
     include_package_data=True,
     install_requires=pdmfota_requirements,
     ext_modules=[armbsdiff]

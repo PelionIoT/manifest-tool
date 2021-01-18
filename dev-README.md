@@ -10,8 +10,7 @@ Example:
 $ pyenv install 3.8.0
 $ pyenv install 3.7.5
 $ pyenv install 3.6.9
-$ pyenv install 3.5.7
-$ pyenv local 3.8.0 3.7.5 3.6.9 3.5.7
+$ pyenv local 3.8.0 3.7.5 3.6.9
 $ python --version
 Python 3.8.0
 ```

@@ -110,6 +110,8 @@ def register_parser(parser: argparse.ArgumentParser):
     service.add_argument(
         '-u', '--api-url',
         help='Pelion Device Management API URL. '
+             '[Default: {}]'.format(defaults.API_GW),
+        default=defaults.API_GW
     )
 
     parser.add_argument(
@@ -317,18 +319,15 @@ def generate_developer_config(
 def generate_service_config(api_key: str, api_url: str, api_config_path: Path):
     cfg = dict()
 
-    if api_key is None and api_url is None:
+    if api_key is None or api_url is None:
         return
 
     if api_config_path.is_file():
         with api_config_path.open('rt') as fh:
             cfg = yaml.safe_load(fh)
 
-    if api_key:
-        cfg['api_key'] = api_key
-
-    if api_url:
-        cfg['host'] = api_url
+    cfg['api_key'] = api_key
+    cfg['host'] = api_url
 
     with api_config_path.open('wt') as fh:
         yaml.safe_dump(cfg, fh)
@@ -368,7 +367,7 @@ def entry_point(args):
         api_key = defaults.PELION_GW[args.gw_preset].get('api_key')
 
     api_url = args.api_url
-    if not api_url and hasattr(args, 'gw_preset') and args.gw_preset:
+    if hasattr(args, 'gw_preset') and args.gw_preset:
         api_url = defaults.PELION_GW[args.gw_preset].get('host')
 
     generate_service_config(

@@ -260,11 +260,11 @@ def load_service_config(service_config):
     if service_config.is_file():
         with service_config.open('rt') as fh:
             config = yaml.safe_load(fh)
-    else:
-        raise AssertionError('Pelion service configurations (URL and API key) '
-                             'are not provided for assisted campaign '
-                             'management')
-    return config
+            if 'host' in config and 'api_key' in config:
+                return config
+    raise AssertionError('Pelion service configurations (URL and API key) '
+                         'are not provided for assisted campaign '
+                         'management')
 
 
 def entry_point(

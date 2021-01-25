@@ -45,7 +45,7 @@ setup(
     long_description_content_type="text/markdown",
     url='https://github.com/PelionIoT/manifest-tool',
     author='Pelion',
-    author_email='iotsupport@arm.com',
+    author_email='pdm-support@pelion.com',
     packages=find_packages(exclude=['tests']),
     zip_safe=False,
     entry_points={

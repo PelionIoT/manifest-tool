@@ -1,12 +1,16 @@
 # Changelog
 
 ## 2.1.1
+- Remove support for Python 3.5.
+- In v1 schema, allow creating manifests without the `priority` field.
+- Changes to the `manifest-dev-tool`:
+  - Fix usage of https://api.us-east-1.mbedcloud.com as default Pelion Device Management API URL.
 - Changes to the `manifest-dev-tool update` command:
   - Add `--use-short-url` option. Using this option decreases manifest size.
     **Note:** The device must be configured to use CoAP.
   - Add `--gw-preset` option, which enables presetting an access key in a `.pelion-dev-presets.yaml` file in the home directory.
   - Print campaign summary on tool exit.
-  - Upload FW images smaller than 100MB with the `/v3/firmware-images` API
+  - Upload firmware images smaller than 100MB with the `/v3/firmware-images` API.
 - Improve the tool help and the `README.md`.
 
 ## 2.1.0

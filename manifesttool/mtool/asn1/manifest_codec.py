@@ -124,8 +124,8 @@ class ManifestAsnCodecBase(abc.ABC):
 
         if 'priority' in input_cfg:
             self.set_update_priority(int(input_cfg['priority']))
-        else:
-            raise AssertionError('priority filed myst be provided')
+        elif self.get_name() == 'v3':
+            raise AssertionError('priority filed must be provided')
 
         self.set_component_name(input_cfg.get('component', 'MAIN'))
 

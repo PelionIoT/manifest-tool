@@ -72,6 +72,11 @@ def register_parser(parser: argparse.ArgumentParser,
                  'Default: current epoch time.',
             default=int(time.time())
         )
+        optional.add_argument(
+            '-r', '--priority',
+            type=int,
+            help='Set update priority.'
+        )
     else:
         optional.add_argument(
             '-v', '--fw-version',
@@ -99,13 +104,12 @@ def register_parser(parser: argparse.ArgumentParser,
             help='Sign image. Use only when the bootloader on a device '
                  'expects a signed FW image.'
         )
-    optional.add_argument(
-        '-r', '--priority',
-        type=non_negative_int_arg_factory,
-        help='Update priority >=0. [Default: 0]',
-        metavar='INT',
-        default=0
-    )
+        optional.add_argument(
+            '-r', '--priority',
+            type=non_negative_int_arg_factory,
+            help='Set update priority >=0. [Default: 0]',
+            default=0
+        )
 
     optional.add_argument(
         '-d', '--vendor-data',
@@ -162,13 +166,15 @@ def create_dev_manifest(
         'device': {
             'class-id': dev_cfg['class-id']
         },
-        'priority': priority,
         'payload': {
             'url': payload_url,
             'file-path': payload_path.as_posix(),
             'format': payload_format.value
         }
     }
+
+    if priority is not None:
+        input_cfg['priority'] = priority
 
     if manifest_version.get_name() != 'v1':
         input_cfg['sign-image'] = sign_image

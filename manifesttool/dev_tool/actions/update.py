@@ -262,7 +262,7 @@ def load_service_config(service_config):
             config = yaml.safe_load(fh)
             if 'host' in config and 'api_key' in config:
                 return config
-    raise AssertionError('Pelion service configurations (URL and API key) '
+    raise AssertionError('Pelion service configurations (URL and access key) '
                          'are not provided for assisted campaign '
                          'management')
 

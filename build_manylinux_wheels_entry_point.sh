@@ -19,8 +19,15 @@
 
 set -e -u -x
 
-# Move to shared dir
-cd /io
+git --version
+
+
+mkdir /work
+cd /work
+
+# Clone from shared dir
+git clone /io manifest-tool
+cd manifest-tool
 
 function repair_wheel {
     wheel="$1"
@@ -35,6 +42,9 @@ function repair_wheel {
 
 # Compile wheels to wheelhouse/$PLAT
 for PYBIN in /opt/python/cp3*/bin; do
+    if [[ $PYBIN == /opt/python/cp35-cp35m/bin ]]; then
+        continue
+    fi
     echo '------------------------------------------------------------'
     echo "${PYBIN}"
     echo '------------------------------------------------------------'
@@ -54,6 +64,9 @@ fi
 
 # Install packages and test
 for PYBIN in /opt/python/cp3*/bin; do
+    if [[ $PYBIN == /opt/python/cp35-cp35m/bin ]]; then
+        continue
+    fi
     echo '------------------------------------------------------------'
     echo "${PYBIN}"
     echo '------------------------------------------------------------'
@@ -61,4 +74,7 @@ for PYBIN in /opt/python/cp3*/bin; do
     "${PYBIN}/manifest-tool" --version
     "${PYBIN}/manifest-dev-tool" --version
     "${PYBIN}/manifest-delta-tool" --version
+
+    # Copy to shared dist
+    cp -v wheelhouse/* /io/dist/.
 done

@@ -69,7 +69,6 @@ def register_parser(parser: argparse.ArgumentParser, schema_version: str):
         '-t', '--timeout',
         type=non_negative_int_arg_factory,
         help='Wait timeout in seconds. '
-             'Only relevant if --wait-for-completion was provided. '
              '[Default: 0 - wait-forever]',
         default=0
     )
@@ -80,23 +79,37 @@ def register_parser(parser: argparse.ArgumentParser, schema_version: str):
              'Only relevant if --wait-for-completion was provided.'
     )
 
-
-def _wait(api: pelion.UpdateServiceApi, campaign_id: pelion.ID, timeout):
+def _manage_campaign(api: pelion.UpdateServiceApi,
+                     campaign_id: pelion.ID,
+                     end_time: int,
+                     do_wait: bool):
+    starting = True
+    old_state = ''
     try:
-        old_state = api.campaign_get(campaign_id)['state']
-        logger.info("Campaign state: %s", old_state)
-        current_time = time.time()
-        while timeout == 0 or time.time() < current_time + timeout:
+        api.campaign_start(campaign_id)
+        while end_time == 0 or time.time() < end_time:
             curr_campaign = api.campaign_get(campaign_id)
             curr_state = curr_campaign['state']
             curr_phase = curr_campaign['phase']
+            if starting:
+                if api.campaign_is_not_started(curr_phase):
+                    raise AssertionError(
+                        'Campaign not started - check filter and campaign '
+                        'state.\n'
+                        'Reason: {}'.format(curr_campaign['autostop_reason']))
+                if api.campaign_is_active(curr_phase):
+                    logger.info('Started Campaign ID: %s', campaign_id)
+                    starting = False
+                    if not do_wait:
+                        return
+            else:
+                if not api.campaign_is_active(curr_phase):
+                    logger.info(
+                        "Campaign is finished in state: %s", curr_state)
+                    return
             if old_state != curr_state:
                 logger.info("Campaign state: %s", curr_state)
                 old_state = curr_state
-            if not api.campaign_is_active(curr_phase):
-                logger.info(
-                    "Campaign is finished in state: %s", curr_state)
-                return
             time.sleep(1)
         logger.error('Campaign timed out')
         raise AssertionError('Campaign timed out')
@@ -125,7 +138,7 @@ def _finalize(api: pelion.UpdateServiceApi,
               manifest_id: pelion.ID,
               fw_image_id: pelion.ID,
               manifest_path: Path):
-    summary = []
+    summary = {}
     failed_devices = []
     try:
         if campaign_id:
@@ -171,7 +184,7 @@ def update(
         device_id: str,
         do_wait: bool,
         do_start: bool,
-        timeout: int,
+        end_time: int,
         do_cleanup: bool,
         service_config: Path,
         fw_version: str,
@@ -239,10 +252,7 @@ def update(
         )
 
         if do_start:
-            api.campaign_start(campaign_id)
-
-        if do_wait:
-            _wait(api, campaign_id, timeout)
+            _manage_campaign(api, campaign_id, end_time, do_wait)
 
     except KeyboardInterrupt:
         logger.error('Aborted by user...')
@@ -311,7 +321,7 @@ def entry_point(
         device_id=args.device_id,
         do_start=args.start_campaign or args.wait,
         do_wait=args.wait,
-        timeout=args.timeout,
+        end_time=time.time() + args.timeout if args.timeout > 0 else 0,
         do_cleanup=not args.no_cleanup,
         service_config=cache_dir / defaults.CLOUD_CFG,
         fw_version=fw_version,

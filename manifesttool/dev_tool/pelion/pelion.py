@@ -46,6 +46,11 @@ CAMPAIGN_ACTIVE_PHASES = [
     'active'
 ]
 
+CAMPAIGN_NOT_STARTED_PHASES = [
+    'draft',
+    'stopped'
+]
+
 FW_UPLOAD_MAX_SMALL_SIZE = int(100 * 1024 * 1024)
 
 # must be greater than 5MB - AWS limitation
@@ -322,7 +327,7 @@ class UpdateServiceApi:
             device_filter: str
     ) -> ID:
         """
-        Create update campaign om Pelion portal
+        Create update campaign on Pelion portal
 
         :param name: campaign name as will appear on Pelion portal
         :param manifest_id: manifest ID as
@@ -393,32 +398,14 @@ class UpdateServiceApi:
 
     def campaign_start(self, campaign_id: ID):
         """
-        Start draft update campaign
+        Start update campaign
         :param campaign_id: campaign ID
         """
-        try:
-            response = requests.post(
-                self._url(FW_CAMPAIGN_START, id=campaign_id),
-                headers=self._headers()
-            )
-            response.raise_for_status()
-
-            time.sleep(1)
-
-            campaign = self.campaign_get(campaign_id)
-            while True:
-                if campaign['phase'] == 'draft':
-                    raise AssertionError(
-                        'Campaign not started - check filter and campaign '
-                        'state.\n'
-                        'Reason: {}'.format(campaign['autostop_reason']))
-                if campaign['phase'] == 'active':
-                    break
-                campaign = self.campaign_get(campaign_id)
-        except requests.HTTPError:
-            LOG.error('Failed to start campaign %s', campaign_id)
-            raise
-        LOG.info('Started Campaign ID: %s', campaign_id)
+        response = requests.post(
+            self._url(FW_CAMPAIGN_START, id=campaign_id),
+            headers=self._headers()
+        )
+        response.raise_for_status()
 
     def campaign_get(self, campaign_id: ID) -> dict:
         """
@@ -477,3 +464,13 @@ class UpdateServiceApi:
         :return: True if update campaign phase is starting or active
         """
         return phase in CAMPAIGN_ACTIVE_PHASES
+
+    @staticmethod
+    def campaign_is_not_started(phase: Phase) -> bool:
+        """
+        Helper function for understanding if update campaign is not
+        started phase
+        :param phase: current update campaign phase
+        :return: True if update campaign phase is starting or active
+        """
+        return phase in CAMPAIGN_NOT_STARTED_PHASES

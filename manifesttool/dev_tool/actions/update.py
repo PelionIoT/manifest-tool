@@ -117,7 +117,7 @@ def _manage_campaign(api: pelion.UpdateServiceApi,
         logger.error('Failed to retrieve campaign state')
         raise
 
-def _print_summary(summary: dict):
+def _print_summary(summary: dict, summary_reasons: dict):
     logger.info("----------------------------")
     logger.info("    Campaign Summary ")
     logger.info("----------------------------")
@@ -130,6 +130,16 @@ def _print_summary(summary: dict):
     logger.info(" Pending:                %d",
                 summary.get('info') if summary.get('info') else 0)
     logger.info(" Total in this campaign: %d", sum(summary.values()))
+    if summary_reasons.get('fail'):
+        logger.warning("Reasons for failed updates:")
+        for reasons in summary_reasons['fail']:
+            if reasons.get('description'):
+                logger.warning(" %s", reasons.get('description'))
+    if summary_reasons.get('skipped'):
+        logger.warning("Reasons for skipped updates:")
+        for reasons in summary_reasons['skipped']:
+            if reasons.get('description'):
+                logger.warning(" %s", reasons.get('description'))
 
 
 def _finalize(api: pelion.UpdateServiceApi,
@@ -139,18 +149,24 @@ def _finalize(api: pelion.UpdateServiceApi,
               fw_image_id: pelion.ID,
               manifest_path: Path):
     summary = {}
+    summary_reasons = {}
     failed_devices = []
     try:
         if campaign_id:
             # stop the campaign if it's still active
             api.campaign_stop(campaign_id)
-            # get summary and failed devices
+            # get summary, failed devices and reasons
             statistics = api.campaign_statistics(campaign_id)
             summary = {s['id']: s['count'] for s in statistics}
             if summary.get('fail') and summary.get('fail') > 0:
                 devices_state = api.campaign_device_metadata(campaign_id)
                 failed_devices = [d['device_id'] for d in devices_state
                                   if d['deployment_state'] != 'deployed']
+                summary_reasons['fail'] = \
+                    api.campaign_statistic_events(campaign_id, 'fail')
+            if summary.get('skipped') and summary.get('skipped') > 0:
+                summary_reasons['skipped'] = \
+                    api.campaign_statistic_events(campaign_id, 'skipped')
         if do_cleanup:
             logger.info('Cleaning up resources...')
             if campaign_id:
@@ -167,7 +183,7 @@ def _finalize(api: pelion.UpdateServiceApi,
 
     # print campaign summary
     if summary:
-        _print_summary(summary)
+        _print_summary(summary, summary_reasons)
         if failed_devices:
             # assert if not all devices were updated
             raise AssertionError(

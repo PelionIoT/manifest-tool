@@ -61,6 +61,8 @@ class CampaignFsm:
         (Phase('draft'), 'draft'),
         (Phase('starting'), 'scheduled'),
         (Phase('active'), 'publishing'),
+        (Phase('active'), 'publishing'),
+        (Phase('active'), 'publishing'),
         (Phase('stopping'), 'stopping'),
         (Phase('stopped'), 'auto_stopped')
     ]
@@ -295,6 +297,46 @@ def mock_update_apis(
         status_code=http_status_code
     )
 
+    # Campaign statistics fail events
+    requests_mock.get(
+        api_url(FW_CAMPAIGN_STATISTICS_EVENTS, id=campaign_id, summary_id='fail'),
+        json={
+            'data': [
+                {
+                    'created_at': 'NA',
+                    'event_type': 'NA',
+                    'description': 'Update error, failed',
+                    'summary_status': 'FAIL',
+                    'id': 'NA',
+                    'count': 2,
+                    'summary_status_id': 'fail',
+                    'campaign_id': str(campaign_id)
+                }
+            ]
+        },
+        status_code=http_status_code
+    )
+
+    # Campaign statistics skipped events
+    requests_mock.get(
+        api_url(FW_CAMPAIGN_STATISTICS_EVENTS, id=campaign_id, summary_id='skipped'),
+        json={
+            'data': [
+                {
+                    'created_at': 'NA',
+                    'event_type': 'NA',
+                    'description': 'Update skipped, skipped',
+                    'summary_status': 'SKIPPED',
+                    'id': 'NA',
+                    'count': 2,
+                    'summary_status_id': 'skipped',
+                    'campaign_id': str(campaign_id)
+                }
+            ]
+        },
+        status_code=http_status_code
+    )
+
     # Campaign devices
     requests_mock.get(
         api_url(FW_CAMPAIGN_DEV_METADATA, id=campaign_id),
@@ -340,7 +382,7 @@ def _common(happy_day_data, action, payload_path):
         '--payload-path', payload_path.as_posix(),
         '--vendor-data', happy_day_data['dev_cfg'].as_posix(),
         '--wait-for-completion',
-        '--timeout', '1',
+        '--timeout', '10',
         '--device-id', '1234'
     ]
     if any(['v1' in x for x in action]):
@@ -439,7 +481,7 @@ def test_cli_update_failed_device(happy_day_data, action, requests_mock, caplog)
         action,
         happy_day_data['fw_file']
     ) == 1
-    assert caplog.messages[-9:] == [
+    assert caplog.messages[-11:] == [
         '----------------------------',
         '    Campaign Summary ',
         '----------------------------',
@@ -448,5 +490,7 @@ def test_cli_update_failed_device(happy_day_data, action, requests_mock, caplog)
         ' Skipped:                0',
         ' Pending:                0',
         ' Total in this campaign: 2',
+        'Reasons for failed updates:',
+        ' Update error, failed',
         'Failed to update 2 devices: xxxx-device-id-xxxx, yyyy-device-id-yyyy'
     ]

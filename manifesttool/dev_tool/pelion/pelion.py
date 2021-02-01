@@ -39,6 +39,8 @@ FW_CAMPAIGN = '/v3/update-campaigns/{id}'
 FW_CAMPAIGN_STOP = '/v3/update-campaigns/{id}/stop'
 FW_CAMPAIGN_START = '/v3/update-campaigns/{id}/start'
 FW_CAMPAIGN_STATISTICS = '/v3/update-campaigns/{id}/statistics'
+FW_CAMPAIGN_STATISTICS_EVENTS = \
+    '/v3/update-campaigns/{id}/statistics/{summary_id}/event_types'
 FW_CAMPAIGN_DEV_METADATA = '/v3/update-campaigns/{id}/campaign-device-metadata'
 
 CAMPAIGN_ACTIVE_PHASES = [
@@ -430,6 +432,29 @@ class UpdateServiceApi:
         try:
             response = requests.get(
                 self._url(FW_CAMPAIGN_STATISTICS, id=campaign_id),
+                headers=self._headers()
+            )
+            response.raise_for_status()
+            return response.json()['data']
+        except requests.HTTPError:
+            pass
+        return []
+
+    def campaign_statistic_events(self,
+                                  campaign_id: ID,
+                                  summary_id: str) -> List[dict]:
+        """
+        Get campaign events grouped by summary
+
+        :param campaign_id: campaign ID
+        :param summary_id: The summary status
+            Available values: fail, success, info, skipped
+        :return: List of statistics for a campaign
+        """
+        try:
+            response = requests.get(
+                self._url(FW_CAMPAIGN_STATISTICS_EVENTS,
+                          id=campaign_id, summary_id=summary_id),
                 headers=self._headers()
             )
             response.raise_for_status()

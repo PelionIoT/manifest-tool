@@ -123,3 +123,4 @@ the release creation time.
     ```
     twine upload dist/*
     ```
+1. Close fixed issues

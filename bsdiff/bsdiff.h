@@ -1,7 +1,7 @@
 /*-
  * Copyright 2003-2005 Colin Percival
  * Copyright 2012 Matthew Endsley
- * Copyright (c) 2018-2020 Pelion
+ * Copyright (c) 2018-2021 Pelion
  * All rights reserved
  *
  * Redistribution and use in source and binary forms, with or without

@@ -1,6 +1,6 @@
 #!/usr/bin/env bash -e
 # ----------------------------------------------------------------------------
-# Copyright 2019-2020 Pelion
+# Copyright 2019-2021 Pelion
 #
 # SPDX-License-Identifier: Apache-2.0
 #

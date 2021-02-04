@@ -25,7 +25,8 @@ import yaml
 from requests import HTTPError
 
 from manifesttool.dev_tool import defaults
-from manifesttool.dev_tool.actions.create import bump_minor
+from manifesttool.dev_tool.actions.create \
+    import load_cfg_and_get_fw_ver
 from manifesttool.dev_tool.actions.create \
     import register_parser as register_create_parser
 from manifesttool.dev_tool.actions.create import create_dev_manifest
@@ -297,36 +298,8 @@ def entry_point(
         args,
         manifest_version: Type[ManifestAsnCodecBase]
 ):
-
-    cache_dir = args.cache_dir
-
-    if not cache_dir.is_dir():
-        raise AssertionError('Tool cache directory is missing. '
-                             'Execute "init" command to create it.')
-
-    with (cache_dir / defaults.DEV_CFG).open('rt') as fh:
-        dev_cfg = yaml.safe_load(fh)
-    component_name = getattr(args, 'component_name', None)
-    cache_fw_version_file = cache_dir / defaults.UPDATE_VERSION
-    fw_version = args.fw_version
-    if 'v1' not in manifest_version.get_name():
-        if cache_fw_version_file.is_file():
-            with cache_fw_version_file.open('rt') as fh:
-                cached_versions = yaml.safe_load(fh)
-        else:
-            cached_versions = dict()
-        if not fw_version:
-            fw_version = cached_versions.get(component_name, '0.0.1')
-            fw_version = bump_minor(fw_version)
-
-        cached_versions[component_name] = fw_version
-
-        with cache_fw_version_file.open('wt') as fh:
-            yaml.dump(cached_versions, fh)
-        logger.info('FW version: %s', fw_version)
-    else:
-        assert fw_version is not None
-        logger.info('FW version: %d', fw_version)
+    dev_cfg, fw_version = \
+        load_cfg_and_get_fw_ver(args, manifest_version)
 
     update(
         payload_path=args.payload_path,
@@ -339,9 +312,9 @@ def entry_point(
         do_wait=args.wait,
         end_time=time.time() + args.timeout if args.timeout > 0 else 0,
         do_cleanup=not args.no_cleanup,
-        service_config=cache_dir / defaults.CLOUD_CFG,
+        service_config=args.cache_dir / defaults.CLOUD_CFG,
         fw_version=fw_version,
         sign_image=getattr(args, 'sign_image', False),
-        component=component_name,
+        component=getattr(args, 'component_name', None),
         short_url=hasattr(args, 'use_short_url') and args.use_short_url
     )

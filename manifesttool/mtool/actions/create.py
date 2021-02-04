@@ -28,6 +28,7 @@ import yaml
 from manifesttool.mtool.actions import existing_file_path_arg_factory
 from manifesttool.mtool.actions import non_negative_int_arg_factory
 from manifesttool.mtool.actions import semantic_version_arg_factory
+from manifesttool.mtool.actions import semver_as_tuple_arg_factory
 from manifesttool.mtool.asn1 import ManifestAsnCodecBase
 from manifesttool.mtool.asn1.v1 import ManifestAsnCodecV1
 from manifesttool.mtool import ecdsa_helper
@@ -64,13 +65,22 @@ class CreateAction:
         )
 
         if schema_version == 'v1':
-            optional.add_argument(
+            version_group = optional.add_mutually_exclusive_group()
+            version_group.add_argument(
                 '-v', '--fw-version',
                 type=non_negative_int_arg_factory,
                 help='Version number (integer) of the candidate image. '
                      'Default: current epoch time.',
                 default=int(time.time())
             )
+            version_group.add_argument(
+                '--fw-migrate-ver',
+                type=semver_as_tuple_arg_factory,
+                help='Version number of the candidate image in '
+                     'SemVer format. NOTE: Use to upgrade from '
+                     'v1 manifest schema to a later schema.'
+            )
+
             required.add_argument(
                 '--update-certificate',
                 type=existing_file_path_arg_factory,
@@ -150,10 +160,15 @@ class CreateAction:
             input_schema = yaml.safe_load(fh)
         jsonschema.validate(input_cfg, input_schema)
 
+        if getattr(args, 'fw_migrate_ver', None):
+            fw_version = args.fw_migrate_ver[0]
+        else:
+            fw_version = args.fw_version
+
         manifest_bin = cls.do_create(
             pem_key_data=args.key.read(),
             input_cfg=input_cfg,
-            fw_version=args.fw_version,
+            fw_version=fw_version,
             update_certificate=getattr(args, 'update_certificate', None),
             asn1_codec_class=asn1_codec
         )

@@ -27,6 +27,7 @@ from manifesttool.dev_tool import defaults
 from manifesttool.mtool.actions import existing_file_path_arg_factory
 from manifesttool.mtool.actions import non_negative_int_arg_factory
 from manifesttool.mtool.actions import semantic_version_arg_factory
+from manifesttool.mtool.actions import semver_as_tuple_arg_factory
 from manifesttool.mtool.actions.create import CreateAction
 from manifesttool.mtool.asn1 import ManifestAsnCodecBase
 from manifesttool.mtool.payload_format import PayloadFormat
@@ -65,13 +66,23 @@ def register_parser(parser: argparse.ArgumentParser,
         )
 
     if schema_version == 'v1':
-        optional.add_argument(
+
+        version_group = optional.add_mutually_exclusive_group()
+        version_group.add_argument(
             '-v', '--fw-version',
             type=non_negative_int_arg_factory,
             help='Version number (integer) of the candidate image. '
                  'Default: current epoch time.',
             default=int(time.time())
         )
+        version_group.add_argument(
+            '--fw-migrate-ver',
+            type=semver_as_tuple_arg_factory,
+            help='Version number of the candidate image in '
+                 'SemVer format. NOTE: Use to upgrade from '
+                 'v1 manifest schema to a later schema.'
+        )
+
         optional.add_argument(
             '-r', '--priority',
             type=int,
@@ -202,41 +213,57 @@ def bump_minor(sem_ver: str):
     split = str(int(split) + 1)
     return '{}.{}.{}'.format(major, minor, split)
 
+def load_cfg_and_get_fw_ver(
+        args,
+        manifest_version: Type[ManifestAsnCodecBase]
+):
+    if not args.cache_dir.is_dir():
+        raise AssertionError('Tool cache directory is missing. '
+                             'Execute "init" command to create it.')
+
+    component_name = getattr(args, 'component_name', 'MAIN')
+    fw_migrate_ver = getattr(args, 'fw_migrate_ver', None)
+    cache_fw_version_file = args.cache_dir / defaults.UPDATE_VERSION
+    cached_versions = dict()
+    fw_sem_ver = None
+
+    # load dev_cfg
+    with (args.cache_dir / defaults.DEV_CFG).open('rt') as fh:
+        dev_cfg = yaml.safe_load(fh)
+
+    # load cached_versions
+    if 'v1' not in manifest_version.get_name() or fw_migrate_ver:
+        if cache_fw_version_file.is_file():
+            with cache_fw_version_file.open('rt') as fh:
+                cached_versions = yaml.safe_load(fh)
+
+    # set fw_version
+    if 'v1' not in manifest_version.get_name():
+        fw_version = args.fw_version if args.fw_version else \
+            bump_minor(cached_versions.get(component_name, '0.0.1'))
+        fw_sem_ver = fw_version
+        logger.info('FW version: %s', fw_version)
+    elif fw_migrate_ver:
+        fw_version, fw_sem_ver = args.fw_migrate_ver
+        logger.info('FW version: %d (%s)', fw_version, fw_sem_ver)
+    else:
+        fw_version = args.fw_version
+        logger.info('FW version: %d', fw_version)
+
+    # save cached_versions
+    if fw_sem_ver:
+        cached_versions[component_name] = fw_sem_ver
+        with cache_fw_version_file.open('wt') as fh:
+            yaml.dump(cached_versions, fh)
+
+    return dev_cfg, fw_version
+
 def entry_point(
         args,
         manifest_version: Type[ManifestAsnCodecBase]
 ):
-    cache_dir = args.cache_dir
-
-    if not cache_dir.is_dir():
-        raise AssertionError(
-            'Tool cache directory is missing. '
-            'Execute "init" command to create it.')
-
-    with (cache_dir / defaults.DEV_CFG).open('rt') as fh:
-        dev_cfg = yaml.safe_load(fh)
-
-    component_name = getattr(args, 'component_name', None)
-    cache_fw_version_file = cache_dir / defaults.UPDATE_VERSION
-    fw_version = args.fw_version
-    if 'v1' not in manifest_version.get_name():
-        if cache_fw_version_file.is_file():
-            with cache_fw_version_file.open('rt') as fh:
-                cached_versions = yaml.safe_load(fh)
-        else:
-            cached_versions = dict()
-        if not fw_version:
-            fw_version = cached_versions.get(component_name, '0.0.1')
-            fw_version = bump_minor(fw_version)
-
-        cached_versions[component_name] = fw_version
-
-        with cache_fw_version_file.open('wt') as fh:
-            yaml.dump(cached_versions, fh)
-        logger.info('FW version: %s', fw_version)
-    else:
-        assert fw_version is not None
-        logger.info('FW version: %d', fw_version)
+    dev_cfg, fw_version = \
+        load_cfg_and_get_fw_ver(args, manifest_version)
 
     manifest_bin = create_dev_manifest(
         dev_cfg=dev_cfg,

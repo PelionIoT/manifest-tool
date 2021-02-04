@@ -18,8 +18,7 @@
 import argparse
 import re
 from pathlib import Path
-from typing import List
-
+from typing import List, Tuple
 
 def non_negative_int_arg_factory(value: str) -> int:
     """
@@ -50,6 +49,32 @@ def semantic_version_arg_factory(value) -> str:
             '"{}" is not a [0-999].[0-999].[0-999] SemVer'.format(value))
     return value
 
+def _semver_to_int(value: str) -> int:
+    """
+    Helper to construct integer value for SemVer string
+    :param value: input string in SemVer format
+    :return: integer value
+    """
+    # 'x.y.z' -> 0x800xxx000yyy0zzz
+    # Note, result must be same as client
+    #  fota_component_version_semver_to_int
+    major_bits = 16 + 24
+    minor_bits = 16
+    split_bits = 0
+    major, minor, split = value.split('.')
+    return (1 << 63) | \
+           (int(major) << major_bits) | \
+           (int(minor) << minor_bits) | \
+           (int(split) << split_bits)
+
+def semver_as_tuple_arg_factory(value: str) -> Tuple[int, str]:
+    """
+    Construct major, minor, split tuple for an argument
+    :param value: input string
+    :return: tuple of integer value and original str value
+    """
+    value = semantic_version_arg_factory(value)
+    return _semver_to_int(value), value
 
 def existing_file_path_arg_factory(value):
     """

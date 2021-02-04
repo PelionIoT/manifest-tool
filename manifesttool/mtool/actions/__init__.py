@@ -37,20 +37,17 @@ def non_negative_int_arg_factory(value: str) -> int:
             '"{}" is an invalid non-negative integer value'.format(value))
     return prospective
 
-
 def semantic_version_arg_factory(value) -> str:
     """
-        Construct major, minor, split tuple for an argument
-        :param value: input string
-        :return: str
+    Construct major, minor, split tuple for an argument
+    :param value: input string
+    :return: str
     """
     nibble = '([0-9]|[1-9][0-9]{0,2})'
-    pattern = r'\.'.join([nibble, nibble, nibble])
-    match = re.match(pattern, value)
-    if not match:
+    pattern = '^' + r'\.'.join([nibble, nibble, nibble]) + '$'
+    if not re.match(pattern, value):
         raise argparse.ArgumentTypeError(
-            '{} is an invalid SemVer. Expecting following pattern {}'.format(
-                value, pattern))
+            '"{}" is not a [0-999].[0-999].[0-999] SemVer'.format(value))
     return value
 
 

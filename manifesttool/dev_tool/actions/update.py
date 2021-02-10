@@ -22,7 +22,7 @@ from pathlib import Path
 from typing import Type
 
 import yaml
-from requests import HTTPError
+import requests
 
 from manifesttool.dev_tool import defaults
 from manifesttool.dev_tool.actions.create \
@@ -88,8 +88,17 @@ def _manage_campaign(api: pelion.UpdateServiceApi,
     old_state = ''
     try:
         api.campaign_start(campaign_id)
+    except requests.HTTPError as ex:
+        logger.error('Failed to start campaign %s', campaign_id)
+        raise
+    try:
         while end_time == 0 or time.time() < end_time:
-            curr_campaign = api.campaign_get(campaign_id)
+            try:
+                curr_campaign = api.campaign_get(campaign_id)
+            except requests.ConnectionError as ex:
+                logger.debug('Connection error %s', ex)
+                time.sleep(3)
+                continue
             curr_state = curr_campaign['state']
             curr_phase = curr_campaign['phase']
             if starting:
@@ -111,10 +120,10 @@ def _manage_campaign(api: pelion.UpdateServiceApi,
             if old_state != curr_state:
                 logger.info("Campaign state: %s", curr_state)
                 old_state = curr_state
-            time.sleep(1)
+            time.sleep(3)
         logger.error('Campaign timed out')
         raise AssertionError('Campaign timed out')
-    except HTTPError:
+    except requests.HTTPError as ex:
         logger.error('Failed to retrieve campaign state')
         raise
 
@@ -178,7 +187,7 @@ def _finalize(api: pelion.UpdateServiceApi,
                 api.fw_delete(fw_image_id)
             if manifest_path and manifest_path.is_file():
                 manifest_path.unlink()
-    except HTTPError as ex:
+    except requests.HTTPError as ex:
         logger.error('Failed to finalize update campaign')
         logger.debug('Exception %s', ex, exc_info=True)
 

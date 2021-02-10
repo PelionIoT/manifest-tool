@@ -133,6 +133,9 @@ describing the update type.
                           # Will be used to generate a vendor UUID
       # or
       vendor-id: fa6b4a53d5ad5fdfbe9de663e4d41ffe  # Valid vendor UUID
+      custom-data-path: my.custom-data.bin # Vendor's custom data file - 
+                                           # to be passed to the target devices.
+                                           # only relevant for manifest v3 format.
 
     device:  # One of "model-name" or "class-id" fields are expected
       model-name: Smart Slippers  # A device model name

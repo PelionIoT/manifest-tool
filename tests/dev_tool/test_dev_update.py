@@ -402,7 +402,8 @@ def _common(happy_day_data, action, payload_path):
         ['update-v1']
     ]
 )
-def test_cli_update_delta_happy_day(happy_day_data, action, requests_mock, caplog):
+def test_cli_update_delta_happy_day(happy_day_data, action, requests_mock, timeless, caplog):
+    _ = timeless
     mock_update_apis(requests_mock)
 
     assert _common(
@@ -430,10 +431,11 @@ def test_cli_update_delta_happy_day(happy_day_data, action, requests_mock, caplo
         ['update-v1']
     ]
 )
-def test_cli_update_full_timeout(happy_day_data, action, requests_mock, caplog):
+def test_cli_update_full_timeout(happy_day_data, action, requests_mock, timeless, caplog):
     """
     Campaign timeout case - campaign never reaches stopped phase
     """
+    _ = timeless
     mock_update_apis(requests_mock, last_phase_in_test=CampaignFsm.PHASE_ACTIVE)
     assert _common(
         happy_day_data,
@@ -450,10 +452,11 @@ def test_cli_update_full_timeout(happy_day_data, action, requests_mock, caplog):
         ['update-v1']
     ]
 )
-def test_cli_update_conflict(happy_day_data, action, requests_mock, caplog):
+def test_cli_update_conflict(happy_day_data, action, requests_mock, timeless, caplog):
     """
     Campaign conflict - campaign will be created in draft state
     """
+    _ = timeless
     mock_update_apis(requests_mock, last_phase_in_test=CampaignFsm.PHASE_DRAFT)
     assert _common(
         happy_day_data,
@@ -471,10 +474,11 @@ def test_cli_update_conflict(happy_day_data, action, requests_mock, caplog):
         ['update-v1']
     ]
 )
-def test_cli_update_failed_device(happy_day_data, action, requests_mock, caplog):
+def test_cli_update_failed_device(happy_day_data, action, requests_mock, timeless, caplog):
     """
     Campaign conflict - campaign will be created in draft state
     """
+    _ = timeless
     mock_update_apis(requests_mock, deployment_state='failed')
     assert _common(
         happy_day_data,

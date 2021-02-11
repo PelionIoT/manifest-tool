@@ -19,6 +19,7 @@ import contextlib
 import os
 import uuid
 from pathlib import Path
+import time
 
 import pytest
 
@@ -27,11 +28,23 @@ from manifesttool.delta_tool import delta_tool
 from manifesttool.dev_tool import defaults
 from manifesttool.dev_tool.actions import init as dev_init
 
-
 @pytest.fixture(scope="session")
 def happy_day_data(tmp_path_factory):
     yield data_generator(tmp_path_factory, size=512)
 
+@pytest.fixture
+def timeless(monkeypatch):
+
+    timeless.cur_time = time.time()
+
+    def sleep_mock(seconds):
+        timeless.cur_time += seconds
+
+    def time_mock() -> float:
+        return timeless.cur_time
+
+    monkeypatch.setattr(time, 'sleep', sleep_mock)
+    monkeypatch.setattr(time, 'time', time_mock)
 
 def data_generator(tmp_path_factory, size):
     tmp_path = tmp_path_factory.mktemp("data")

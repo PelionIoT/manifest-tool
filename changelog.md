@@ -1,5 +1,12 @@
 # Changelog
 
+## 2.2.0
+- Changes to `manifest-dev-tool`:
+  - Improve timeout and connection error handling.
+  - Add skipped and failed reasons to campaign summary.
+- Add `--fw-migrate-ver` option to v1 commands. This lets you set a semantic version for the firmware when upgrading from Device Management Client 4.7.1 and lower to Device Management Client 4.8.0 and higher, which supports manifest schema v3.
+- Improve the tool help and the `README.md` file.
+
 ## 2.1.1
 - Remove support for Python 3.5.
 - In v1 schema, allow creating manifests without the `priority` field.

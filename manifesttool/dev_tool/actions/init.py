@@ -21,6 +21,7 @@ import logging
 import time
 import uuid
 from pathlib import Path
+import shutil
 
 import yaml
 from cryptography import x509
@@ -135,6 +136,17 @@ def register_parser(parser: argparse.ArgumentParser):
         default=uuid.uuid4()
     )
 
+    parser.add_argument(
+        '--update-certificate',
+        help='Path to the update certificate file.',
+        type=Path
+    )
+    parser.add_argument(
+        '--key',
+        help='Path to the PEM format private key file.',
+        type=Path
+    )
+
 
 def chunks(arr, num_of_elements):
     for i in range(0, len(arr), num_of_elements):
@@ -155,7 +167,7 @@ def generate_update_default_resources_c(
         vendor_id: uuid.UUID,
         class_id: uuid.UUID,
         private_key_file: Path,
-        certificate_file: Path
+        cert_file: Path
 ):
     """
     Generate update resources C source file for developer convenience.
@@ -164,13 +176,13 @@ def generate_update_default_resources_c(
     :param vendor_id: vendor UUID
     :param class_id: class UUID
     :param private_key_file: private key file
-    :param certificate_file: update certificate file
+    :param cert_file: update certificate file
     """
 
     vendor_id_str = pretty_print(vendor_id.bytes)
     class_id_str = pretty_print(class_id.bytes)
 
-    cert_data = certificate_file.read_bytes()
+    cert_data = cert_file.read_bytes()
 
     cert_str = pretty_print(cert_data)
 
@@ -195,16 +207,52 @@ def generate_update_default_resources_c(
     logger.info('generated update source %s', c_source)
 
 
+def import_credentials(
+        origin_key_file: Path,
+        origin_cert_file: Path,
+        dest_key_file: Path,
+        dest_cert_file: Path
+):
+    """
+    Import developer credentials
+
+    :param origin_key_file - path to .pem signing key file
+    :param origin_cert_file - path to .der public key certificate file
+    :param dest_key_file - destination file path
+    :param dest_cert_file - destination file path
+    """
+
+    logger.info('importing dev-credentials')
+
+    if origin_key_file != dest_key_file:
+        shutil.copy(origin_key_file, dest_key_file)
+        logger.info(
+            'imported %s to %s',
+            origin_key_file,
+            dest_key_file
+        )
+
+    if origin_cert_file != dest_cert_file:
+        shutil.copy(origin_cert_file, dest_cert_file)
+        logger.info(
+            'imported %s to %s',
+            origin_cert_file,
+            dest_cert_file
+        )
+
+    logger.info('dev-credentials - imported')
+
+
 def generate_credentials(
         key_file: Path,
-        certificate_file: Path,
+        cert_file: Path,
         cred_valid_time: int
 ):
     """
     Generate developer credentials
 
-    :param key_file - .pem signing key file
-    :param certificate_file - .der public key certificate file
+    :param key_file - path to .pem signing key file
+    :param cert_file - path to .der public key certificate file
     :param cred_valid_time - x.509 certificate validity period
     """
 
@@ -276,11 +324,11 @@ def generate_credentials(
         )
         logger.info('created %s', key_file)
 
-        certificate_file.parent.mkdir(parents=True, exist_ok=True)
-        certificate_file.write_bytes(
+        cert_file.parent.mkdir(parents=True, exist_ok=True)
+        cert_file.write_bytes(
             cert.public_bytes(serialization.Encoding.DER))
 
-        logger.info('created %s', certificate_file)
+        logger.info('created %s', cert_file)
 
         logger.info('dev-credentials - generated')
 
@@ -289,14 +337,14 @@ def generate_credentials(
 
         if key_file.is_file():
             key_file.unlink()
-        if certificate_file.is_file():
-            certificate_file.unlink()
+        if cert_file.is_file():
+            cert_file.unlink()
         raise
 
 
 def generate_developer_config(
         key_file: Path,
-        certificate_file: Path,
+        cert_file: Path,
         config: Path,
         vendor_id: uuid.UUID,
         class_id: uuid.UUID
@@ -304,7 +352,7 @@ def generate_developer_config(
 
     cfg_data = {
         'key_file': key_file.as_posix(),
-        'certificate': certificate_file.as_posix(),
+        'certificate': cert_file.as_posix(),
         'class-id': class_id.bytes.hex(),
         'vendor-id': vendor_id.bytes.hex(),
     }
@@ -333,7 +381,10 @@ def generate_service_config(api_key: str, api_url: str, api_config_path: Path):
         yaml.safe_dump(cfg, fh)
 
 
-def entry_point(args):
+def entry_point(
+        args,
+        parser: argparse.ArgumentParser
+):
 
     cache_dir = args.cache_dir
     cache_dir.mkdir(parents=True, exist_ok=True)
@@ -341,15 +392,31 @@ def entry_point(args):
     vendor_id = args.vendor_id
     class_id = args.class_id
 
-    generate_credentials(
-        key_file=cache_dir / defaults.UPDATE_PRIVATE_KEY,
-        certificate_file=cache_dir / defaults.UPDATE_PUBLIC_KEY_CERT,
-        cred_valid_time=365 * 20  # years
-    )
+    import_key = getattr(args, 'key', None)
+    import_cert = getattr(args, 'update_certificate', None)
+
+    if import_key or import_cert:
+        if not import_key or not import_cert:
+            parser.error(
+                'require --key and --update-certificate '
+                'or none of those.'
+            )
+        import_credentials(
+            origin_key_file=import_key,
+            origin_cert_file=import_cert,
+            dest_key_file=cache_dir / defaults.UPDATE_PRIVATE_KEY,
+            dest_cert_file=cache_dir / defaults.UPDATE_PUBLIC_KEY_CERT
+        )
+    else:
+        generate_credentials(
+            key_file=cache_dir / defaults.UPDATE_PRIVATE_KEY,
+            cert_file=cache_dir / defaults.UPDATE_PUBLIC_KEY_CERT,
+            cred_valid_time=365 * 20  # years
+        )
 
     generate_developer_config(
         key_file=cache_dir / defaults.UPDATE_PRIVATE_KEY,
-        certificate_file=cache_dir / defaults.UPDATE_PUBLIC_KEY_CERT,
+        cert_file=cache_dir / defaults.UPDATE_PUBLIC_KEY_CERT,
         config=cache_dir / defaults.DEV_CFG,
         vendor_id=vendor_id,
         class_id=class_id
@@ -360,7 +427,7 @@ def entry_point(args):
         vendor_id=vendor_id,
         class_id=class_id,
         private_key_file=cache_dir / defaults.UPDATE_PRIVATE_KEY,
-        certificate_file=cache_dir / defaults.UPDATE_PUBLIC_KEY_CERT
+        cert_file=cache_dir / defaults.UPDATE_PUBLIC_KEY_CERT
     )
     api_key = args.access_key
     if not api_key and hasattr(args, 'gw_preset') and args.gw_preset:

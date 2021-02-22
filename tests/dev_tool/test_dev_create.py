@@ -40,7 +40,7 @@ def test_cli_developer(happy_day_data, action):
     vendor_id = uuid.uuid4()
     generate_developer_config(
         key_file=happy_day_data['key_file'],
-        certificate_file=happy_day_data['certificate_file'],
+        cert_file=happy_day_data['certificate_file'],
         config=dev_cfg,
         class_id = class_id,
         vendor_id = vendor_id

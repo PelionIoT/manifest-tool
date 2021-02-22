@@ -28,7 +28,7 @@ def test_generate_developer_config_happy_day(tmp_path):
     certificate_file = tmp_path / 'dev.cert.der'
     generate_credentials(
         key_file=key_file,
-        certificate_file=certificate_file,
+        cert_file=certificate_file,
         cred_valid_time=8
     )
     config = tmp_path / 'my_cfg.yaml'
@@ -36,7 +36,7 @@ def test_generate_developer_config_happy_day(tmp_path):
     vendor_id = uuid.uuid4()
     generate_developer_config(
         key_file=key_file,
-        certificate_file=certificate_file,
+        cert_file=certificate_file,
         config=config,
         class_id=class_id,
         vendor_id=vendor_id

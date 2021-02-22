@@ -47,7 +47,7 @@ def happy_day_data(
     manifest_version = request.param  # Type[ManifestAsnCodecBase]
     generate_credentials(
         key_file=key_file,
-        certificate_file=certificate_file,
+        cert_file=certificate_file,
         cred_valid_time=8
     )
     fw_file = tmp_path / 'fw.bin'
@@ -189,7 +189,7 @@ def test_parse_and_verify_bad_signature(tmp_path, happy_day_data):
     certificate_file = tmp_path / 'dev.cert.der'
     generate_credentials(
         key_file=key_file,
-        certificate_file=certificate_file,
+        cert_file=certificate_file,
         cred_valid_time=8
     )
     with pytest.raises(AssertionError) as e:

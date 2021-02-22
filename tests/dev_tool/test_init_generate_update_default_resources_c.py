@@ -26,7 +26,7 @@ def test_generate_update_default_resources_c_happy_day(tmp_path):
     certificate_file = tmp_path / 'dev.cert.der'
     generate_credentials(
         key_file=key_file,
-        certificate_file=certificate_file,
+        cert_file=certificate_file,
         cred_valid_time=8
     )
     c_source = tmp_path / 'my_source.c'
@@ -38,7 +38,7 @@ def test_generate_update_default_resources_c_happy_day(tmp_path):
         vendor_id=vendor_id,
         class_id=class_id,
         private_key_file=key_file,
-        certificate_file=certificate_file,
+        cert_file=certificate_file,
     )
     assert c_source.is_file()
     gen_data = c_source.read_text()

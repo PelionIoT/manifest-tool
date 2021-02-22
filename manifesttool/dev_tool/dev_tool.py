@@ -129,7 +129,7 @@ def entry_point(argv=sys.argv[1:]):  # pylint: disable=dangerous-default-value
         action = DevActions(args.action)
 
         if action == DevActions.INIT:
-            init.entry_point(args)
+            init.entry_point(args, parser)
         # ---------------------------------------------------------------------
         elif action == DevActions.CREATE:
             create.entry_point(args, ManifestAsnCodecV3)

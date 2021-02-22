@@ -24,7 +24,7 @@ from manifesttool.dev_tool.actions.init import generate_credentials
 def test_happy_day(tmp_path):
     generate_credentials(
         key_file=tmp_path / 'dev.key.pem',
-        certificate_file=tmp_path / 'dev.cert.der',
+        cert_file=tmp_path / 'dev.cert.der',
         cred_valid_time=8
     )
 
@@ -34,14 +34,14 @@ def test_overwriting_keys(tmp_path):
     certificate_file = tmp_path / 'dev.cert.der'
     generate_credentials(
         key_file=key_file,
-        certificate_file=certificate_file,
+        cert_file=certificate_file,
         cred_valid_time=8
     )
     key_digest = digest_file(key_file)
     cert_digest = digest_file(certificate_file)
     generate_credentials(
         key_file=key_file,
-        certificate_file=certificate_file,
+        cert_file=certificate_file,
         cred_valid_time=8
     )
     assert key_digest != digest_file(key_file)

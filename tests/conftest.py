@@ -52,7 +52,7 @@ def data_generator(tmp_path_factory, size):
     certificate_file = tmp_path / 'dev.cert.der'
     dev_init.generate_credentials(
         key_file=key_file,
-        certificate_file=certificate_file,
+        cert_file=certificate_file,
         cred_valid_time=8
     )
     bsdiff_version = armbsdiff.get_version().encode('utf-8')
@@ -77,7 +77,7 @@ def data_generator(tmp_path_factory, size):
     dev_cfg = tmp_path / 'dev.cfg.yaml'
     dev_init.generate_developer_config(
         key_file=key_file,
-        certificate_file=certificate_file,
+        cert_file=certificate_file,
         config=dev_cfg,
         class_id=class_id,
         vendor_id=vendor_id

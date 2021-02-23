@@ -91,7 +91,7 @@ class CreateAction:
             required.add_argument(
                 '-v', '--fw-version',
                 type=semantic_version_arg_factory,
-                help='Version number of the candidate image in SemVer format.',
+                help='Version number of the candidate image in SemVer format. Minimum 0.0.2, maximum 999.999.999.',
                 required=True
             )
 

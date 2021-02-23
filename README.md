@@ -194,7 +194,7 @@ describing the update type.
         --output my.manifest.bin
     ```
 
-Please note that `fw-version` numbers can be between 0.0.2 and 999.999.999.
+Please note that `fw-version` numbers can be between 0.0.1 and 999.999.999. The version number must be bigger than the one currently installed on the device.
 
 #### `manifest-tool create-v1`
 

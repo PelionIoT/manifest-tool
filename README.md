@@ -194,6 +194,8 @@ describing the update type.
         --output my.manifest.bin
     ```
 
+Please note that `fw-version` numbers can be between 0.0.2 and 999.999.999.
+
 #### `manifest-tool create-v1`
 
 Older versions of Device Management update client use manifest

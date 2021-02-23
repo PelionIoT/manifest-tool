@@ -6,6 +6,7 @@ This document explains how to install and use the manifest tool.
 - [Installing the manifest tool](#installing-the-manifest-tool)
 - [Using the manifest tool](#using-the-manifest-tool)
 - [Developer workflow example](#developer-workflow-example)
+- [Upgrading from manifest tool v1.5.2 and lower](#upgrading-from-manifest-tool-v152-and-lower)
 - [Troubleshooting](#troubleshooting)
 
 <span class="notes">**Note:** Please see the [changelog](./changelog.md) for the list of all changes between release versions.</span>
@@ -133,7 +134,7 @@ describing the update type.
                           # Will be used to generate a vendor UUID
       # or
       vendor-id: fa6b4a53d5ad5fdfbe9de663e4d41ffe  # Valid vendor UUID
-      custom-data-path: my.custom-data.bin # Vendor's custom data file - 
+      custom-data-path: my.custom-data.bin # Vendor's custom data file -
                                            # to be passed to the target devices.
                                            # only relevant for manifest v3 format.
 
@@ -369,10 +370,10 @@ Initializes the developer environment.
   ```yaml
   usa:
       host: https://api.us-east-1.mbedcloud.com
-      api_key: ak_SOME_VERY_SECRET_API_KEY
+      access_key: ak_SOME_VERY_SECRET_ACCESS_KEY
   japan:
       host: https://api.ap-northeast-1.mbedcloud.com
-      api_key: ak_SOME_OTHER_VERY_SECRET_API_KEY
+      access_key: ak_SOME_OTHER_VERY_SECRET_ACCESS_KEY
   ```
 
   To obtain an access key and API host URL, in Device Management Portal, click **Access Management** > **Access keys** > **New access key**. Limit access to the `.pelion-dev-presets.yaml` file to your user only.
@@ -477,7 +478,7 @@ v1-format manifest.
 1. From within the repository, execute:
 
     ```
-    manifest-dev-tool init -a $MY_API_KEY
+    manifest-dev-tool init -a $MY_ACCESS_KEY
     ```
     The tool initializes the developer environment and generates a `update_default_resources.c` file.
 1. Build the firmware image for your device.
@@ -495,6 +496,32 @@ v1-format manifest.
     ```
     manifest-dev-tool update --payload-path <new mbed-cloud-client-example_update.bin or delta.bin> --wait-for-completion
     ```
+
+## Upgrading from manifest tool v1.5.2 and lower
+
+Manifest tool v2.0.0 is not compatible with previous versions.
+
+This section explains how to migrate your existing configuration and credentials for use with manifest-tool version 2.2.0 and higher.
+
+* Initializing the development environment using previously-defined configuration and credentials
+
+    Run the [`manifest-dev-tool init`](#manifest-dev-tool-init) command as follow:
+
+    ```
+    manifest-dev-tool init --api-url <API URL> \
+                           --access-key <Access key> \
+                           --vendor-id <Vendor ID> \
+                           --class-id <Class ID> \
+                           --key <private key path> \
+                           --update-certificate <certificate path>
+    ```
+    Where `<API URL>` and `<Access key>` are the values from the previous `.mbed_cloud_config.json` file, `<Vendor ID>` and `<Class ID>` are the values from the previous `.manifest_tool.json` file, and `<private key path>` and `<certificate path>` are the paths to your private key and update certificate, respectively.
+
+    When the command finishes successfully, you can remove the previously-created files.
+
+* Adapting the create manifest configuration
+
+    If you use `manifest-tool` (not `manifest-dev-tool`), create a new configuration file, as described in [manifest-tool create](#manifest-tool-create), and copy the relevant information from your existing `.manifest_tool.json` file.
 
 ## Troubleshooting
 

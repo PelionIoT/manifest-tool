@@ -85,7 +85,7 @@ def data_generator(tmp_path_factory, size):
 
     api_config_path = tmp_path / 'dev.cloud_cfg.yaml'
     dev_init.generate_service_config(
-        api_key='sdsdadadadsdadasdadsadasdas',
+        access_key='sdsdadadadsdadasdadsadasdas',
         api_url=defaults.API_GW,
         api_config_path=api_config_path
     )

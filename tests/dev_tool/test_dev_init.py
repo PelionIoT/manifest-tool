@@ -31,7 +31,7 @@ def test_cli(tmp_path):
     key = cache_dir / defaults.UPDATE_PRIVATE_KEY
     api_cfg = cache_dir / defaults.CLOUD_CFG
 
-    dummy_api_key = '456321789541515'
+    dummy_access_key = '456321789541515'
     dummy_api_url = 'https://i.am.tired.of.writing.tests.com'
 
     cmd = [
@@ -51,7 +51,7 @@ def test_cli(tmp_path):
 
     cmd = [
         'init',
-        '--api-key', dummy_api_key,
+        '--access-key', dummy_access_key,
         '--api-url', dummy_api_url
     ]
 
@@ -74,5 +74,5 @@ def test_cli(tmp_path):
 
     with api_cfg.open('rb') as fh:
         api_cfg_data = yaml.safe_load(fh)
-    assert dummy_api_key == api_cfg_data['api_key']
+    assert dummy_access_key == api_cfg_data['access_key']
     assert dummy_api_url == api_cfg_data['host']

@@ -364,17 +364,25 @@ def generate_developer_config(
     logger.info('generated developer config file %s', config)
 
 
-def generate_service_config(api_key: str, api_url: str, api_config_path: Path):
+def generate_service_config(
+    access_key: str,
+    api_url: str,
+    api_config_path: Path
+):
     cfg = dict()
 
-    if api_key is None or api_url is None:
+    if access_key is None or api_url is None:
         return
 
     if api_config_path.is_file():
         with api_config_path.open('rt') as fh:
             cfg = yaml.safe_load(fh)
+            # if generated with previous versions
+            # delete api_key
+            if 'api_key' in cfg:
+                cfg.pop('api_key')
 
-    cfg['api_key'] = api_key
+    cfg['access_key'] = access_key
     cfg['host'] = api_url
 
     with api_config_path.open('wt') as fh:
@@ -429,21 +437,25 @@ def entry_point(
         private_key_file=cache_dir / defaults.UPDATE_PRIVATE_KEY,
         cert_file=cache_dir / defaults.UPDATE_PUBLIC_KEY_CERT
     )
-    api_key = args.access_key
-    if not api_key and hasattr(args, 'gw_preset') and args.gw_preset:
-        api_key = defaults.PELION_GW[args.gw_preset].get('api_key')
+    access_key = args.access_key
+    if not access_key and hasattr(args, 'gw_preset') and args.gw_preset:
+        access_key = \
+            defaults.PELION_GW[args.gw_preset].get('access_key')
+        if not access_key:
+            access_key = \
+                defaults.PELION_GW[args.gw_preset].get('api_key')
 
     api_url = args.api_url
     if hasattr(args, 'gw_preset') and args.gw_preset:
         api_url = defaults.PELION_GW[args.gw_preset].get('host')
 
     generate_service_config(
-        api_key=api_key,
+        access_key=access_key,
         api_url=api_url,
         api_config_path=cache_dir / defaults.CLOUD_CFG
     )
 
-    if not api_key:
+    if not access_key:
         logger.warning('Access key not provided, so assisted '
                        'campaign management will not be available')
 

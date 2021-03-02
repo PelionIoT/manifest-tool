@@ -65,15 +65,15 @@ ID = NewType('ID', str)
 Phase = NewType('Phase', str)
 
 class UpdateServiceApi:
-    def __init__(self, host: URL, api_key: str):
+    def __init__(self, host: URL, access_key: str):
         """
         Create REST API provider for Update Service APIs
         :param host: Pelion service URL
-        :param api_key: account API key
+        :param access_key: account access key
         """
         self._host = host
         self._default_headers = {
-            'Authorization': 'Bearer {}'.format(api_key)
+            'Authorization': 'Bearer {}'.format(access_key)
         }
 
     def _url(self, api, **kwargs) -> str:

@@ -221,7 +221,7 @@ def update(
     config = load_service_config(service_config)
 
     api = pelion.UpdateServiceApi(
-        host=config['host'], api_key=config['api_key'])
+        host=config['host'], access_key=config['access_key'])
     manifest_path = None
     fw_image_id = None
     manifest_id = None
@@ -296,7 +296,11 @@ def load_service_config(service_config):
     if service_config.is_file():
         with service_config.open('rt') as fh:
             config = yaml.safe_load(fh)
+            if 'host' in config and 'access_key' in config:
+                return config
             if 'host' in config and 'api_key' in config:
+                # replace api_key with access_key for backward compatibility
+                config['access_key'] = config.pop('api_key')
                 return config
     raise AssertionError('Pelion service configurations (URL and access key) '
                          'are not provided for assisted campaign '

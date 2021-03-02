@@ -56,14 +56,14 @@ def _semver_to_int(value: str) -> int:
     :param value: input string in SemVer format
     :return: integer value
     """
-    # 'x.y.z' -> 0x800xxx000yyy0zzz
+    # 'x.y.z' -> 0x008xxx000yyy0zzz
     # Note, result must be same as client
     #  fota_component_version_semver_to_int
     major_bits = 16 + 24
     minor_bits = 16
     split_bits = 0
     major, minor, split = value.split('.')
-    return (1 << 63) | \
+    return (1 << 55) | \
            (int(major) << major_bits) | \
            (int(minor) << minor_bits) | \
            (int(split) << split_bits)

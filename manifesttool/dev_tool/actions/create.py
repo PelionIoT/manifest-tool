@@ -85,8 +85,8 @@ def register_parser(parser: argparse.ArgumentParser,
 
         optional.add_argument(
             '-r', '--priority',
-            type=int,
-            help='Set update priority.'
+            type=non_negative_int_arg_factory,
+            help='Set update priority >=0.'
         )
     else:
         optional.add_argument(

@@ -125,6 +125,16 @@ class CreateAction:
 
         codec = asn1_codec_class()
 
+        # validate input against manifest-input-schema.json
+        schema_path = MTOOL_PATH / 'manifest-input-schema.json'
+        with schema_path.open('rb') as fh:
+            input_schema = yaml.safe_load(fh)
+            if isinstance(codec, ManifestAsnCodecV1):
+                # priority field is optional for v1
+                # delete it from required list
+                input_schema['required'].remove('priority')
+            jsonschema.validate(input_cfg, input_schema)
+
         raw_signature = True
         if isinstance(codec, ManifestAsnCodecV1):
             raw_signature = False
@@ -157,11 +167,8 @@ class CreateAction:
             args: argparse.Namespace,
             asn1_codec: Type[ManifestAsnCodecBase]
     ) -> None:
+
         input_cfg = yaml.safe_load(args.config)
-        schema_path = MTOOL_PATH / 'manifest-input-schema.json'
-        with schema_path.open('rb') as fh:
-            input_schema = yaml.safe_load(fh)
-        jsonschema.validate(input_cfg, input_schema)
 
         if getattr(args, 'fw_migrate_ver', None):
             fw_version = args.fw_migrate_ver[0]

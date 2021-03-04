@@ -1,7 +1,8 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
   "title": "Manifest-tool input validator",
-  "description": "This schema is used to validate the input arguments for manifest-tool",
+  "description": "This schema is used to validate the manifest-tool configuration file.",
+  "$comment": "for manifest v1, 'priority' is removed in the code to have it optional.",
   "type": "object",
   "required": [
     "vendor",
@@ -50,8 +51,9 @@
       ]
     },
     "priority": {
-      "description": "Update priority",
-      "type": "integer"
+      "description": "Update priority. optional for manifest v1.",
+      "type": "integer",
+      "minimum": 0
     },
     "payload": {
       "type": "object",

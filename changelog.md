@@ -4,7 +4,11 @@
 - Changes to `manifest-dev-tool`:
   - Improve timeout and connection error handling.
   - Add skipped and failed reasons to campaign summary.
+  - Add `--key` and `--update-certificate` options to `init` command to initialize the development environment with existing credentials.
 - Add `--fw-migrate-ver` option to v1 commands. This lets you set a semantic version for the firmware when upgrading from Device Management Client 4.7.1 and lower to Device Management Client 4.8.0 and higher, which supports manifest schema v3.
+- Improve manifest configuration file validation.
+- Use `access_key` in configuration files but continue to accept `api_key` for backward compatibility.
+- Set minimum SemVer value to `0.0.1`.
 - Improve the tool help and the `README.md` file.
 
 ## 2.1.1

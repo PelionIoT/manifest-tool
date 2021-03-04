@@ -46,7 +46,7 @@ def semantic_version_arg_factory(value) -> str:
     pattern = '^' + r'\.'.join([nibble, nibble, nibble]) + '$'
     if not re.match(pattern, value) or value == '0.0.0':
         raise argparse.ArgumentTypeError(
-            '"{}" is not a valid SemVer format.'
+            '"{}" is not a valid SemVer format. '
             'Min. 0.0.1, max 999.999.999'.format(value))
     return value
 

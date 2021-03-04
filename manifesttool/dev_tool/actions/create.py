@@ -92,8 +92,8 @@ def register_parser(parser: argparse.ArgumentParser,
         optional.add_argument(
             '-v', '--fw-version',
             type=semantic_version_arg_factory,
-            help='Version number of the candidate image in SemVer format.'
-                 'Min. 0.0.1, max 999.999.999.'
+            help='Version number of the candidate image in SemVer format. '
+                 'Min. 0.0.1, max 999.999.999. '
                  'Must be bigger than the version currently '
                  'in the device(s).',
         )
@@ -121,7 +121,7 @@ def register_parser(parser: argparse.ArgumentParser,
         optional.add_argument(
             '-r', '--priority',
             type=non_negative_int_arg_factory,
-            help='Set update priority >=0. [Default: 0]',
+            help='Set update priority >=0. [Default: 0].',
             default=0
         )
 

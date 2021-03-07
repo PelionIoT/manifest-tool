@@ -211,10 +211,15 @@ def create_dev_manifest(
     )
     return manifest_bin
 
-def bump_minor(sem_ver: str):
-    major, minor, split = sem_ver.split('.')
-    split = str(int(split) + 1)
-    return '{}.{}.{}'.format(major, minor, split)
+def bump_version(sem_ver: str):
+    nibbles = sem_ver.split('.')
+    for i in range(2, -1, -1):
+        nibble = int(nibbles[i]) + 1
+        if nibble <= 999:
+            nibbles[i] = nibble
+            break
+        nibbles[i] = 0
+    return semantic_version_arg_factory('{}.{}.{}'.format(*nibbles))
 
 def load_cfg_and_get_fw_ver(
         args,
@@ -227,7 +232,7 @@ def load_cfg_and_get_fw_ver(
     component_name = getattr(args, 'component_name', 'MAIN')
     fw_migrate_ver = getattr(args, 'fw_migrate_ver', None)
     cache_fw_version_file = args.cache_dir / defaults.UPDATE_VERSION
-    cached_versions = dict()
+    cached_versions = None
     fw_sem_ver = None
 
     # load dev_cfg
@@ -240,10 +245,14 @@ def load_cfg_and_get_fw_ver(
             with cache_fw_version_file.open('rt') as fh:
                 cached_versions = yaml.safe_load(fh)
 
+    # make sure cached_versions is not None
+    if cached_versions is None:
+        cached_versions = dict()
+
     # set fw_version
     if 'v1' not in manifest_version.get_name():
         fw_version = args.fw_version if args.fw_version else \
-            bump_minor(cached_versions.get(component_name, '0.0.1'))
+            bump_version(cached_versions.get(component_name, '0.0.1'))
         fw_sem_ver = fw_version
         logger.info('FW version: %s', fw_version)
     elif fw_migrate_ver:

@@ -564,3 +564,7 @@ This section explains how to migrate your existing configuration and credentials
 
     **Solution:** Execute `manifest-dev-tool update ...
     --wait-for-completion` with the `--no-cleanup` flag.
+
+* **Device does not support this manifest schema**
+
+   **Solution:** Your device does not support the created manifest schema. Switch from the `create` or` update` command to the `create-v1` or` update-v1` command respectively and vice versa.

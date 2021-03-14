@@ -35,7 +35,7 @@ armbsdiff = Extension(
 )
 
 with open('requirements.txt', 'rt') as fh:
-    pdmfota_requirements = fh.readlines()
+    tool_requirements = fh.readlines()
 
 setup(
     name='manifest-tool',
@@ -46,6 +46,7 @@ setup(
     url='https://github.com/PelionIoT/manifest-tool',
     author='Pelion',
     author_email='pdm-support@pelion.com',
+    license='Apache 2.0',
     packages=find_packages(exclude=['tests']),
     zip_safe=False,
     entry_points={
@@ -57,6 +58,6 @@ setup(
     },
     python_requires='>=3.6.0',
     include_package_data=True,
-    install_requires=pdmfota_requirements,
+    install_requires=tool_requirements,
     ext_modules=[armbsdiff]
 )

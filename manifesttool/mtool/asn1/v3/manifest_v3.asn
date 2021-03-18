@@ -68,7 +68,7 @@ ManifestSchema DEFINITIONS IMPLICIT TAGS ::= BEGIN
     },
     manifest Manifest,
 
-    -- raw ECDSA signature (r||s) over installed payload
+    -- raw ECDSA signature (r||s) over Manifest
     signature OCTET STRING
   }
 

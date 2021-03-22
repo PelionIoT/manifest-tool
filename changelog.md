@@ -10,6 +10,7 @@
 - Use `access_key` in configuration files but continue to accept `api_key` for backward compatibility.
 - Set minimum SemVer value to `0.0.1`.
 - Improve the tool help and the `README.md` file.
+- Update license and copyrights information.
 
 ## 2.1.1
 - Remove support for Python 3.5.

@@ -109,11 +109,9 @@ the release creation time.
 1. Update `requirements.txt` to dependencies latest version.
 1. Bump the packege [version](./manifesttool/__init__.py).
 1. Run `tox` on Windows, Linux and Mac.
-1. Run `build_manylinux_wheels.sh` on Linux.
 1. Create release on GitHub.
-1. Gather wheels and tar.gz into one dist folder:
-    - On Linux - `wheelhouse` folder
-    - On Mac and Windows - `dist` folder
+1. Run `build_manylinux_wheels.sh` on Linux.
+1. Gather wheels and tar.gz from all `dist` folder into one dist folder.
 1. Install `twine`: `pip install twine`.
 1. Publish to https://test.pypi.org and check:
     ```

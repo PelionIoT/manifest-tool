@@ -35,10 +35,10 @@ from manifesttool.mtool import ecdsa_helper
 
 MTOOL_PATH = Path(__file__).resolve().parent.parent
 
+logger = logging.getLogger('manifest-tool-create')
+
 
 class CreateAction:
-
-    logger = logging.getLogger('manifest-tool-create')
 
     @staticmethod
     def register_parser_args(
@@ -159,7 +159,14 @@ class CreateAction:
         signature = ecdsa_helper.ecdsa_sign(der_manifest, pem_key_data)
         if raw_signature:
             signature = ecdsa_helper.signature_der_to_raw(signature)
-        return codec.get_der_signed_resource(signature)
+        manifest_bin = codec.get_der_signed_resource(signature)
+
+        logger.info('Attention: When updating Mbed OS devices,'
+                    ' candidate features must match the device\'s'
+                    ' bootloader features. Incompatibility may'
+                    ' result in damaged devices.')
+
+        return manifest_bin
 
     @classmethod
     def entry_point(

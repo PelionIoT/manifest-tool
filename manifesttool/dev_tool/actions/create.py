@@ -197,6 +197,8 @@ def create_dev_manifest(
     if vendor_data_path:
         input_cfg['vendor']['custom-data-path'] = vendor_data_path.as_posix()
 
+    # logger.debug('input_cfg=\n%s', yaml.dump(input_cfg))
+
     manifest_bin = CreateAction.do_create(
         pem_key_data=key_data,
         input_cfg=input_cfg,

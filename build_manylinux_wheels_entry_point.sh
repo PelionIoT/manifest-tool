@@ -19,9 +19,6 @@
 
 set -e -u -x
 
-git --version
-
-
 mkdir /work
 cd /work
 
@@ -45,10 +42,12 @@ for PYBIN in /opt/python/cp3*/bin; do
     if [[ $PYBIN == /opt/python/cp35-cp35m/bin ]]; then
         continue
     fi
+    if [[ $PYBIN == /opt/python/cp310-cp310/bin ]]; then
+        continue
+    fi
     echo '------------------------------------------------------------'
     echo "${PYBIN}"
     echo '------------------------------------------------------------'
-    "${PYBIN}/pip" install -r requirements.txt
     "${PYBIN}/pip" wheel . --no-deps -w wheelhouse/$PLAT
 done
 
@@ -67,9 +66,13 @@ for PYBIN in /opt/python/cp3*/bin; do
     if [[ $PYBIN == /opt/python/cp35-cp35m/bin ]]; then
         continue
     fi
+    if [[ $PYBIN == /opt/python/cp310-cp310/bin ]]; then
+        continue
+    fi
     echo '------------------------------------------------------------'
     echo "${PYBIN}"
     echo '------------------------------------------------------------'
+    "${PYBIN}/pip" install --prefer-binary -r requirements.txt
     "${PYBIN}/pip" install manifest-tool --no-index -f wheelhouse/
     "${PYBIN}/manifest-tool" --version
     "${PYBIN}/manifest-dev-tool" --version

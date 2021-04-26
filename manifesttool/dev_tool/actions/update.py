@@ -216,7 +216,8 @@ def update(
         fw_version: str,
         sign_image: bool,
         component: str,
-        short_url: bool
+        short_url: bool,
+        encrypt_payload: bool
 ):
     config = load_service_config(service_config)
 
@@ -226,23 +227,43 @@ def update(
     fw_image_id = None
     manifest_id = None
     campaign_id = None
+    encrypted_digest = None
+    encrypted_size = None
     try:
         timestamp = time.strftime('%Y_%m_%d-%H_%M_%S')
         logger.info('Uploading FW image %s', payload_path.as_posix())
 
-        fw_image_url, short_image_url, fw_image_id = api.fw_upload(
-            fw_name='{timestamp}-{filename}'.format(
-                filename=payload_path.name,
-                timestamp=timestamp),
-            image=payload_path
+        fw_meta = api.fw_upload(
+            fw_name='{}-{}'.format(timestamp, payload_path.name),
+            image=payload_path,
+            encrypt=encrypt_payload
         )
+
+        fw_image_id = fw_meta['id']
+        payload_url = fw_meta['short_datafile' if short_url else 'datafile']
+
+        if encrypt_payload:
+            if fw_meta.get('datafile_encryption', False) and \
+               fw_meta.get('encrypted_datafile_checksum', False) and \
+               fw_meta.get('encrypted_datafile_size', False):
+                encrypted_digest = \
+                    fw_meta['encrypted_datafile_checksum']
+                encrypted_size = \
+                    fw_meta['encrypted_datafile_size']
+            else:
+                raise AssertionError(
+                    'Request to encrypt payload failed! '
+                    'Device Management doesn\'t support this feature.'
+                )
 
         manifest_data = create_dev_manifest(
             dev_cfg=dev_cfg,
             manifest_version=manifest_version,
             vendor_data_path=vendor_data,
             payload_path=payload_path,
-            payload_url=short_image_url if short_url else fw_image_url,
+            payload_url=payload_url,
+            encrypted_digest=encrypted_digest,
+            encrypted_size=encrypted_size,
             priority=priority,
             fw_version=fw_version,
             sign_image=sign_image,
@@ -320,6 +341,9 @@ def entry_point(
     dev_cfg, fw_version = \
         load_cfg_and_get_fw_ver(args, manifest_version)
 
+    encrypt_payload = \
+        hasattr(args, 'encrypt_payload') and args.encrypt_payload
+
     update(
         payload_path=args.payload_path,
         dev_cfg=dev_cfg,
@@ -335,5 +359,6 @@ def entry_point(
         fw_version=fw_version,
         sign_image=getattr(args, 'sign_image', False),
         component=getattr(args, 'component_name', None),
-        short_url=hasattr(args, 'use_short_url') and args.use_short_url
+        short_url=hasattr(args, 'use_short_url') and args.use_short_url,
+        encrypt_payload=encrypt_payload
     )

@@ -21,7 +21,7 @@ import logging
 import time
 import urllib.parse
 from pathlib import Path
-from typing import Tuple, NewType, List
+from typing import NewType, List
 
 import requests
 
@@ -130,25 +130,29 @@ class UpdateServiceApi:
             '=' * count, increments, progress)
         print(text, end='\n' if progress == 100 else '')
 
-    def fw_upload(self, fw_name: str, image: Path) -> Tuple[URL, str, ID]:
+    def fw_upload(self, fw_name: str, image: Path, encrypt: bool) \
+            -> dict:
         """
         Upload FW image
         :param fw_name: update candidate image name as will appear on Pelion
                portal
         :param image: candidate FW image
-        :return: tuple consisting of uploaded image URL, short image URL and ID
+        :param encrypt: request to encrypt FW image
+        :return: uploaded image meta
         """
         fw_size = image.stat().st_size
 
         if fw_size < FW_UPLOAD_MAX_SMALL_SIZE:
-            fw_image_url, short_image_url, fw_image_id = \
-                self._upload_small_image(fw_name, image)
+            fw_meta = self._upload_small_image(
+                fw_name, image, encrypt
+            )
         else:
-            fw_image_url, short_image_url, fw_image_id = \
-                self._upload_big_image(fw_name, fw_size, image)
+            fw_meta = self._upload_big_image(
+                fw_name, fw_size, image, encrypt
+            )
 
-        LOG.info('Uploaded FW image %s', fw_image_url)
-        return fw_image_url, short_image_url, fw_image_id
+        LOG.info('Uploaded FW image %s', fw_meta['datafile'])
+        return fw_meta
 
     def _upload_image_chunk(self, chunk: bytes, job_id: ID):
         """
@@ -168,18 +172,24 @@ class UpdateServiceApi:
         )
         response.raise_for_status()
 
-    def _upload_big_image(self, fw_name: str, fw_size: int, image: Path) -> \
-            Tuple[URL, str, ID]:
+    def _upload_big_image(
+        self,
+        fw_name: str,
+        fw_size: int,
+        image: Path,
+        encrypt: bool
+    ) -> dict:
         """
         Helper function for uploading small FW image
         :param fw_name: fw name as appears on the portal
         :param image: candidate FW image
-        :return: tuple consisting of uploaded image URL, short image URL and ID
+        :param encrypt: Request to encrypt FW image
+        :return: uploaded image meta
         """
         job_id = None
         try:
             with image.open('rb') as fh:
-                job_id = self._create_upload_job(fw_name)
+                job_id = self._create_upload_job(fw_name, encrypt)
                 self._print_upload_progress(0, fw_size)
                 upload_counter = 0
                 while True:
@@ -198,13 +208,18 @@ class UpdateServiceApi:
             if job_id:
                 self._delete_upload_job(job_id)
 
-    def _upload_small_image(self, fw_name: str, image: Path) -> \
-            Tuple[URL, str, ID]:
+    def _upload_small_image(
+        self,
+        fw_name: str,
+        image: Path,
+        encrypt: bool
+    ) -> dict:
         """
         Helper function for uploading small FW image
         :param fw_name: fw name as appears on the portal
         :param image: candidate FW image
-        :return: tuple consisting of uploaded image URL, short image URL and ID
+        :param encrypt: Request to encrypt FW image
+        :return: uploaded image meta
         """
         with image.open('rb') as fh:
             response = requests.post(
@@ -214,20 +229,18 @@ class UpdateServiceApi:
                     'datafile': (image.name, fh),
                 },
                 data={
-                    'name': fw_name
+                    'name': fw_name,
+                    'datafile_encryption': encrypt
                 }
             )
             response.raise_for_status()
-            fw_image_url = response.json()['datafile']
-            short_image_url = response.json()['short_datafile']
-            fw_image_id = response.json()['id']
-            return fw_image_url, short_image_url, fw_image_id
+            return response.json()
 
-    def _get_fw_image_meta(self, job_id: ID) -> Tuple[URL, str, ID]:
+    def _get_fw_image_meta(self, job_id: ID) -> dict:
         """
         Helper function for extracting uploaded image URL and ID
         :param job_id: upload job ID
-        :return: tuple consisting of uploaded image URL, short image URL and ID
+        :return: uploaded image meta
         """
         response = requests.get(
             self._url(FW_UPLOAD_JOB, id=job_id),
@@ -238,9 +251,8 @@ class UpdateServiceApi:
             self._url(FW_IMAGE, id=image_id),
             headers=self._headers())
         response.raise_for_status()
-        url = response.json()['datafile']
-        short_url = response.json()['short_datafile']
-        return url, short_url, image_id
+
+        return response.json()
 
     def _delete_upload_job(self, job_id: ID):
         """
@@ -254,16 +266,20 @@ class UpdateServiceApi:
         response.raise_for_status()
         LOG.debug('FW upload job %s deleted', job_id)
 
-    def _create_upload_job(self, fw_name: str) -> ID:
+    def _create_upload_job(self, fw_name: str, encrypt: bool) -> ID:
         """
         Helper function for creating a firmware image upload job
         :param fw_name: fw name as appears on the portal
+        :param encrypt: Request to encrypt FW image
         :return: upload job ID
         """
         response = requests.post(
             self._url(FW_UPLOAD_JOBS),
             headers=self._headers(),
-            json={'name': fw_name}
+            json={
+                'name': fw_name,
+                'datafile_encryption': encrypt
+            }
         )
         response.raise_for_status()
         response_data = response.json()

@@ -30,7 +30,8 @@ from tests import conftest
     [
         ['create'],
         ['create', '--sign-image'],
-        ['create-v1']
+        ['create-v1'],
+        ['create-v1', '--fw-migrate-ver', '1.2.3']
     ]
 )
 def test_cli_developer(happy_day_data, action):
@@ -56,8 +57,12 @@ def test_cli_developer(happy_day_data, action):
         '--vendor-data', dev_cfg.as_posix(),
     ]
 
-    if not any(['v1' in x for x in action]):
-        cmd.extend(['--fw-version', '100.500.0'])
+    if '-fw-version' not in action and \
+        '--fw-migrate-ver' not in action:
+        if action[0] == 'create-v1':
+            cmd.extend(['--fw-version', '100500'])
+        else:
+            cmd.extend(['--fw-version', '100.500.666'])
 
     with conftest.working_directory(happy_day_data['tmp_path']):
         assert 0 == dev_tool.entry_point(cmd)

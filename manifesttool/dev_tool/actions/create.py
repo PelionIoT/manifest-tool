@@ -88,7 +88,26 @@ def register_parser(parser: argparse.ArgumentParser,
             type=non_negative_int_arg_factory,
             help='Set update priority >=0.'
         )
-    else:
+    else:  # v3
+        if is_update_parser:
+            optional.add_argument(
+                '-e', '--encrypt-payload',
+                action='store_true',
+                help='Encrypt the payload device downloads.',
+            )
+        else:
+            optional.add_argument(
+                '--encrypted-digest',
+                type=str,
+                help='Encrypted payload digest (32-byte HEX string).'
+                     ' Use only if the candidate payload is encrypted.',
+            )
+            optional.add_argument(
+                '--encrypted-size',
+                type=non_negative_int_arg_factory,
+                help='Encrypted payload size.'
+                     ' Use only if the candidate payload is encrypted.',
+            )
         optional.add_argument(
             '-v', '--fw-version',
             type=semantic_version_arg_factory,
@@ -154,6 +173,8 @@ def create_dev_manifest(
         vendor_data_path: Path,
         payload_path: Path,
         payload_url: str,
+        encrypted_digest: str,
+        encrypted_size: int,
         priority: int,
         fw_version: str,
         sign_image: bool,
@@ -169,9 +190,14 @@ def create_dev_manifest(
     delta_meta_file = payload_file.with_suffix('.yaml')
 
     if delta_meta_file.is_file():
+        if encrypted_digest:
+            raise AssertionError('Unexpected combination (Delta+Encrypted)')
         payload_format = PayloadFormat.PATCH
     else:
-        payload_format = PayloadFormat.RAW
+        if encrypted_digest:
+            payload_format = PayloadFormat.ENCRYPTED_RAW
+        else:
+            payload_format = PayloadFormat.RAW
 
     input_cfg = {
         'vendor': {
@@ -186,6 +212,12 @@ def create_dev_manifest(
             'format': payload_format.value
         }
     }
+
+    if encrypted_digest:
+        input_cfg['payload']['encrypted'] = {
+            'digest': encrypted_digest,
+            'size': encrypted_size
+        }
 
     if priority is not None:
         input_cfg['priority'] = priority
@@ -234,7 +266,7 @@ def load_cfg_and_get_fw_ver(
     component_name = getattr(args, 'component_name', 'MAIN')
     fw_migrate_ver = getattr(args, 'fw_migrate_ver', None)
     cache_fw_version_file = args.cache_dir / defaults.UPDATE_VERSION
-    cached_versions = None
+    cached_versions = dict()
     fw_sem_ver = None
 
     # load dev_cfg
@@ -246,10 +278,6 @@ def load_cfg_and_get_fw_ver(
         if cache_fw_version_file.is_file():
             with cache_fw_version_file.open('rt') as fh:
                 cached_versions = yaml.safe_load(fh)
-
-    # make sure cached_versions is not None
-    if cached_versions is None:
-        cached_versions = dict()
 
     # set fw_version
     if 'v1' not in manifest_version.get_name():
@@ -274,8 +302,19 @@ def load_cfg_and_get_fw_ver(
 
 def entry_point(
         args,
+        parser: argparse.ArgumentParser,
         manifest_version: Type[ManifestAsnCodecBase]
 ):
+    encrypted_digest = getattr(args, 'encrypted_digest', None)
+    encrypted_size = getattr(args, 'encrypted_size', None)
+
+    if encrypted_digest or encrypted_size:
+        if not encrypted_digest or not encrypted_size:
+            parser.error(
+                'require --encrypted-digest and --encrypted-size '
+                'or none of those.'
+            )
+
     dev_cfg, fw_version = \
         load_cfg_and_get_fw_ver(args, manifest_version)
 
@@ -285,6 +324,8 @@ def entry_point(
         vendor_data_path=args.vendor_data,
         payload_path=args.payload_path,
         payload_url=args.payload_url,
+        encrypted_digest=encrypted_digest,
+        encrypted_size=encrypted_size,
         priority=args.priority,
         fw_version=fw_version,
         sign_image=getattr(args, 'sign_image', False),

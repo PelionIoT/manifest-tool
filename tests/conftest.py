@@ -28,6 +28,8 @@ from manifesttool.delta_tool import delta_tool
 from manifesttool.dev_tool import defaults
 from manifesttool.dev_tool.actions import init as dev_init
 
+from cryptography.hazmat.primitives.ciphers.aead import AESCCM
+
 @pytest.fixture(scope="session")
 def happy_day_data(tmp_path_factory):
     yield data_generator(tmp_path_factory, size=512)
@@ -46,7 +48,61 @@ def timeless(monkeypatch):
     monkeypatch.setattr(time, 'sleep', sleep_mock)
     monkeypatch.setattr(time, 'time', time_mock)
 
-def data_generator(tmp_path_factory, size):
+# Candidate image encryption is done using AES-CCM.
+# Effective pages of 1016 image bytes.
+# AES-CCM tag of size 8 bytes placed at the *start* of each output page.
+# Total of 1024 bytes per output page.
+# The nonce/IV of the first block is 1, and it is increased by 1 for each page.
+# The nonce/IV size is 8 bytes (little endian).
+TAG_SIZE_BYTES = 8
+
+NONCE_SIZE_BYTES = 8
+NONCE_BYTE_ORDER = "little"
+
+PAGE_SIZE_BYTES = 1024
+EFFECTIVE_PAGE_SIZE_BYTES = PAGE_SIZE_BYTES - TAG_SIZE_BYTES
+
+def encrypt_file(input_file_name : str, output_file_name : str, key : bytes) -> None:
+
+    input_file = open(input_file_name, "rb")
+    output_file = open(output_file_name, "wb")
+
+    # AES-CCM instance.
+    aesccm = AESCCM(key, tag_length=TAG_SIZE_BYTES)
+
+    # Nonce is starting with 1 for the first page.
+    nonce_value = 1
+
+    while True:
+
+        data_page = input_file.read(EFFECTIVE_PAGE_SIZE_BYTES)
+        if len(data_page) == 0:
+            break
+
+        # Convert nonce to machine representation.
+        nonce = nonce_value.to_bytes(NONCE_SIZE_BYTES, NONCE_BYTE_ORDER)
+
+        # Encrypt page.
+        aesccm_output = aesccm.encrypt(nonce, data_page, None)
+
+        encrypted_data = aesccm_output[0:len(data_page)]
+        tag = aesccm_output[len(data_page):]
+
+        # Verify sizes are as they are expected to be.
+        assert len(tag) == TAG_SIZE_BYTES
+        assert len(encrypted_data) + len(tag) == len(aesccm_output)
+
+        # Write tag and encrypted data (in reverse order compared to
+        # output of encryption function).
+        output_file.write(tag)
+        output_file.write(encrypted_data)
+
+        nonce_value += 1
+
+    input_file.close()
+    output_file.close()
+
+def data_generator(tmp_path_factory, size, encryption_key : bytes = None):
     tmp_path = tmp_path_factory.mktemp("data")
     key_file = tmp_path / 'dev.key.pem'
     certificate_file = tmp_path / 'dev.cert.der'
@@ -57,7 +113,7 @@ def data_generator(tmp_path_factory, size):
     )
     bsdiff_version = armbsdiff.get_version().encode('utf-8')
     fw_file = tmp_path / 'fw.bin'
-    fw_data = bsdiff_version + os.urandom(size)
+    fw_data = bsdiff_version + os.urandom(size - len(bsdiff_version))
     fw_file.write_bytes(fw_data)
     new_fw_file = tmp_path / 'new_fw.bin'
     new_fw_data = fw_data + os.urandom(512)
@@ -70,6 +126,12 @@ def data_generator(tmp_path_factory, size):
         block_size=512,
         threshold=60
     )
+
+    if encryption_key:
+        encrypted_fw_file = tmp_path / 'encrypted_fw.bin'
+        encrypt_file(fw_file, encrypted_fw_file, encryption_key)
+    else:
+        encrypted_fw_file = None
 
     class_id = uuid.uuid4()
     vendor_id = uuid.uuid4()
@@ -93,6 +155,7 @@ def data_generator(tmp_path_factory, size):
     return {
         'fw_file': fw_file,
         'new_fw_file': new_fw_file,
+        'encrypted_fw_file': encrypted_fw_file,
         'delta_file': delta_file,
         'key_file': key_file,
         'certificate_file': certificate_file,

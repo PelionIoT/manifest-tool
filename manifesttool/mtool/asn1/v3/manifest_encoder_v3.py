@@ -75,17 +75,18 @@ class ManifestAsnCodecV3(ManifestAsnCodecBase):
     def set_payload_format(self, payload_format: str):
         self.dom['payload-format'] = payload_format
 
-    def set_delta_metadata(
+    def set_payload_metadata(
             self,
             installed_digest: bytes,
             installed_size: int,
             precursor_digest: bytes
     ):
-        delta_meta_dom = manifest_schema.DeltaMetadata()
+        delta_meta_dom = manifest_schema.PayloadMetadata()
         delta_meta_dom['installed-size'] = installed_size
         delta_meta_dom['installed-digest'] = installed_digest
-        delta_meta_dom['precursor-digest'] = precursor_digest
-        self.dom['delta-metadata'] = delta_meta_dom
+        if precursor_digest:
+            delta_meta_dom['precursor-digest'] = precursor_digest
+        self.dom['payload-metadata'] = delta_meta_dom
 
     @classmethod
     def decode(
@@ -126,7 +127,7 @@ class ManifestAsnCodecV3(ManifestAsnCodecBase):
             if str(codec.dom['payload-format']) == \
                     'arm-patch-stream':
                 digest = bytes(
-                    codec.dom['delta-metadata']['installed-digest']
+                    codec.dom['payload-metadata']['installed-digest']
                 )
             try:
                 ecdsa_helper.ecdsa_verify_prehashed(

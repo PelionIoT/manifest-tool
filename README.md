@@ -123,50 +123,65 @@ describing the update type.
       the [`manifest-tool public-key`](#manifest-tool-public-key)
       command.
 
-* Upload the new firmware binary to a server that your devices can access, and obtain the URL for the uploaded firmware binary.
+* Upload the new firmware image to a server that your devices can access.
 
 * A configuration file in JSON or YAML format.
 
     Configuration file format:
     ```yaml
-    vendor:  # One of "domain" or "vendor-id" fields are expected
-      domain: pelion.com  # FW owner domain. Expected to include a dot (".")
-                          # Will be used to generate a vendor UUID
-      # or
-      vendor-id: fa6b4a53d5ad5fdfbe9de663e4d41ffe  # Valid vendor UUID
-      custom-data-path: my.custom-data.bin # Vendor's custom data file -
-                                           # to be passed to the target devices.
-                                           # only relevant for manifest v3 format.
+    vendor:  # One of "domain" or "vendor-id" fields are expected.
+      domain: pelion.com  # FW owner domain. Used to generate a vendor UUID.
+                          # Expected to include a dot (".").
+      # OR
+      vendor-id: fa6b4a53d5ad5fdfbe9de663e4d41ffe  # Valid vendor UUID.
+      custom-data-path: my.custom-data.bin # Vendor's custom data file
+                                           #  to be passed to the target devices.
+                                           # Only relevant for manifest v3 format.
 
     device:  # One of "model-name" or "class-id" fields are expected
-      model-name: Smart Slippers  # A device model name
-                                  # Will be used to generate a device-class UUID
-      # or
-      class-id: 327c726ac6e54f7a82fbf1d3beda80f0  # Valid device-class UUID
+      model-name: Smart Slippers  # A device model name. Used to generate a class UUID.
+      # OR
+      class-id: 327c726ac6e54f7a82fbf1d3beda80f0  # Valid device-class UUID.
 
-    priority: 1  #  Update priority as will be passed to authorization callback
-                 #  implemented by application on a device side
+    priority: 1  # Update priority as will be passed to authorization callback.
+                 # Implemented by application on a device side.
 
     payload:
-      url: http://some-url.com/files?id=1234  # File storage URL for devices to
-                                              # acquire the FW candidate
-      file-path: ./my.fw.bin  # Update candidate local file - for digest
-                              # calculation & signing
-      format: raw-binary  # one of following:
-                          #  raw-binary - for full image update campaigns
-                          #  arm-patch-stream - for delta update campaigns
+      url: http://some-url.com/files?id=1234  # Address from which the device downloads
+                                              #  the candidate payload.
+                                              # Obtained by clicking "Copy HTTP URL" on 
+                                              # the Firmware image details screen 
+                                              # in Device Management Portal,
+                                              #  or by copying the `datafile` attribute.
+      file-path: ./my.fw.bin  # Local path to the candidate payload file
+                              #  or the delta patch file.
+                              # Used for digest calculation & signing.
+      format: raw-binary  # One of following:
+                          #  raw-binary       - full image update campaigns.
+                          #  arm-patch-stream - delta patch update campaigns.
+                          # For manifest v3 only:
+                          #  encrypted-raw    - full image update with encrypted image.
+      encrypted:  # Required for 'encrypted-raw' format.
+        digest: 3725565932eb5b9fbd5767a3a534cb6a1a87813e0b4a76deacb9b36695c71307
+                      # The encrypted payload digest.
+                      # Obtained by copying the `encrypted_datafile_checksum` attribute
+                      # from the Firmware image details screen in Device Management Portal.
+        size: 471304  # The encrypted payload size.
+                      # Obtained by copying the `encrypted_datafile_size` attribute
+                      # from the Firmware image details screen in Device Management Portal.
 
-    component: MAIN  # [Optional] The name of the component to be updated - only relevant for manifest v3 format.
-                     # If omitted "MAIN" component name will be used for updating
-                     # the main application image
+    component: MAIN  # [Optional] The name of the component to be updated
+                     #  only relevant for manifest v3 format.
+                     # Set to "MAIN" by default for updating
+                     #  the main application image.
 
-    sign-image: True  # [Optional] Boolean field accepting True/False values - only
-                      # relevant for manifest v3 format.
+    sign-image: True  # [Optional] Boolean field accepting True/False values.
+                      # Only relevant for manifest v3 format.
                       # When Set to True - 64 Bytes raw signature over the installed
-                      # image will be added to the manifest.
+                      #  image will be added to the manifest.
                       # Image signature can be used for cases when device bootloader
-                      # expects to work with signed images (e.g. secure-boot)
-                      # When omitted False value is assumed
+                      #  expects to work with signed images (e.g. secure-boot).
+                      # Set to False by default.
     ```
 
 **Example**
@@ -426,12 +441,12 @@ manifest-dev-tool create-v1 \
 #### `manifest-dev-tool update`
 
 Same as [`manifest-dev-tool create`](#manifest-dev-tool-create) but also
-lets you interact with Device Management Portal to run a full update
+lets you interact with Device Management to run a full update
 campaign.
 
 The command:
 
-1. Uploads the payload to Device Management Portal and obtains the URL.
+1. Uploads the payload to Device Management and obtains the URL.
 1. Creates a manifest file with the URL from the previous step and
    obtains a manifest URL.
 1. Creates an update campaign with the manifest URL from the previous
@@ -440,12 +455,10 @@ The command:
    `--wait-for-completion` argument.
 1. If you pass the `--wait-for-completion` argument, the tool waits for
    campaign completion for the time period specified by `--timeout` or
-   until the campaign reaches one of its terminating states in Device
-   Management Portal (`expired`, `userstopped`, or
-   `quotaallocationfailed`).
+   until the campaign reaches one of its terminating states.
 1. If you pass the `--wait-for-completion` argument without the
    `--no-cleanup` flag, the tool removes the uploaded test resources
-   from Device Management Portal before exiting.
+   from Device Management before exiting.
 
 **Example**
 
@@ -541,17 +554,16 @@ This section explains how to migrate your existing configuration and credentials
 
    `manifest-dev-tool update` creates a unique `class-id` and
    `vendor-id` generated per developer. Device Management expects a
-   single device with these properties to connect to Device Management
-   Portal.
+   single device with these properties to connect to Device Management.
 
    In rare cases, during development, a device's `device-id` might
    change after you re-flash it. This may result in two devices having
-   the same `class-id` and `vendor-id` in Device Management Portal. In
+   the same `class-id` and `vendor-id` in Device Management. In
    this scenario, Device Management will detect both devices and try to
    update them both, although one of them no longer exists
 
    **Solution:** Manually delete the unwanted device from Device
-   Management Portal. Alternatively, run `manifest-dev-tool update ...
+   Management. Alternatively, run `manifest-dev-tool update ...
    --wait-for-completion` with `--device-id DEVICE_ID` to override the
    default campaign filter and target a specific device by its ID.
 

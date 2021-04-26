@@ -22,3 +22,4 @@ import enum
 class PayloadFormat(enum.Enum):
     RAW = 'raw-binary'
     PATCH = 'arm-patch-stream'
+    ENCRYPTED_RAW = 'encrypted-raw'

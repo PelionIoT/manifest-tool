@@ -67,7 +67,8 @@
           "description": "Payload format type",
           "enum": [
             "raw-binary",
-            "arm-patch-stream"
+            "arm-patch-stream",
+            "encrypted-raw"
           ]
         },
         "url": {
@@ -77,7 +78,31 @@
         "file-path": {
           "$ref": "#/definitions/non_empty_string",
           "description": "Path to payload file - must be accessible by the manifest-tool"
+        },
+        "encrypted": {
+          "type": "object",
+          "required": [
+            "digest",
+            "size"
+          ],
+          "properties": {
+            "digest": {
+              "$ref": "#/definitions/digest_hex_string",
+              "description": "Encrypted payload digest"
+            },
+            "size": {
+              "type": "integer",
+              "minimum": 1,
+              "description": "Encrypted payload size"
+            }
+          }
         }
+      },
+      "if": {
+        "properties": { "format": { "enum": ["encrypted-raw"] } }
+      },
+      "then": {
+        "required": ["encrypted"]
       }
     },
     "component": {
@@ -98,6 +123,11 @@
       "type": "string",
       "pattern": "[0-9a-fA-F]{32}",
       "description": "HEX encoded UUID string"
+    },
+    "digest_hex_string": {
+      "type": "string",
+      "pattern": "[0-9a-fA-F]{64}",
+      "description": "Digest HEX encoded string"
     }
   }
 }

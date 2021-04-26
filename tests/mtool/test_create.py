@@ -36,6 +36,7 @@ GEN_DIR = SCRIPT_DIR / 'test_data'
 
 FILE_ID = 0
 
+ENCRYPTION_KEY = bytearray.fromhex('0102030405060708090A0B0C0D0E0F10')
 
 @pytest.mark.parametrize('fw_size', [512, 713, 4096, 100237, 512001])
 def test_create_happy_day_full(
@@ -44,7 +45,7 @@ def test_create_happy_day_full(
 ):
     global FILE_ID
     GEN_DIR.mkdir(exist_ok=True)
-    happy_day_data = data_generator(tmp_path_factory, fw_size)
+    happy_day_data = data_generator(tmp_path_factory, fw_size, ENCRYPTION_KEY)
     manifest = None
     for manifest_codec in ManifestVersion.list_codecs():
         input_cfg = {
@@ -74,6 +75,14 @@ def test_create_happy_day_full(
                 input_cfg['component'] = component
             elif (FILE_ID % 3) == 0:
                 input_cfg['component'] = component
+                # encrypted payload with dummy metadata
+                input_cfg['payload']['format'] = 'encrypted-raw'
+                input_cfg['payload']['encrypted'] = {
+                    'digest': calc_digest(happy_day_data['encrypted_fw_file']),
+                    'size': happy_day_data['encrypted_fw_file'].stat().st_size
+                }
+                input_cfg['payload']['url'] = '../test_data/{}_f_encrypted_payload.bin'.format(FILE_ID)
+
             version = '100.500.0'
 
             version_file = GEN_DIR / '{}_f_version_{}.txt'.format(
@@ -94,7 +103,14 @@ def test_create_happy_day_full(
 
         manifest_file = GEN_DIR / '{}_f_manifest_{}.bin'.format(
             FILE_ID, manifest_codec.get_name())
-        manifest_file.write_bytes(manifest)
+        if 'encrypted' in input_cfg['payload']:
+            # mimic service behaviour,
+            # concatenate DER with dummy aes-128-bit key
+            manifest_file.write_bytes(
+                manifest + bytearray.fromhex('8110') + ENCRYPTION_KEY
+            )
+        else:
+            manifest_file.write_bytes(manifest)
 
         certificate_file = GEN_DIR / '{}_f_certificate.bin'.format(FILE_ID)
         certificate_file.write_bytes(
@@ -108,6 +124,10 @@ def test_create_happy_day_full(
 
         new_fw_file = GEN_DIR / '{}_f_final_image.bin'.format(FILE_ID)
         new_fw_file.write_bytes(happy_day_data['fw_file'].read_bytes())
+
+        if input_cfg['payload']['format'] == 'encrypted-raw':
+            encrypted_payload_file = GEN_DIR / '{}_f_encrypted_payload.bin'.format(FILE_ID)
+            encrypted_payload_file.write_bytes(happy_day_data['encrypted_fw_file'].read_bytes())
 
         dom = manifest_codec.decode(manifest, None)
 

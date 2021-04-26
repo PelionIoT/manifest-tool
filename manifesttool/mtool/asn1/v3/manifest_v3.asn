@@ -16,18 +16,19 @@
 -- limitations under the License.
 -- ----------------------------------------------------------------------------
 
--- Manifest definition file in ASN.1 (v. 1.1.0)
+-- Manifest definition file in ASN.1 (v. 1.1.1)
 ManifestSchema DEFINITIONS IMPLICIT TAGS ::= BEGIN
 
-  -- Describing of arm-bsdiff-stream payload
-  DeltaMetadata ::= SEQUENCE {
+  -- Metadata for payload reconstruction
+  PayloadMetadata ::= SEQUENCE {
     -- represents reconstructed payload size
     installed-size INTEGER,
     -- represents reconstructed payload digest
     installed-digest OCTET STRING,
 
-    -- specifies currently installed payload digest
-    precursor-digest OCTET STRING
+    -- Used with 'arm-patch-stream',
+    -- never for other payload formats
+    precursor-digest OCTET STRING OPTIONAL
   }
 
   Manifest ::= SEQUENCE {
@@ -48,15 +49,19 @@ ManifestSchema DEFINITIONS IMPLICIT TAGS ::= BEGIN
     payload-size INTEGER,
     payload-uri UTF8String,
     payload-format ENUMERATED {
+      -- xx01-xxFF describe payload-format
+      -- 01xx-FFxx describe encrypted-format
       raw-binary(1),
-      arm-patch-stream(5)
+      arm-patch-stream(5),
+      encrypted-raw(257),  -- 0x0101
     },
 
     -- raw ECDSA signature (r||s) over installed payload
     installed-signature OCTET STRING,
 
-    -- only relevant if payload-format = arm-patch-stream
-    delta-metadata DeltaMetadata OPTIONAL,
+    -- Used with 'arm-patch-stream', 'encrypted-raw'
+    -- never for 'raw-binary'
+    payload-metadata PayloadMetadata OPTIONAL,
 
     -- custom data to be passed to an endpoint device
     vendor-data OCTET STRING OPTIONAL
@@ -73,3 +78,13 @@ ManifestSchema DEFINITIONS IMPLICIT TAGS ::= BEGIN
   }
 
 END
+
+-- Encryption Key Schema:
+--   the key used to encrypt the payload
+--   added by service after SignedResource
+-- (Comment out to be ignore by manifest-tool)
+-- EncryptionKeySchema DEFINITIONS IMPLICIT TAGS ::= BEGIN
+--   EncryptionKey ::= CHOICE {
+--     aes-128-bit [1] IMPLICIT OCTET STRING (SIZE(16))
+--   }
+-- END

@@ -162,7 +162,7 @@ class ManifestAsnCodecV1(ManifestAsnCodecBase):
             _format = 'bsdiff-stream'
         self.dom['resource']['manifest']['payload']['format']['enum'] = _format
 
-    def set_delta_metadata(
+    def set_payload_metadata(
             self,
             installed_digest: bytes,
             installed_size: int,

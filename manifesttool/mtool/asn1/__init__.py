@@ -32,7 +32,7 @@ class ManifestVersion:
     )
 
     @classmethod
-    def list_names(cls):
+    def list_names(cls):  # pragma: no cover
         return cls.VERSIONS.keys()
 
     @classmethod
@@ -40,15 +40,16 @@ class ManifestVersion:
         return cls.VERSIONS.values()
 
     @classmethod
-    def from_string(cls, _str: str) -> Type[ManifestAsnCodecBase]:
+    def from_string(cls, _str: str) -> \
+            Type[ManifestAsnCodecBase]:  # pragma: no cover
         return cls.VERSIONS[_str]
 
     @classmethod
-    def get_default(cls) -> Type[ManifestAsnCodecBase]:
+    def get_default(cls) -> Type[ManifestAsnCodecBase]:  # pragma: no cover
         return next(iter(cls.VERSIONS.values()))
 
 # pylint: disable=too-few-public-methods
-class StoreManifestVersion(argparse.Action):
+class StoreManifestVersion(argparse.Action):  # pragma: no cover
     def __call__(self, parser, namespace, values, option_string=None):
         prospective = values
         try:

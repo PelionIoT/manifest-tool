@@ -280,6 +280,12 @@ def update(
         if do_start:
             _manage_campaign(api, campaign_id, end_time, do_wait)
 
+    except requests.HTTPError as ex:
+        # log additional service info
+        srv_message = ex.response.json().get('message', None)
+        if srv_message:
+            logger.error(srv_message)
+        raise
     except KeyboardInterrupt:
         logger.error('Aborted by user...')
     finally:

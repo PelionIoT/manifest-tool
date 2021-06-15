@@ -25,7 +25,7 @@ from typing import Type
 import jsonschema
 import yaml
 
-from manifesttool.mtool.actions import existing_file_path_arg_factory
+from manifesttool.common.common_helpers import existing_file_path_arg
 from manifesttool.mtool.actions import non_negative_int_arg_factory
 from manifesttool.mtool.actions import semantic_version_arg_factory
 from manifesttool.mtool.actions import semver_as_tuple_arg_factory
@@ -83,7 +83,7 @@ class CreateAction:
 
             required.add_argument(
                 '--update-certificate',
-                type=existing_file_path_arg_factory,
+                type=existing_file_path_arg,
                 help='Path to the update certificate file.',
                 required=True
             )

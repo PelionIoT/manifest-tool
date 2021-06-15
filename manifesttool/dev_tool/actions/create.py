@@ -24,7 +24,7 @@ from typing import Type
 import yaml
 
 from manifesttool.dev_tool import defaults
-from manifesttool.mtool.actions import existing_file_path_arg_factory
+from manifesttool.common.common_helpers import existing_file_path_arg
 from manifesttool.mtool.actions import non_negative_int_arg_factory
 from manifesttool.mtool.actions import semantic_version_arg_factory
 from manifesttool.mtool.actions import semver_as_tuple_arg_factory
@@ -53,7 +53,7 @@ def register_parser(parser: argparse.ArgumentParser,
     required.add_argument(
         '-p', '--payload-path',
         help='Local path to the candidate payload file.',
-        type=existing_file_path_arg_factory,
+        type=existing_file_path_arg,
         required=True
     )
 
@@ -148,7 +148,7 @@ def register_parser(parser: argparse.ArgumentParser,
         '-d', '--vendor-data',
         help='Path to a vendor custom data file - to be passed to '
              'the target devices.',
-        type=existing_file_path_arg_factory
+        type=existing_file_path_arg
     )
 
     optional.add_argument(

@@ -19,8 +19,7 @@ import argparse
 from pathlib import Path
 
 from manifesttool.mtool import ecdsa_helper
-from manifesttool.mtool.actions import existing_file_path_arg_factory
-
+from manifesttool.common.common_helpers import existing_file_path_arg
 
 class PublicKeyAction:
     @staticmethod
@@ -31,7 +30,7 @@ class PublicKeyAction:
         required.add_argument(
             'private_key',
             help='Path to a private key PEM file.',
-            type=existing_file_path_arg_factory,
+            type=existing_file_path_arg,
         )
 
         required.add_argument(

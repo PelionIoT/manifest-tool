@@ -76,16 +76,3 @@ def semver_as_tuple_arg_factory(value: str) -> Tuple[int, str]:
     """
     value = semantic_version_arg_factory(value)
     return _semver_to_int(value), value
-
-def existing_file_path_arg_factory(value):
-    """
-        Construct Path to an existing file for an argument
-        :param value: input string
-        :return: major, minor, split tuple
-    """
-    prospective = Path(value)
-    if not prospective.is_file():
-        raise argparse.ArgumentTypeError(
-            'File "{}" is not found'.format(value)
-        )
-    return prospective

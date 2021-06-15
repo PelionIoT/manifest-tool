@@ -25,21 +25,11 @@ from mmap import mmap, ACCESS_READ
 from pathlib import Path
 
 import yaml
-
+from manifesttool.common.common_helpers import existing_file_path_arg
 from manifesttool import __version__
 from manifesttool import armbsdiff
 
 logger = logging.getLogger("manifest-delta-tool")
-
-
-def _existing_file_path_factory(value):
-    prospective = Path(value)
-    if not prospective.is_file():
-        raise argparse.ArgumentTypeError(
-            'File {} is not found'.format(value)
-        )
-    return prospective
-
 
 def _block_size_factory(value):
     prospective = None
@@ -169,14 +159,14 @@ def get_parser():
 
     required.add_argument(
         '-c', '--current-fw',
-        type=_existing_file_path_factory,
+        type=existing_file_path_arg,
         help='Path to the currently installed firmware image, without '
              'headers, for delta update calculation.',
         required=True
     )
     required.add_argument(
         '-n', '--new-fw',
-        type=_existing_file_path_factory,
+        type=existing_file_path_arg,
         help='Path to the candidate image.',
         required=True
     )

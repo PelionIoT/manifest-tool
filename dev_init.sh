@@ -24,7 +24,7 @@ fi
 
 source venv/bin/activate
 
-pip uninstall manifesttool --yes
+pip uninstall manifest-tool --yes
 pip install --editable .
 
 pip install -r dev-requirements.txt

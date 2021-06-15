@@ -22,7 +22,7 @@ IF NOT EXIST venv (
 
 call venv\Scripts\activate.bat
 
-pip uninstall manifesttool --yes
+pip uninstall manifest-tool --yes
 pip install --editable .
 
 pip install -r dev-requirements.txt

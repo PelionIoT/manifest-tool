@@ -20,22 +20,6 @@ import re
 from pathlib import Path
 from typing import List, Tuple
 
-def non_negative_int_arg_factory(value: str) -> int:
-    """
-    Construct non negative integer value for an argument
-    :param value: input string
-    :return: integer value
-    """
-    prospective = None
-    try:
-        prospective = int(value)
-    except ValueError:
-        pass
-    if prospective is None or prospective < 0:
-        raise argparse.ArgumentTypeError(
-            '"{}" is an invalid non-negative integer value'.format(value))
-    return prospective
-
 def semantic_version_arg_factory(value) -> str:
     """
     Construct major, minor, split tuple for an argument

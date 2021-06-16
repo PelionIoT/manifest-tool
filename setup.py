@@ -53,7 +53,8 @@ setup(
         "console_scripts": [
             "manifest-tool=manifesttool.mtool.mtool:entry_point",
             "manifest-dev-tool=manifesttool.dev_tool.dev_tool:entry_point",
-            "manifest-delta-tool=manifesttool.delta_tool.delta_tool:entry_point"
+            "manifest-delta-tool=manifesttool.delta_tool.delta_tool:entry_point",
+            "manifest-package-tool=manifesttool.package_tool.package_tool:entry_point"
         ],
     },
     python_requires='>=3.6.0',

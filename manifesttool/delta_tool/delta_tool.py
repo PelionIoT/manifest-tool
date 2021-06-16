@@ -25,7 +25,7 @@ from mmap import mmap, ACCESS_READ
 from pathlib import Path
 
 import yaml
-from manifesttool.common.common_helpers import existing_file_path_arg
+from manifesttool.common.common_helpers import get_argument_path
 from manifesttool import __version__
 from manifesttool import armbsdiff
 
@@ -159,14 +159,14 @@ def get_parser():
 
     required.add_argument(
         '-c', '--current-fw',
-        type=existing_file_path_arg,
+        type=get_argument_path,
         help='Path to the currently installed firmware image, without '
              'headers, for delta update calculation.',
         required=True
     )
     required.add_argument(
         '-n', '--new-fw',
-        type=existing_file_path_arg,
+        type=get_argument_path,
         help='Path to the candidate image.',
         required=True
     )

@@ -1,5 +1,5 @@
 # ----------------------------------------------------------------------------
-# Copyright 2019-2021 Pelion
+# Copyright 2021 Pelion
 #
 # SPDX-License-Identifier: Apache-2.0
 #
@@ -15,28 +15,23 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ----------------------------------------------------------------------------
+
 import argparse
-from pathlib import Path
+import logging
 
-from manifesttool.mtool import ecdsa_helper
-from manifesttool.common.common_helpers import get_argument_path
+class ParseAction:
 
-class PublicKeyAction:
+    logger = logging.getLogger('manifest-package-parse')
+
     @staticmethod
-    def register_parser_args(parser: argparse.ArgumentParser):
+    def register_parser_args(parser):
         required = parser.add_argument_group('required arguments')
         optional = parser.add_argument_group('optional arguments')
 
         required.add_argument(
-            'private_key',
-            help='Path to a private key PEM file.',
-            type=get_argument_path,
-        )
-
-        required.add_argument(
-            '-o', '--out',
-            help='Output public key filename.',
-            type=Path,
+            '-p', '--package',
+            help='Path to the package file.',
+            type=argparse.FileType('rb'),
             required=True
         )
 
@@ -47,13 +42,20 @@ class PublicKeyAction:
             help='Show this help message and exit.'
         )
 
+    # pylint: disable=too-many-branches
     @classmethod
-    def get_key(cls, private_key_bytes: bytes):
-        public_key = ecdsa_helper.public_key_from_private(private_key_bytes)
-        public_key_bytes = ecdsa_helper.public_key_to_bytes(public_key)
-        return public_key_bytes
+    def do_parse(
+            cls
+    ):
+
+        logging.info(
+            '\n----- Package dump start -----\n'
+            '%s----- Package dump end -----',
+
+        )
 
     @classmethod
     def entry_point(cls, args):
-        private_key_bytes = cls.get_key(args.private_key.read_bytes())
-        args.out.write_bytes(private_key_bytes)
+
+        logging.info(args.package)
+        cls.do_parse()

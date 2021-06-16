@@ -24,8 +24,8 @@ from typing import Type
 import yaml
 
 from manifesttool.dev_tool import defaults
-from manifesttool.common.common_helpers import existing_file_path_arg
-from manifesttool.mtool.actions import non_negative_int_arg_factory
+from manifesttool.common.common_helpers import get_argument_path
+from manifesttool.common.common_helpers import get_non_negative_int_argument
 from manifesttool.mtool.actions import semantic_version_arg_factory
 from manifesttool.mtool.actions import semver_as_tuple_arg_factory
 from manifesttool.mtool.actions.create import CreateAction
@@ -53,7 +53,7 @@ def register_parser(parser: argparse.ArgumentParser,
     required.add_argument(
         '-p', '--payload-path',
         help='Local path to the candidate payload file.',
-        type=existing_file_path_arg,
+        type=get_argument_path,
         required=True
     )
 
@@ -70,7 +70,7 @@ def register_parser(parser: argparse.ArgumentParser,
         version_group = optional.add_mutually_exclusive_group()
         version_group.add_argument(
             '-v', '--fw-version',
-            type=non_negative_int_arg_factory,
+            type=get_non_negative_int_argument,
             help='Version number (integer) of the candidate image. '
                  'Default: current epoch time.',
             default=int(time.time())
@@ -85,7 +85,7 @@ def register_parser(parser: argparse.ArgumentParser,
 
         optional.add_argument(
             '-r', '--priority',
-            type=non_negative_int_arg_factory,
+            type=get_non_negative_int_argument,
             help='Set update priority >=0.'
         )
     else:  # v3
@@ -104,7 +104,7 @@ def register_parser(parser: argparse.ArgumentParser,
             )
             optional.add_argument(
                 '--encrypted-size',
-                type=non_negative_int_arg_factory,
+                type=get_non_negative_int_argument,
                 help='Encrypted payload size.'
                      ' Use only if the candidate payload is encrypted.',
             )
@@ -139,7 +139,7 @@ def register_parser(parser: argparse.ArgumentParser,
         )
         optional.add_argument(
             '-r', '--priority',
-            type=non_negative_int_arg_factory,
+            type=get_non_negative_int_argument,
             help='Set update priority >=0. [Default: 0].',
             default=0
         )
@@ -148,7 +148,7 @@ def register_parser(parser: argparse.ArgumentParser,
         '-d', '--vendor-data',
         help='Path to a vendor custom data file - to be passed to '
              'the target devices.',
-        type=existing_file_path_arg
+        type=get_argument_path
     )
 
     optional.add_argument(

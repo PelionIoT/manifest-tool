@@ -1,0 +1,43 @@
+{
+    "$schema": http://json-schema.org/draft-07/schema#,
+    "title": "Manifest-package-tool input validator",
+    "description": "This schema is used to validate the manifest-package-tool configuration file.",
+    "type": "object",
+    "required": [
+        "images"
+    ],
+    "properties": {
+        "images" : {
+            "type" : "array",
+            "minItems": 2,
+            "items": {
+                "type" : "object",
+                "properties" : {
+                    "img_id" : {
+                        "description" : "Image identifier",
+                        "type" : "string"
+                    },
+                    "vendor_data" : {
+                        "description" : "Image Vendor data",
+                        "type" : "string"
+                    },
+                    "file_name" : {
+                        "description" : "Image file name",
+                        "$ref": "#/definitions/non_empty_string"
+                    }
+                },
+                "required": [
+                    "img_id",
+                    "vendor_data",
+                    "file_name"
+                ]
+            }
+        }
+    },
+    "definitions": {
+        "non_empty_string": {
+          "type": "string",
+          "minLength": 1
+        }
+    }
+}

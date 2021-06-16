@@ -31,7 +31,7 @@ from manifesttool.dev_tool.actions.create \
     import register_parser as register_create_parser
 from manifesttool.dev_tool.actions.create import create_dev_manifest
 from manifesttool.dev_tool.pelion import pelion
-from manifesttool.mtool.actions import non_negative_int_arg_factory
+from manifesttool.common.common_helpers import get_non_negative_int_argument
 from manifesttool.mtool.asn1 import ManifestAsnCodecBase
 
 logger = logging.getLogger('manifest-dev-tool-update')
@@ -68,7 +68,7 @@ def register_parser(parser: argparse.ArgumentParser, schema_version: str):
     )
     pdm_group.add_argument(
         '-t', '--timeout',
-        type=non_negative_int_arg_factory,
+        type=get_non_negative_int_argument,
         help='Wait timeout in seconds. '
              '[Default: 0 - wait-forever]',
         default=0

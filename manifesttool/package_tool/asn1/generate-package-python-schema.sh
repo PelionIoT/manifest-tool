@@ -1,6 +1,6 @@
 #!/usr/bin/env bash -e
 # ----------------------------------------------------------------------------
-# Copyright 2019-2021 Pelion
+# Copyright 2021 Pelion
 #
 # SPDX-License-Identifier: Apache-2.0
 #
@@ -25,5 +25,4 @@ generate() {
     asn1ate $input >> $output
 }
 
-generate v3/manifest_v3.asn v3/manifest_schema_v3.py
-generate v1/manifest-1.0.0 v1/manifest_schema_v1.py
+generate package.asn package_schema.py

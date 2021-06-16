@@ -25,8 +25,8 @@ from typing import Type
 import jsonschema
 import yaml
 
-from manifesttool.common.common_helpers import existing_file_path_arg
-from manifesttool.mtool.actions import non_negative_int_arg_factory
+from manifesttool.common.common_helpers import get_argument_path
+from manifesttool.common.common_helpers import get_non_negative_int_argument
 from manifesttool.mtool.actions import semantic_version_arg_factory
 from manifesttool.mtool.actions import semver_as_tuple_arg_factory
 from manifesttool.mtool.asn1 import ManifestAsnCodecBase
@@ -68,7 +68,7 @@ class CreateAction:
             version_group = optional.add_mutually_exclusive_group()
             version_group.add_argument(
                 '-v', '--fw-version',
-                type=non_negative_int_arg_factory,
+                type=get_non_negative_int_argument,
                 help='Version number (integer) of the candidate image. '
                      'Default: current epoch time.',
                 default=int(time.time())
@@ -83,7 +83,7 @@ class CreateAction:
 
             required.add_argument(
                 '--update-certificate',
-                type=existing_file_path_arg,
+                type=get_argument_path,
                 help='Path to the update certificate file.',
                 required=True
             )

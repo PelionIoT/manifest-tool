@@ -18,16 +18,35 @@
 import argparse
 from pathlib import Path
 
-def existing_file_path_arg(value):
+def get_argument_path(value):
     """
         Construct Path to an existing file for an argument
         :param value: input string
         :return: constructed Path with semantics
         appropriate for the operating systems
     """
-    prospective = Path(value)
-    if not prospective.is_file():
+    arg_path = Path(value)
+    if not arg_path.is_file():
         raise argparse.ArgumentTypeError(
             'File "{}" is not found'.format(value)
         )
-    return prospective
+    return arg_path
+
+def get_file_size(path_file: Path):
+    return Path(path_file).stat().st_size
+
+def get_non_negative_int_argument(value: str) -> int:
+    """
+    Construct non negative integer value for an argument
+    :param value: input string
+    :return: integer value
+    """
+    int_value = None
+    try:
+        int_value = int(value)
+    except ValueError:
+        pass
+    if int_value is None or int_value < 0:
+        raise argparse.ArgumentTypeError(
+            '"{}" is an invalid non-negative integer value'.format(value))
+    return int_value

@@ -408,6 +408,7 @@ def _common(happy_day_data, action, payload_path):
         ('fw_file',    True,  ['update']                      ),
         ('fw_file',    False, ['update', '--sign-image']      ),
         ('fw_file',    False, ['update', '--encrypt-payload'] ),
+        ('fw_file',    False, ['update', '--combined-image']  ),
         ('delta_file', False, ['update']                      ),
         ('delta_file', False, ['update', '--sign-image']      ),
         ('fw_file',    False, ['update-v1']                   ),
@@ -456,6 +457,7 @@ def test_cli_update_happy_day(
     [
         ['update'],
         ['update', '--sign-image'],
+        ['update', '--combined-image'],
         ['update-v1']
     ]
 )
@@ -477,6 +479,7 @@ def test_cli_update_full_timeout(happy_day_data, action, requests_mock, timeless
     [
         ['update'],
         ['update', '--sign-image'],
+        ['update', '--combined-image'],
         ['update-v1']
     ]
 )
@@ -499,7 +502,8 @@ def test_cli_update_conflict(happy_day_data, action, requests_mock, timeless, ca
     [
         ['update'],
         ['update', '--sign-image'],
-        ['update-v1']
+        ['update-v1'],
+        ['update', '--combined-image']
     ]
 )
 def test_cli_update_failed_device(happy_day_data, action, requests_mock, timeless, caplog):

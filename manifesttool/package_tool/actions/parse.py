@@ -15,9 +15,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ----------------------------------------------------------------------------
-
-import argparse
+import tarfile
 import logging
+from manifesttool.common.common_helpers import get_argument_path
+from manifesttool.package_tool.package_format.tar_package \
+    import PackageFormatTar
 
 class ParseAction:
 
@@ -31,7 +33,7 @@ class ParseAction:
         required.add_argument(
             '-p', '--package',
             help='Path to the package file.',
-            type=argparse.FileType('rb'),
+            type=get_argument_path,
             required=True
         )
 
@@ -43,19 +45,19 @@ class ParseAction:
         )
 
     # pylint: disable=too-many-branches
-    @classmethod
-    def do_parse(
-            cls
-    ):
+    @staticmethod
+    def do_parse(package):
 
-        logging.info(
-            '\n----- Package dump start -----\n'
-            '%s----- Package dump end -----',
+        if tarfile.is_tarfile(package):
+            package_format = PackageFormatTar()
+        else:
+            logging.error("Package tool supports only tar format")
+            raise NotImplementedError
 
-        )
+        package_format.parse_package(package)
 
     @classmethod
     def entry_point(cls, args):
 
         logging.info(args.package)
-        cls.do_parse()
+        cls.do_parse(args.package)

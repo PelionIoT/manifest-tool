@@ -152,7 +152,7 @@ class ManifestAsnCodecBase(abc.ABC):
         local_digest, local_size = \
             self._calc_file_digest_and_size(input_cfg)
 
-        if payload_format == PayloadFormat.RAW:
+        if payload_format in (PayloadFormat.RAW, PayloadFormat.COMBINED):
             payload_digest, payload_size = \
                 local_digest, local_size
             installed_digest, installed_size, precursor_digest = \
@@ -164,7 +164,8 @@ class ManifestAsnCodecBase(abc.ABC):
             installed_digest, installed_size, precursor_digest = \
                 self._get_delta_metadata(input_cfg)
 
-        elif payload_format == PayloadFormat.ENCRYPTED_RAW:
+        elif payload_format in (PayloadFormat.ENCRYPTED_RAW,
+                                PayloadFormat.ENCRYPTED_COMBINED):
             payload_digest, payload_size = \
                 self._get_encryption_metadata(input_cfg)
             installed_digest, installed_size, precursor_digest = \

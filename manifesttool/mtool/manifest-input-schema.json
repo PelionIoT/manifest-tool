@@ -68,7 +68,9 @@
           "enum": [
             "raw-binary",
             "arm-patch-stream",
-            "encrypted-raw"
+            "combined",
+            "encrypted-raw",
+            "encrypted-combined"
           ]
         },
         "url": {
@@ -99,7 +101,7 @@
         }
       },
       "if": {
-        "properties": { "format": { "enum": ["encrypted-raw"] } }
+        "properties": { "format": { "enum": ["encrypted-raw", "encrypted-combined"] } }
       },
       "then": {
         "required": ["encrypted"]
@@ -107,7 +109,8 @@
     },
     "component": {
       "description": "Component name - only relevant for manifest v3",
-      "$ref": "#/definitions/non_empty_string"
+      "type": "string",
+      "minLength": 1
     },
     "sign-image":{
       "description": "Do sign installed image - only relevant for manifest v3. Required for devices with PKI image authentication in bootloader",

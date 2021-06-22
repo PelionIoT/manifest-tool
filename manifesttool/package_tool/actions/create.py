@@ -22,7 +22,6 @@ from pathlib import Path
 import jsonschema
 import yaml
 from manifesttool.common.common_helpers import get_argument_path
-from manifesttool.common.common_helpers import get_non_negative_int_argument
 from manifesttool.package_tool.asn1.package_encoder import DescriptorAsnCodec
 from manifesttool.package_tool.package_format.tar_package \
     import PackageFormatTar
@@ -30,11 +29,21 @@ from manifesttool.package_tool.package_format.tar_package \
 PTOOL_PATH = Path(__file__).resolve().parent.parent
 logger = logging.getLogger('manifest-package-tool-create')
 
-def alignment_size_type(alignment_size):
-    alignment_size = int(alignment_size)
-    if alignment_size < 1:
-        raise argparse.ArgumentTypeError("Minimum alignment size is 1")
-    return alignment_size
+def _get_alignment_int_argument(value: str) -> int:
+    """
+    Construct non negative integer value for an argument
+    :param value: input string
+    :return: integer value
+    """
+    int_value = None
+    try:
+        int_value = int(value)
+    except ValueError:
+        pass
+    if int_value is None or int_value < 1:
+        raise argparse.ArgumentTypeError(
+            '"{}" is an invalid aligment value, should be >0'.format(value))
+    return int_value
 
 class CreateAction:
 
@@ -58,7 +67,7 @@ class CreateAction:
             '--format',
             help='Package format type.',
             choices=['tar'],  # Add bin when impelemented
-            required=True
+            default='tar'
         )
 
         required.add_argument(
@@ -67,7 +76,7 @@ class CreateAction:
             help='Candidate storage read size, \
                 used for image alignment. Relevant for embedded devices.',
             default=1,
-            type=get_non_negative_int_argument
+            type=_get_alignment_int_argument
         )
 
         required.add_argument(

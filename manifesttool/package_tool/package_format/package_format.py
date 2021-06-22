@@ -20,8 +20,6 @@ import logging
 from typing import TypeVar
 
 DESCRIPTOR_FILE_NAME = "_desc_"
-CNFG_IMAGES_NAME = "images"
-CNFG_FILE_NAME = "file_name"
 
 PackageFormatBaseType = TypeVar(
     'PackageFormatBaseType', bound='PackageFormatBase')
@@ -31,15 +29,9 @@ logger = logging.getLogger('package-format')
 class PackageFormatBase(abc.ABC):
 
     @abc.abstractmethod
-    def create_package(self, output_file, input_cfg, asn1der):
+    def parse_package(self, package_file):
         raise NotImplementedError
 
-    @staticmethod
-    def get_images(input_cfg: dict) -> list:
-        images_list = []
-        num_of_images = len(input_cfg[CNFG_IMAGES_NAME])
-
-        for img_index in range(0, num_of_images):
-            image_dict = (input_cfg[CNFG_IMAGES_NAME])[img_index]
-            images_list.append(image_dict[CNFG_FILE_NAME])
-        return images_list
+    @abc.abstractmethod
+    def create_package(self, output_file, input_cfg, asn1der):
+        raise NotImplementedError

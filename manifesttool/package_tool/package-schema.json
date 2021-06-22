@@ -15,15 +15,20 @@
                 "properties" : {
                     "img_id" : {
                         "description" : "Image identifier",
-                        "type" : "string"
+                        "type" : "string",
+                        "pattern": "^[0-9a-zA-Z_.-]*$",
+                        "minLength": 1
+
                     },
                     "vendor_data" : {
                         "description" : "Image Vendor data",
-                        "type" : "string"
+                        "type" : "string",
+                        "minLength": 1
                     },
                     "file_name" : {
                         "description" : "Image file name",
-                        "$ref": "#/definitions/non_empty_string"
+                        "type": "string",
+                        "minLength": 1
                     }
                 },
                 "required": [
@@ -32,12 +37,6 @@
                     "file_name"
                 ]
             }
-        }
-    },
-    "definitions": {
-        "non_empty_string": {
-          "type": "string",
-          "minLength": 1
         }
     }
 }

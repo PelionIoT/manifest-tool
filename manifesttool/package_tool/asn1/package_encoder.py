@@ -48,8 +48,9 @@ class DescriptorAsnCodec:
     def get_img_descriptor(image):
 
         image_descriptor = package_schema.ImgDescriptor()
-        image_descriptor['id'] = image['file_name']
+        image_descriptor['id'] = image['img_id']
         image_descriptor['vendor-data'] = image['vendor_data']
+        image_descriptor['vendor-data-size'] = len(image['vendor_data'])
         image_descriptor['image-size'] = get_file_size(image['file_name'])
 
         return image_descriptor

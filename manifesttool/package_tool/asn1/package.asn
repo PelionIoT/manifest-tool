@@ -19,18 +19,21 @@
 --Package definition file in ASN.1 --
 DescriptorSchema DEFINITIONS IMPLICIT TAGS ::= BEGIN
 
-  string ::= UTF8String
-  int ::= INTEGER
+  String ::= UTF8String
+  Int ::= INTEGER
+  Bytes ::= OCTET STRING
 
   -- Image descriptor 
   ImgDescriptor ::= SEQUENCE
   {
      -- Image identifier , also the file name in Linux
-     id         string,
+     id         String,
      -- Vendor data
-     vendor-data string,
+     vendor-data Bytes,
+     -- Vendor data
+     vendor-data-size Int,
      -- Image size
-     image-size  int
+     image-size  Int
   }
 
   Descriptor ::= SEQUENCE 

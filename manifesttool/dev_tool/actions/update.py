@@ -217,7 +217,8 @@ def update(
         sign_image: bool,
         component: str,
         short_url: bool,
-        encrypt_payload: bool
+        encrypt_payload: bool,
+        combined_package: bool
 ):
     config = load_service_config(service_config)
 
@@ -267,7 +268,8 @@ def update(
             priority=priority,
             fw_version=fw_version,
             sign_image=sign_image,
-            component=component
+            component=component,
+            combined_package=combined_package
         )
 
         manifest_name = 'manifest-{timestamp}-{filename}'.format(
@@ -360,5 +362,6 @@ def entry_point(
         sign_image=getattr(args, 'sign_image', False),
         component=getattr(args, 'component_name', None),
         short_url=hasattr(args, 'use_short_url') and args.use_short_url,
-        encrypt_payload=encrypt_payload
+        encrypt_payload=encrypt_payload,
+        combined_package=getattr(args, 'combined_image', False)
     )

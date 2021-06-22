@@ -53,7 +53,9 @@ ManifestSchema DEFINITIONS IMPLICIT TAGS ::= BEGIN
       -- 01xx-FFxx describe encrypted-format
       raw-binary(1),
       arm-patch-stream(5),
+      combined(6),
       encrypted-raw(257),  -- 0x0101
+      encrypted-combined(263) -- 0x0106
     },
 
     -- raw ECDSA signature (r||s) over installed payload

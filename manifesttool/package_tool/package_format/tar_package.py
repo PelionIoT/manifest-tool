@@ -18,13 +18,13 @@
 import logging
 import tempfile
 from pathlib import Path
-import os.path
 import tarfile
 from manifesttool.package_tool.package_format.package_format \
     import PackageFormatBase
 from manifesttool.package_tool.package_format.package_format \
     import DESCRIPTOR_FILE_NAME
-
+from manifesttool.package_tool.asn1.package_encoder \
+    import DescriptorAsnCodec
 
 TAR_TOOL_PATH = Path(__file__).resolve().parent.parent
 DESC_FILE = TAR_TOOL_PATH / DESCRIPTOR_FILE_NAME
@@ -38,9 +38,6 @@ class PackageFormatTar(PackageFormatBase):
             fh.write(asn1der)
             desc_path = fh.name
 
-        # Get list of the images
-        images_list = self.get_images(input_cfg)
-
         with tarfile.open(output_file, "w:") as tar_handle:
 
             # Add descriptor file to the package
@@ -48,5 +45,21 @@ class PackageFormatTar(PackageFormatBase):
             logging.debug('add files')
 
             # Add all images to the package
-            for image in images_list:
-                tar_handle.add(image, arcname=os.path.basename(image))
+            for image in input_cfg['images']:
+                tar_handle.add(image['file_name'], image['img_id'])
+
+    @classmethod
+    def parse_package(cls, package_file):
+
+        with tarfile.open(package_file, "r:") as tar_arch:
+            logging.info("Contents of the tar package - ")
+            for tarinfo in tar_arch:
+                logging.info('File name : %s', tarinfo.name)
+                if tarinfo.name in DESCRIPTOR_FILE_NAME:
+                    with tar_arch.extractfile(DESCRIPTOR_FILE_NAME) as desc_fh:
+                        asn1der = desc_fh.read()
+                    asn1_dict = DescriptorAsnCodec.decode(asn1der)
+
+        logging.info("Information of update images:")
+        for img in asn1_dict['descriptors-array']:
+            logging.info(img)

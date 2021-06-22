@@ -143,6 +143,11 @@ def register_parser(parser: argparse.ArgumentParser,
             help='Set update priority >=0. [Default: 0].',
             default=0
         )
+        optional.add_argument(
+            '--combined-image',
+            action='store_true',
+            help='Use combined package prepared by manifest-package-tool'
+        )
 
     optional.add_argument(
         '-d', '--vendor-data',
@@ -166,6 +171,28 @@ def register_parser(parser: argparse.ArgumentParser,
         help='Show this help message and exit.'
     )
 
+def set_payload_format(
+    delta_meta_file,
+    combined_package,
+    encrypted_digest
+):
+
+    if delta_meta_file.is_file():
+        if encrypted_digest:
+            raise AssertionError('Unexpected combination (Delta+Encrypted)')
+        payload_format = PayloadFormat.PATCH
+    elif combined_package is True:
+        if encrypted_digest:
+            payload_format = PayloadFormat.ENCRYPTED_COMBINED
+        else:
+            payload_format = PayloadFormat.COMBINED
+    else:
+        if encrypted_digest:
+            payload_format = PayloadFormat.ENCRYPTED_RAW
+        else:
+            payload_format = PayloadFormat.RAW
+
+    return payload_format
 
 def create_dev_manifest(
         dev_cfg: dict,
@@ -178,9 +205,9 @@ def create_dev_manifest(
         priority: int,
         fw_version: str,
         sign_image: bool,
-        component: str
+        component: str,
+        combined_package: bool
 ):
-
     key_file = Path(dev_cfg['key_file'])
     if not key_file.is_file():
         raise AssertionError('{} not found'.format(key_file.as_posix()))
@@ -189,15 +216,8 @@ def create_dev_manifest(
     payload_file = payload_path
     delta_meta_file = payload_file.with_suffix('.yaml')
 
-    if delta_meta_file.is_file():
-        if encrypted_digest:
-            raise AssertionError('Unexpected combination (Delta+Encrypted)')
-        payload_format = PayloadFormat.PATCH
-    else:
-        if encrypted_digest:
-            payload_format = PayloadFormat.ENCRYPTED_RAW
-        else:
-            payload_format = PayloadFormat.RAW
+    payload_format = \
+        set_payload_format(delta_meta_file, combined_package, encrypted_digest)
 
     input_cfg = {
         'vendor': {
@@ -329,7 +349,8 @@ def entry_point(
         priority=args.priority,
         fw_version=fw_version,
         sign_image=getattr(args, 'sign_image', False),
-        component=getattr(args, 'component_name', None)
+        component=getattr(args, 'component_name', None),
+        combined_package=getattr(args, 'combined_image', False)
     )
 
     with args.output as fh:

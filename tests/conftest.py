@@ -20,9 +20,9 @@ import os
 import uuid
 from pathlib import Path
 import time
-
+import yaml
 import pytest
-
+import random
 from manifesttool import armbsdiff
 from manifesttool.delta_tool import delta_tool
 from manifesttool.dev_tool import defaults
@@ -152,6 +152,8 @@ def data_generator(tmp_path_factory, size, encryption_key : bytes = None):
         api_config_path=api_config_path
     )
 
+    package_data = package_data_generator(tmp_path_factory,1024*512)
+
     return {
         'fw_file': fw_file,
         'new_fw_file': new_fw_file,
@@ -161,7 +163,58 @@ def data_generator(tmp_path_factory, size, encryption_key : bytes = None):
         'certificate_file': certificate_file,
         'tmp_path': tmp_path,
         'dev_cfg': dev_cfg,
-        'api_config_path': api_config_path
+        'api_config_path': api_config_path,
+        'package_data': package_data,
+        'encryption_key': encryption_key
+    }
+
+def package_data_generator(tmp_path_factory, max_image_size):
+
+    tmp_path  = tmp_path_factory.mktemp("package_data")
+    img1_name = tmp_path  / 'first.bin'
+    img1_size = random.randint(1024, max_image_size)
+    img1_data =  os.urandom(img1_size)
+    img1_name.write_bytes(img1_data)
+    img2_name = tmp_path  / 'second.bin'
+    img2_size = random.randint(1024, max_image_size)
+    img2_data =  os.urandom(img2_size)
+    img2_name.write_bytes(img2_data)
+    out_file_name = tmp_path /'package_file'
+    img1_id = 'img1_id'
+    img2_id = 'img2_id'
+
+    tmp_cfg = tmp_path / "package_config.yaml"
+
+    with tmp_cfg.open('wt') as fh:
+        yaml.dump(
+            {
+                'images': [
+                {
+                    'img_id': img1_id,
+                    'vendor_data': 'ca34_NM',
+                    'file_name': img1_name.as_posix()
+                },
+                {
+                    'img_id': img2_id,
+                    'vendor_data': 'VER1.2',
+                    'file_name':  img2_name.as_posix()
+                }
+        ]
+            },
+            fh
+        )
+
+    with open(tmp_cfg, "rb") as config_fh:
+        input_cfg = yaml.safe_load(config_fh)
+
+    return {
+        "1img_id" : img1_id,
+        "2img_id" : img2_id,
+        "1img_size" : img1_size,
+        "2img_size" : img2_size,
+        "out_file_name" : out_file_name.as_posix(),
+        "tmp_cfg" : tmp_cfg.as_posix(),
+        "input_cfg" : input_cfg
     }
 
 @contextlib.contextmanager

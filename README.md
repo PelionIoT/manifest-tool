@@ -160,8 +160,10 @@ describing the update type.
                           #  raw-binary       - full image update campaigns.
                           #  arm-patch-stream - delta patch update campaigns.
                           # For manifest v3 only:
-                          #  encrypted-raw    - full image update with encrypted image.
-      encrypted:  # Required for 'encrypted-raw' format.
+                          #  combined           - combined image update
+                          #  encrypted-raw      - full image update with encrypted image.
+                          #  encrypted-combined - combined image update with encrypted image.
+      encrypted:  # Required for 'encrypted-raw', 'encrypted-patch' formats.
         digest: 3725565932eb5b9fbd5767a3a534cb6a1a87813e0b4a76deacb9b36695c71307
                       # The encrypted payload digest.
                       # Obtained by copying the `encrypted_datafile_checksum` attribute

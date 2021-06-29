@@ -195,6 +195,8 @@ describing the update type.
         --output my.manifest.bin
     ```
 
+<span class="notes">**Note:** `--fw-version` is the same as the `MAIN` component attribute in the Pelion Device Management Portal. For example, `--fw-version 1.2.3` is the same as `"MAIN": "1.2.3"`.</span>
+
 <span class="notes">**Note:** The value of `--fw-version` can be between 0.0.1 and 999.999.999 and must be bigger than the firmware version currently installed on the device.</span>
 
 #### `manifest-tool create-v1`

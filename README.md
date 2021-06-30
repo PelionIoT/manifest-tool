@@ -198,6 +198,7 @@ describing the update type.
       url: http://some-url.com/files?id=1234
       file-path: ./my.fw.bin
       format: raw-binary
+    component: MAIN
     ```
 
 * Run:
@@ -210,7 +211,7 @@ describing the update type.
         --output my.manifest.bin
     ```
 
-<span class="notes">**Note:** The value of `--fw-version` can be between 0.0.1 and 999.999.999 and must be bigger than the firmware version currently installed on the device.</span>
+<span class="notes">**Note:** The value of `--fw-version` refers to the firmware version of the component to be updated. The value can be between 0.0.1 and 999.999.999 and must be greater than the firmware version currently installed on the device.</span>
 
 #### `manifest-tool create-v1`
 
@@ -415,6 +416,7 @@ manifest-dev-tool create \
     --payload-url http://test.pdmc.pelion.com?fileId=1256 \
     --payload-path new_fw.bin \
     --fw-version 1.2.3 \
+    --component-name MAIN \
     --output update-manifest.bin
 ```
 

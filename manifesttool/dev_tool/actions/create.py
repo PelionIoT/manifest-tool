@@ -93,7 +93,7 @@ def register_parser(parser: argparse.ArgumentParser,
             optional.add_argument(
                 '-e', '--encrypt-payload',
                 action='store_true',
-                help='Encrypt the payload device downloads.',
+                help='Encrypt the payload the device downloads.',
             )
         else:
             optional.add_argument(
@@ -122,7 +122,7 @@ def register_parser(parser: argparse.ArgumentParser,
             metavar='NAME',
             help='The name of the component to be udpated. '
                  'Must correspond to an existing component '
-                 'name on target devices.'
+                 'name on target devices. [Default: MAIN].'
         )
         if is_update_parser:
             optional.add_argument(

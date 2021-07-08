@@ -1,5 +1,14 @@
 # Changelog
 
+## 2.3.0
+- Add encrypted payload support to `manifest-tool`:
+  - Add `encrypted-raw` payload format and encrypted payload information to manifest configuration file.
+- Add encrypted payload support to `manifest-dev-tool`:
+  - Add `--encrypted-digest` and `--encrypted-size` options to `create` command.
+  - Add `--encrypt-payload` option to `update`.
+- Build wheels for `manylinux_2_24_x86_64`.
+- Improve the tool help and the `README.md` file.
+
 ## 2.2.0
 - Changes to `manifest-dev-tool`:
   - Improve timeout and connection error handling.

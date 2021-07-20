@@ -30,6 +30,6 @@ PLAT=manylinux2014_x86_64  && docker run --rm -e PLAT=$PLAT -v `pwd`:/io quay.io
 
 PLAT=manylinux_2_24_x86_64 && docker run --rm -e PLAT=$PLAT -v `pwd`:/io quay.io/pypa/$PLAT /io/build_manylinux_wheels_entry_point.sh |& tee $PLAT.log &
 
-sudo chown -R $USERNAME:$USERNAME dist/
-
 wait
+
+sudo chown -R $USERNAME:$USERNAME dist/

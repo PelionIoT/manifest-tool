@@ -111,7 +111,10 @@ the release creation time.
 1. Run `tox` on Windows, Linux and Mac.
 1. Create release on GitHub.
 1. Run `build_manylinux_wheels.sh` on Linux.
-1. Gather wheels and tar.gz from all `dist` folder into one dist folder.
+1. Gather wheels and tar.gz from all `dist` folder into one dist folder:
+   ```
+   scp $USER@<source base path>/manifest-tool/dist/*.whl dist/
+   ```
 1. Install `twine`: `pip install twine`.
 1. Publish to https://test.pypi.org and check:
     ```
@@ -121,4 +124,5 @@ the release creation time.
     ```
     twine upload dist/*
     ```
+1. Yank older pre-releases in https://pypi.org/manage/project/manifest-tool/releases/
 1. Close fixed issues

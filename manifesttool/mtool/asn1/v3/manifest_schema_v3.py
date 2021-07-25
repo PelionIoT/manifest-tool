@@ -45,7 +45,7 @@ Manifest.componentType = namedtype.NamedTypes(
     namedtype.NamedType('payload-digest', univ.OctetString()),
     namedtype.NamedType('payload-size', univ.Integer()),
     namedtype.NamedType('payload-uri', char.UTF8String()),
-    namedtype.NamedType('payload-format', univ.Enumerated(namedValues=namedval.NamedValues(('raw-binary', 1), ('arm-patch-stream', 5), ('combined', 6), ('encrypted-raw', 257), ('encrypted-combined', 263)))),
+    namedtype.NamedType('payload-format', univ.Enumerated(namedValues=namedval.NamedValues(('raw-binary', 1), ('arm-patch-stream', 5), ('combined', 6), ('encrypted-raw', 257), ('encrypted-combined', 262)))),
     namedtype.NamedType('installed-signature', univ.OctetString()),
     namedtype.OptionalNamedType('payload-metadata', PayloadMetadata()),
     namedtype.OptionalNamedType('vendor-data', univ.OctetString())

@@ -1,8 +1,8 @@
 images:
-  - img_id: First image identifier
+  - sub_comp_name: First image identifier
     vendor_data: First image vendor data
     file_name: First image file name
 
-  - img_id:  Second iamge identifier
+  - sub_comp_name:  Second iamge identifier
     vendor_data: Second image vendor data
     file_name: Second image file name

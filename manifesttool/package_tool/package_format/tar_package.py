@@ -46,7 +46,7 @@ class PackageFormatTar(PackageFormatBase):
 
             # Add all images to the package
             for image in input_cfg['images']:
-                tar_handle.add(image['file_name'], image['img_id'])
+                tar_handle.add(image['file_name'], image['sub_comp_name'])
 
     @classmethod
     def parse_package(cls, package_file):

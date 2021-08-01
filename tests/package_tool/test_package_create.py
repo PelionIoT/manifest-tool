@@ -75,7 +75,7 @@ def check_descriptor_file(tar_file, file_name,input_config):
         asn1 = DescriptorAsnCodec.decode(asn1der)
         assert len(input_config['images'])==asn1['num-of-images']
         for asn_image, config_image in zip(asn1['descriptors-array'], input_config['images']):
-            assert asn_image['id']==config_image['img_id'].encode('ASCII')
+            assert asn_image['id']==config_image['sub_comp_name'].encode('ASCII')
             assert asn_image['vendor-data-size'] == len(config_image['vendor_data'])
             assert asn_image['vendor-data']==config_image['vendor_data'].encode('ASCII')
 

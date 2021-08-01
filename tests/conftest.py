@@ -190,12 +190,12 @@ def package_data_generator(tmp_path_factory, max_image_size):
             {
                 'images': [
                 {
-                    'img_id': img1_id,
+                    'sub_comp_name': img1_id,
                     'vendor_data': 'ca34_NM',
                     'file_name': img1_name.as_posix()
                 },
                 {
-                    'img_id': img2_id,
+                    'sub_comp_name': img2_id,
                     'vendor_data': 'VER1.2',
                     'file_name':  img2_name.as_posix()
                 }

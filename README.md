@@ -29,12 +29,14 @@ Device Management supports:
   firmware image based on the delta patch file and the firmware
   currently present on the device. This technique saves traffic
   bandwidth.
+* Combined updates - The FOTA client lets you define a device component as consisting of several subcomponents, which the device always updates together and reports to the Update service on as a single component. For a combined update, the manifest tool creates a combined package, which includes multiple firmware images. The client parses the combined package and installs the images on the device in a predefined order you set on the device.
 
 The `manifest-tool` Python package includes these command line tools:
 
 - [`manifest-tool`](#manifest-tool) - Creates manifest files.
 - [`manifest-delta-tool`](#manifest-delta-tool) - Generates delta patch
   files.
+- [`manifest-package-tool`](#manifest-package-tool) - Generates a combined package file.
 - [`manifest-dev-tool`](#manifest-dev-tool) - A developer tool for
   running a simplified update campaign.
 
@@ -42,7 +44,6 @@ The `manifest-tool` Python package includes these command line tools:
 
 We recommend installing the `manifest-tool` Python package in a isolated
 [Python virtual environment](https://virtualenv.pypa.io).
-
 
 ### Installing the manifest tool from [PyPi](https://pypi.org/project/manifest-tool/)
 
@@ -64,7 +65,7 @@ pip install manifest-tool
 * [pip (Python Package Installer)](https://pip.pypa.io/en/stable/).
 * Native toolchain:
     * GCC/Clang for Linux/MacOS.
-    * [Microsoft Build Tools for Visual Studio 2019](https://www.visualstudio.com/downloads/#build-tools-for-visual-studio-2019) for Windows or different version sutibule to your Python version as describe [here](https://wiki.python.org/moin/WindowsCompilers).
+    * [Microsoft Build Tools for Visual Studio 2019](https://www.visualstudio.com/downloads/#build-tools-for-visual-studio-2019) for Windows or different version suitable to your Python version as describe [here](https://wiki.python.org/moin/WindowsCompilers).
 
 ```
 $ git clone https://github.com/PelionIoT/manifest-tool.git
@@ -81,6 +82,7 @@ This section explains how to use the CLI tools included in the
 
 - [manifest-tool](#manifest-tool)
 - [manifest-delta-tool](#manifest-delta-tool)
+- [manifest-package-tool](#manifest-package-tool)
 - [manifest-dev-tool](#manifest-dev-tool)
 
 ### manifest-tool
@@ -149,8 +151,8 @@ describing the update type.
     payload:
       url: http://some-url.com/files?id=1234  # Address from which the device downloads
                                               #  the candidate payload.
-                                              # Obtained by clicking "Copy HTTP URL" on 
-                                              # the Firmware image details screen 
+                                              # Obtained by clicking "Copy HTTP URL" on
+                                              # the Firmware image details screen
                                               # in Device Management Portal,
                                               #  or by copying the `datafile` attribute.
       file-path: ./my.fw.bin  # Local path to the candidate payload file
@@ -160,9 +162,9 @@ describing the update type.
                           #  raw-binary       - full image update campaigns.
                           #  arm-patch-stream - delta patch update campaigns.
                           # For manifest v3 only:
-                          #  combined           - combined image update
+                          #  combined           - combined update.
                           #  encrypted-raw      - full image update with encrypted image.
-                          #  encrypted-combined - combined image update with encrypted image.
+                          #  encrypted-combined - combined update with encrypted image.
       encrypted:  # Required for 'encrypted-raw', 'encrypted-patch' formats.
         digest: 3725565932eb5b9fbd5767a3a534cb6a1a87813e0b4a76deacb9b36695c71307
                       # The encrypted payload digest.
@@ -343,6 +345,85 @@ $ manifest-delta-tool -c current_fw.bin -n new_fw.bin -o delta-patch.bin
 <span class="notes">**Note 2:** Compression block size has a direct impact on the amount of memory required by the device receiving the update. The device requires twice the amount of RAM in runtime to decompress and apply the patch.</span>
 
 <span class="notes">**Note 3:** Compression block must be aligned with network (COAP/HTTP) buffer size used for download. Misalignment in sizes may result in device failure to process the delta patch file.</span>
+
+
+### manifest-package-tool
+
+Use this tool to generate combined package files for combined updates.
+
+`manifest-package-tool` commands:
+
+- [`manifest-package-tool create`](#manifest-package-tool-create) - Creates a combined package file for combined updates.
+- [`manifest-package-tool parse`](#manifest-package-tool-parse) - Parses and verifies existing combined package files.
+
+<span class="notes">**Note:** Run `manifest-package-tool --help` for more information about all commands, or `manifest-package-tool <command> --help` for more information about a specific command, including its parameters and how to use them.</span>
+
+
+#### `manifest-package-tool create`
+
+Creates a combined package file based on a configuration file
+with information about firmware images for a combined update.
+
+**Prerequisites**
+
+* A configuration file in JSON or YAML format.
+
+    Configuration file format:
+    ```yaml
+    images:  # Two or more images
+    - file_name:  ./my.fw1.bin     # Local path to one of the firmware images.
+      sub_comp_name:  fw1_id       # Name of the subcomponent firmware image.
+      vendor_data: fw1_vend        # Vendor data for the firmware image.
+    - file_name:  ./my.fw2.bin     # Local path to another firmware image.
+      sub_comp_name:  fw2_id       # Name of the subcomponent firmware image.
+      vendor_data: fw2_vend        # Vendor data for the firmware image.
+    ```
+
+* New firmware images to be included in the combined package. In this example `./my/fw1.bin` and `./my.fw2.bin`.
+
+
+**Example**
+
+```shell
+$ manifest-package-tool create --config combined_package_config.yaml --output combined_package_file
+```
+
+Where `combined_package_config.yaml` is the input configuration file.
+
+The tool creates a `tar`-format combined package with the firmware images listed in the configuration file, where:
+
+- `file_name` is the local path to the image file.
+- `sub_comp_name` is the name the tool gives to the subcomponent firmware image file in the combined package. This must be the same as the name (`sub_comp_name`) defined on the device.
+- `vendor_data` is the vendor information of the firmware image.
+
+In addition to firmware image files, the tool creates a descriptor `__desc__` file inside the `tar` package, which provides information about the contents of the combined package to the FOTA update client.
+
+<span class="notes">**Note 1:** The FOTA update client reports on a combined update as an update of a single component (defined as `comp_name` on the device), consisting of multiple subcomponents (each defined as `sub_comp_name` on the device). When you create a combined package, each `sub_comp_name` must correspond to a `sub_comp_name` on the device. For more information, see [Implementing combined update](TBD)</span>
+
+<span class="notes">**Note 2:** When you create a manifest for a combined update using `manifest-tool`, in the manifest configuration file, set the `format` field to `combined` or `encrypted-combined`, set the `component` field to the name of the component you are updating, and set the `file-path` field to the path of the combined package file.</span>
+
+<span class="notes">**Note 3:** To use a combined package file with the `manifest-dev-tool` `create` or `update` commands, set the path of the combined package file in the `-p` argument and pass the `--combined-image` flag to indicate that the current candidate payload is a combined image.</span>
+
+
+#### `manifest-package-tool parse`
+Parses and validates existing combined package files.
+
+**Prerequisites**
+* A combined package file (in our example `combined_package_file`).
+
+**Example**
+
+```shell
+$ manifest-package-tool parse --package combined_package_file
+Contents of the tar package -
+File name : _desc_
+File name : fw1_id
+File name : fw1_id
+Information of update images:
+OrderedDict([('id', b'fw1_id'), ('vendor-data', b'fw1_vend'), ('vendor-data-size', 8), ('image-size', 417053)])
+OrderedDict([('id', b'fw2_id'), ('vendor-data', b'fw2_vend'), ('vendor-data-size', 8), ('image-size', 253482)])
+```
+
 
 ### manifest-dev-tool
 

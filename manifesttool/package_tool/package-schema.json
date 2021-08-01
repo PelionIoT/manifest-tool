@@ -13,8 +13,8 @@
             "items": {
                 "type" : "object",
                 "properties" : {
-                    "img_id" : {
-                        "description" : "Image identifier",
+                    "sub_comp_name" : {
+                        "description" : "Subcomponent name",
                         "type" : "string",
                         "pattern": "^[0-9a-zA-Z_.-]*$",
                         "minLength": 1
@@ -32,7 +32,7 @@
                     }
                 },
                 "required": [
-                    "img_id",
+                    "sub_comp_name",
                     "vendor_data",
                     "file_name"
                 ]

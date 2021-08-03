@@ -55,7 +55,7 @@ class DescriptorAsnCodec:
 
         return image_descriptor
 
-    def encode_package_descritpor(self, input_cfg: dict) -> bytes:
+    def encode_package_descriptor(self, input_cfg: dict) -> bytes:
 
         self.set_asn1_descriptor(input_cfg)
         return der_encoder.encode(self.dom)

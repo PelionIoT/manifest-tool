@@ -54,7 +54,7 @@ def test_create_happy_day_command(
         'create',
         '--config', happy_day_data['tmp_cfg'],
         '--format', pack_format,
-        '--image-aligment-size', "1",
+        '--image-alignment-size', "1",
         '--output', happy_day_data['out_file_name']
     ]
     assert package_tool.entry_point(cmd) == 0

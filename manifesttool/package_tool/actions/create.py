@@ -42,7 +42,7 @@ def _get_alignment_int_argument(value: str) -> int:
         pass
     if int_value is None or int_value < 1:
         raise argparse.ArgumentTypeError(
-            '"{}" is an invalid aligment value, should be >0'.format(value))
+            '"{}" is an invalid alignment value, should be >0'.format(value))
     return int_value
 
 class CreateAction:
@@ -66,13 +66,13 @@ class CreateAction:
             '-f',
             '--format',
             help='Package format type.',
-            choices=['tar'],  # Add bin when impelemented
+            choices=['tar'],  # Add bin when implemented
             default='tar'
         )
 
         required.add_argument(
             '-a',
-            '--image-aligment-size',
+            '--image-alignment-size',
             help='Candidate storage read size, \
                 used for image alignment. Relevant for embedded devices.',
             default=1,
@@ -109,7 +109,7 @@ class CreateAction:
 
         # create asn1 descriptor
         codec = DescriptorAsnCodec()
-        asn1der = codec.encode_package_descritpor(input_cfg)
+        asn1der = codec.encode_package_descriptor(input_cfg)
 
         if 'tar' in format_type:
             package_format = PackageFormatTar()

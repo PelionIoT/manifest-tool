@@ -21,9 +21,10 @@ import logging
 import time
 import urllib.parse
 from pathlib import Path
-from typing import NewType, List
+from typing import List, NewType
 
 import requests
+import yaml
 
 FW_UPLOAD = '/v3/firmware-images'
 FW_UPLOAD_JOBS = '/v3/firmware-images/upload-jobs'
@@ -65,16 +66,33 @@ ID = NewType('ID', str)
 Phase = NewType('Phase', str)
 
 class UpdateServiceApi:
-    def __init__(self, host: URL, access_key: str):
+    def __init__(self, config_file: Path):
         """
         Create REST API provider for Update Service APIs
         :param host: Pelion service URL
         :param access_key: account access key
         """
-        self._host = host
-        self._default_headers = {
-            'Authorization': 'Bearer {}'.format(access_key)
-        }
+
+        config = {}
+        if config_file.is_file():
+            with config_file.open('rt') as fh:
+                config = yaml.safe_load(fh)
+                if 'access_key' not in config and 'api_key' in config:
+                    # replace api_key with access_key
+                    # for backward compatibility
+                    config['access_key'] = config.pop('api_key')
+
+        if 'host' in config and 'access_key' in config:
+            self._host = config['host']
+            self._default_headers = {
+                'Authorization': 'Bearer {}'.format(
+                    config['access_key']
+                )
+            }
+            return
+
+        raise AssertionError('Pelion service configurations '
+                             '(URL and access key) are not provided')
 
     def _url(self, api, **kwargs) -> str:
         """

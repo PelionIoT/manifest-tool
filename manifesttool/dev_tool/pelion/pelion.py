@@ -26,11 +26,22 @@ from typing import List, NewType
 import requests
 import yaml
 
-FW_UPLOAD = '/v3/firmware-images'
+# APIs documentation:
+# https://developer.pelion.com/docs/device-management/current/service-api-references/service-api-documentation.html
+# Device directory -
+#   https://developer.pelion.com/docs/device-management-api/device-directory
+# Update Service -
+#   https://developer.pelion.com/docs/device-management-api/update-service
+
+DEVICES = 'v3/devices'
+DEVICE = 'v3/devices/{id}'
+
+FW_IMAGES = '/v3/firmware-images'
+FW_IMAGE = '/v3/firmware-images/{id}'
+FW_UPLOAD = FW_IMAGES
 FW_UPLOAD_JOBS = '/v3/firmware-images/upload-jobs'
 FW_UPLOAD_JOB = '/v3/firmware-images/upload-jobs/{id}'
 FW_UPLOAD_JOB_CHUNK = '/v3/firmware-images/upload-jobs/{id}/chunks'
-FW_IMAGE = '/v3/firmware-images/{id}'
 
 FW_MANIFESTS = '/v3/firmware-manifests'
 FW_MANIFEST = '/v3/firmware-manifests/{id}'
@@ -65,7 +76,7 @@ URL = NewType('URL', str)
 ID = NewType('ID', str)
 Phase = NewType('Phase', str)
 
-class UpdateServiceApi:
+class PelionServiceApi:
     def __init__(self, config_file: Path):
         """
         Create REST API provider for Update Service APIs
@@ -402,10 +413,11 @@ class UpdateServiceApi:
         response.raise_for_status()
         LOG.info('Deleted campaign %s', campaign_id)
 
-    def campaign_stop(self, campaign_id: ID):
+    def campaign_stop(self, campaign_id: ID, timeout: int = 60):
         """
         Stop update campaign
         :param campaign_id: campaign ID
+        :param timeout: timeout in seconds to wait for campaign to stop
         """
         try:
             # check campaign phase and skip if it not active
@@ -419,8 +431,8 @@ class UpdateServiceApi:
             )
             response.raise_for_status()
             curr_phase = self.campaign_get(campaign_id)['phase']
-            # The campaign is stopping. wait a minute for it to finish
-            retries = 60
+            # The campaign is stopping. wait for it to stop
+            retries = timeout
             while curr_phase == 'stopping' and retries > 0:
                 time.sleep(1)
                 curr_phase = self.campaign_get(campaign_id)['phase']
@@ -501,7 +513,7 @@ class UpdateServiceApi:
         """
         Get metadata for devices participating in update campaign
 
-        Note: this function and assumes small number of devcises participating
+        Note: this function and assumes small number of devices participating
         in update campaign (as part of developer flow). Thus it does not
         handles pagination
         :param campaign_id: campaign ID
@@ -533,3 +545,77 @@ class UpdateServiceApi:
         :return: True if update campaign phase is starting or active
         """
         return phase in CAMPAIGN_NOT_STARTED_PHASES
+
+    def device_delete(self, device_id: ID):
+        """
+        Delete device with a developer certificate
+        :param device_id: device ID
+        """
+        response = requests.delete(
+            self._url(DEVICE, id=device_id),
+            headers=self._headers()
+        )
+        response.raise_for_status()
+        LOG.info('Deleted device %s', device_id)
+
+    def _get_objects(self, api_url: str, api_filter: str = '') -> dict:
+        """
+        Get list of objects for the account
+        :param api_filter: filter query string
+        :return: Dictionary with the list of objects
+        """
+        api_filter = '&filter={}'.format(api_filter) if api_filter else ''
+        url = '{}?limit=1000&include=total_count{}'.format(api_url, api_filter)
+        response = requests.get(
+            self._url(url),
+            headers=self._headers()
+        )
+        response.raise_for_status()
+        total_count = response.json()['total_count']
+        objects = response.json()['data']
+        LOG.debug('Got %d/%d objects', len(objects), total_count)
+
+        url = url + '&after={after}'
+        while len(objects) < total_count:
+            last_object_id = objects[-1]['id']
+            response = requests.get(
+                self._url(url, after=last_object_id),
+                headers=self._headers()
+            )
+            response.raise_for_status()
+            objects.extend(response.json()['data'])
+            LOG.debug('Got %d/%d objects', len(objects), total_count)
+
+        return objects
+
+    def get_devices(self, api_filter: str = '') -> dict:
+        """
+        Get list of devices for the account
+        :param api_filter: filter query string
+        :return: Dictionary with the list of devices
+        """
+        return self._get_objects(DEVICES, api_filter)
+
+    def get_fw_images(self, api_filter: str = '') -> dict:
+        """
+        Get list of firmware images for the account
+        :param api_filter: filter query string
+        :return: Dictionary with the list of firmware images
+        """
+        return self._get_objects(FW_IMAGES, api_filter)
+
+    def get_manifests(self, api_filter: str = '') -> dict:
+        """
+        Get list of manifests for the account
+        :param api_filter: filter query string
+        :return: Dictionary with the list of manifests
+        """
+        return self._get_objects(FW_MANIFESTS, api_filter)
+
+    def get_campaigns(self, api_filter: str = '') -> dict:
+        """
+        Get list of campaigns for the account
+        :param api_filter: filter query string
+        :return: Dictionary with the list of campaigns
+        """
+        return self._get_objects(FW_CAMPAIGNS, api_filter)

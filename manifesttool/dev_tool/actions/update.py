@@ -79,7 +79,7 @@ def register_parser(parser: argparse.ArgumentParser, schema_version: str):
              'Only relevant if --wait-for-completion was provided.'
     )
 
-def _manage_campaign(api: pelion.UpdateServiceApi,
+def _manage_campaign(api: pelion.PelionServiceApi,
                      campaign_id: pelion.ID,
                      end_time: int,
                      do_wait: bool):
@@ -151,7 +151,7 @@ def _print_summary(summary: dict, summary_reasons: dict):
                 logger.warning(" %s", reasons.get('description'))
 
 
-def _finalize(api: pelion.UpdateServiceApi,
+def _finalize(api: pelion.PelionServiceApi,
               do_cleanup: bool,
               campaign_id: pelion.ID,
               manifest_id: pelion.ID,
@@ -219,7 +219,7 @@ def update(
         encrypt_payload: bool,
         combined_package: bool
 ):
-    api = pelion.UpdateServiceApi(service_config)
+    api = pelion.PelionServiceApi(service_config)
     manifest_path = None
     fw_image_id = None
     manifest_id = None

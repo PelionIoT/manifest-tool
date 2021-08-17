@@ -36,17 +36,18 @@ class PackageFormatTar(PackageFormatBase):
 
         with tempfile.NamedTemporaryFile(delete=False) as fh:
             fh.write(asn1der)
-            desc_path = fh.name
+            fh.close()
 
-        with tarfile.open(output_file, "w:") as tar_handle:
+            with tarfile.open(output_file, "w:") as tar_handle:
 
-            # Add descriptor file to the package
-            tar_handle.add(desc_path, DESCRIPTOR_FILE_NAME)
-            logging.debug('add files')
+                # Add descriptor file to the package
+                tar_handle.add(fh.name, DESCRIPTOR_FILE_NAME)
+                Path(fh.name).unlink()
 
-            # Add all images to the package
-            for image in input_cfg['images']:
-                tar_handle.add(image['file_name'], image['sub_comp_name'])
+                logging.debug('add files')
+                # Add all images to the package
+                for image in input_cfg['images']:
+                    tar_handle.add(image['file_name'], image['sub_comp_name'])
 
     @classmethod
     def parse_package(cls, package_file):

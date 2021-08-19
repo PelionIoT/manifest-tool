@@ -22,8 +22,7 @@ import logging
 import sys
 
 from manifesttool import __version__
-from manifesttool.dev_tool.actions import create
-from manifesttool.dev_tool.actions import init, update
+from manifesttool.dev_tool.actions import clean, create, init, update
 from manifesttool.mtool.asn1.v1 import ManifestAsnCodecV1
 from manifesttool.mtool.asn1.v3 import ManifestAsnCodecV3
 
@@ -39,6 +38,7 @@ class DevActions(enum.Enum):
     UPDATE = 'update'
     UPDATE_V1 = 'update-v1'
 
+    CLEAN = 'clean'
 
 def get_parser():
     parser = argparse.ArgumentParser(
@@ -90,6 +90,16 @@ def get_parser():
     )
     update.register_parser(update_parser, ManifestAsnCodecV1.get_name())
 
+    clean_parser = actions_parser.add_parser(
+        DevActions.CLEAN.value,
+        help='Delete development devices, fw images, manifests and '
+             'update campaigns from account.',
+        description='Delete development devices, fw images, '
+                    'manifests and update campaigns from account.',
+        add_help=False
+    )
+    clean.register_parser(clean_parser)
+
     parser.add_argument(
         '--debug',
         action='store_true',
@@ -140,6 +150,9 @@ def entry_point(argv=sys.argv[1:]):  # pylint: disable=dangerous-default-value
             update.entry_point(args, ManifestAsnCodecV3)
         elif action == DevActions.UPDATE_V1:
             update.entry_point(args, ManifestAsnCodecV1)
+        # ---------------------------------------------------------------------
+        elif action == DevActions.CLEAN:
+            clean.entry_point(args)
         # ---------------------------------------------------------------------
         else:
             raise AssertionError('unknown action')

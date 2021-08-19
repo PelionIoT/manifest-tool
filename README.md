@@ -444,6 +444,8 @@ Use `manifest-dev-tool` for development flows only.
 - [`manifest-dev-tool update-v1`](#manifest-dev-tool-update-v1) - Lets
   you perform end-to-end tests without leaving the command shell using a
   V1-schema manifest.
+- [`manifest-dev-tool clean`](#manifest-dev-tool-clean) - Lets you
+  delete development devices, firmware images, manifests and update campaigns from your account.
 
 <span class="notes">**Note:** Run `manifest-dev-tool --help` for more information about all commands, or `manifest-dev-tool <command> --help` for more information about a specific command, including its parameters and how to use them.</span>
 
@@ -567,6 +569,25 @@ v1-format manifest.
   manifest-dev-tool update-v1 \
       --payload-path my_new_fw.bin \
       --wait-for-completion
+  ```
+
+#### `manifest-dev-tool clean`
+
+Helper command to delete development devices, firmware images, manifests and update campaigns from your account.
+
+<span class="notes">**Note:** Use this command wisely as the delete action is irreversible.</span>
+
+The command:
+1. Fetches a list of development devices, firmware images, manifests and update campaigns.
+1. Stops active update campaigns if you pass the `--delete-active` argument.
+1. Sends a delete request for each object in the list.
+
+The command's default behavior is to delete only inactive objects that are older than 7 days.
+
+**Example**
+
+  ```shell
+  manifest-dev-tool clean
   ```
 
 ### Developer workflow example for mbed-os devices

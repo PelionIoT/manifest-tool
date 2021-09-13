@@ -87,7 +87,7 @@ def _manage_campaign(api: pelion.PelionServiceApi,
     old_state = ''
     try:
         api.campaign_start(campaign_id)
-    except requests.HTTPError as ex:
+    except requests.HTTPError:
         logger.error('Failed to start campaign %s', campaign_id)
         raise
     try:
@@ -122,7 +122,7 @@ def _manage_campaign(api: pelion.PelionServiceApi,
             time.sleep(3)
         logger.error('Campaign timed out')
         raise AssertionError('Campaign timed out')
-    except requests.HTTPError as ex:
+    except requests.HTTPError:
         logger.error('Failed to retrieve campaign state')
         raise
 

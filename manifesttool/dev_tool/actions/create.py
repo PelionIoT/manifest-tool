@@ -286,7 +286,7 @@ def load_cfg_and_get_fw_ver(
     component_name = getattr(args, 'component_name', 'MAIN')
     fw_migrate_ver = getattr(args, 'fw_migrate_ver', None)
     cache_fw_version_file = args.cache_dir / defaults.UPDATE_VERSION
-    cached_versions = dict()
+    cached_versions = {}
     fw_sem_ver = None
 
     # load dev_cfg

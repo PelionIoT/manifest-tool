@@ -303,7 +303,7 @@ def generate_credentials(
                 decipher_only=False),
             critical=False
         ).add_extension(
-            x509.SubjectAlternativeName([x509.DNSName(u"localhost")]),
+            x509.SubjectAlternativeName([x509.DNSName("localhost")]),
             critical=False,
         ).add_extension(
             x509.ExtendedKeyUsage([x509.oid.ExtendedKeyUsageOID.CODE_SIGNING]),
@@ -369,7 +369,7 @@ def generate_service_config(
     api_url: str,
     api_config_path: Path
 ):
-    cfg = dict()
+    cfg = {}
 
     if access_key is None or api_url is None:
         return

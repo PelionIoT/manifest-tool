@@ -24,24 +24,31 @@ from cryptography.hazmat.primitives.asymmetric import ec
 from cryptography.hazmat.primitives.asymmetric import utils as ec_utils
 from cryptography.utils import int_to_bytes
 
-
-def ecdsa_sign_prehashed(digest, pem_key_data):
+def _load_ec_private_key(pem_key_data) -> ec.EllipticCurvePrivateKey:
     private_key = serialization.load_pem_private_key(
         pem_key_data,
         password=None,
         backend=default_backend()
     )
+    if isinstance(private_key, ec.EllipticCurvePrivateKey):
+        return private_key
+    raise TypeError()
+
+def ecdsa_sign_prehashed(digest, pem_key_data) -> bytes:
+    # pylint: disable=no-value-for-parameter
+    private_key: ec.EllipticCurvePrivateKey
+    private_key = _load_ec_private_key(pem_key_data)
     return private_key.sign(
-        digest, ec.ECDSA(ec_utils.Prehashed(hashes.SHA256())))
-
-
-def ecdsa_sign(data_to_sign, pem_key_data):
-    private_key = serialization.load_pem_private_key(
-        pem_key_data,
-        password=None,
-        backend=default_backend()
+        digest, ec.ECDSA(ec_utils.Prehashed(hashes.SHA256()))
     )
-    return private_key.sign(data_to_sign, ec.ECDSA(hashes.SHA256()))
+
+
+def ecdsa_sign(data_to_sign, pem_key_data) -> bytes:
+    # pylint: disable=no-value-for-parameter
+    private_key = _load_ec_private_key(pem_key_data)
+    return private_key.sign(
+        data_to_sign, ec.ECDSA(hashes.SHA256())
+    )
 
 def public_key_from_private(pem_priv_key_data) -> ec.EllipticCurvePublicKey:
     private_key = serialization.load_pem_private_key(

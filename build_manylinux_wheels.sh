@@ -32,4 +32,4 @@ PLAT=manylinux_2_24_x86_64 && docker run --rm -e PLAT=$PLAT -v `pwd`:/io quay.io
 
 wait
 
-sudo chown -R $USERNAME:$USERNAME dist/
+sudo chown -R $USER:$USER dist/

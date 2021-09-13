@@ -1,5 +1,10 @@
 # Changelog
 
+## 2.4.0
+- Add `manifest-package-tool`:
+  - New tool to generate combined package files for combined updates.
+- Update the `README.md` file.
+
 ## 2.3.0
 - Add encrypted payload support to `manifest-tool`:
   - Add `encrypted-raw` payload format and encrypted payload information to manifest configuration file.

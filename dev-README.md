@@ -108,9 +108,10 @@ the release creation time.
 ## Publish release
 1. Update `requirements.txt` to dependencies latest version.
 1. Bump the package [version](./manifesttool/__init__.py) and tar name in [tox.ini](./tox.ini).
+1. Set the development environment by running `dev_init.sh` on Linux/Mac or `dev_init.bat` on Windows.
 1. Run `tox` on Windows, Linux and Mac.
 1. Create release on GitHub.
-1. Run `build_manylinux_wheels.sh` on Linux.
+1. Run `build_manylinux_wheels.sh` on Linux. The dist folder should contain 4 wheels for every Linux distribution (16 wheels overall).
 1. Gather wheels and tar.gz from all `dist` folder into one dist folder:
    ```
    scp $USER@<source base path>/manifest-tool/dist/*.whl dist/

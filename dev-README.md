@@ -3,7 +3,7 @@
 ## Pyenv - https://github.com/pyenv/pyenv
 `pyenv` helps to manage different Python installations side by side.
 
-<span class="notes">**Note:** Currentlly, not in use.</span>
+<span class="notes">**Note:** Currently, not in use.</span>
 
 Example:
 ```shell
@@ -107,7 +107,7 @@ the release creation time.
 
 ## Publish release
 1. Update `requirements.txt` to dependencies latest version.
-1. Bump the packege [version](./manifesttool/__init__.py).
+1. Bump the package [version](./manifesttool/__init__.py) and tar name in [tox.ini](./tox.ini).
 1. Run `tox` on Windows, Linux and Mac.
 1. Create release on GitHub.
 1. Run `build_manylinux_wheels.sh` on Linux.

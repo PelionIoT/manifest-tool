@@ -143,7 +143,9 @@ disable=print-statement,
         too-many-locals,
         missing-docstring,
         duplicate-code,
-        too-many-public-methods
+        too-many-public-methods,
+        consider-using-f-string,
+        unspecified-encoding
 
 # Enable the message, report, category or checker with the given id(s). You can
 # either give multiple identifier separated by comma (,) or put this option

@@ -44,7 +44,7 @@ Same as `dev_init.sh` but for Windows
 
 - Example of running only one test:
   ```
-  pytest tests/dev_tool/test_dev_update.py -o log_cli=true -k test_cli_update_delta_happy_day[action0]
+  pytest tests/dev_tool/test_dev_update.py -o log_cli=true -k test_cli_update_happy_day[fw_file-True-action0]
   ```
 
 ## tox

@@ -30,6 +30,10 @@ PLAT=manylinux2014_x86_64  && docker run --rm -e PLAT=$PLAT -v `pwd`:/io quay.io
 
 PLAT=manylinux_2_24_x86_64 && docker run --rm -e PLAT=$PLAT -v `pwd`:/io quay.io/pypa/$PLAT /io/build_manylinux_wheels_entry_point.sh |& tee $PLAT.log &
 
+docker run --rm --privileged tonistiigi/binfmt:latest --install all &
+
+PLAT=manylinux2014_aarch64 && docker run --rm -e PLAT=$PLAT -v `pwd`:/io quay.io/pypa/$PLAT /io/build_manylinux_wheels_entry_point.sh |& tee $PLAT.log &
+
 wait
 
 sudo chown -R $USER:$USER dist/

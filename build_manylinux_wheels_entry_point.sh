@@ -56,6 +56,10 @@ for whl in wheelhouse/$PLAT/*-linux_x86_64.whl; do
     repair_wheel "$whl"
 done
 
+for whl in wheelhouse/$PLAT/*-linux_aarch64.whl; do
+    repair_wheel "$whl"
+done
+
 # Remove wheelhouse/$PLAT if it's empty
 if [ -z "$(ls -A wheelhouse/$PLAT)" ]; then
     rm -rf "wheelhouse/$PLAT"

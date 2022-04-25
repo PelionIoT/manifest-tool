@@ -21,8 +21,8 @@ from typing import TypeVar
 
 DESCRIPTOR_FILE_NAME = "_desc_"
 
-PackageFormatBaseType = TypeVar(
-    'PackageFormatBaseType', bound='PackageFormatBase')
+PackageFormatBaseT = TypeVar(
+    'PackageFormatBaseT', bound='PackageFormatBase')
 
 logger = logging.getLogger('package-format')
 

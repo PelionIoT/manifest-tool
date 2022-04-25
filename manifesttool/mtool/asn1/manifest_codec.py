@@ -33,8 +33,8 @@ from manifesttool.mtool.payload_format import PayloadFormat
 
 READ_BLOCK_SIZE = 65536
 
-ManifestAsnCodecBaseType = TypeVar(
-    'ManifestAsnCodecBaseType', bound='ManifestAsnCodecBase')
+ManifestAsnCodecBaseT = TypeVar(
+    'ManifestAsnCodecBaseT', bound='ManifestAsnCodecBase')
 
 logger = logging.getLogger('manifest-codec')
 

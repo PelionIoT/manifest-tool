@@ -49,8 +49,7 @@ class PackageFormatTar(PackageFormatBase):
                 for image in input_cfg['images']:
                     tar_handle.add(image['file_name'], image['sub_comp_name'])
 
-    @classmethod
-    def parse_package(cls, package_file):
+    def parse_package(self, package_file):
 
         with tarfile.open(package_file, "r:") as tar_arch:
             logging.info("Contents of the tar package - ")

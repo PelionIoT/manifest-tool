@@ -42,7 +42,22 @@ The `manifest-tool` Python package includes these command line tools:
 
 ## Installing the manifest tool
 
-We recommend installing the `manifest-tool` Python package in a isolated
+Unfortunately this tool is written in Python. For this reason we recommend just using the docker container version:
+
+```
+docker pull ghcr.io/pelioniot/manifest-tool:latest
+docker tag ghcr.io/pelioniot/manifest-tool  manifest-tool
+```
+
+And then run the manifest-tool like:
+
+```
+docker run manifest-tool [ARGS ...]
+```
+
+## Installing locally
+
+If installing locally, we recommend installing the `manifest-tool` Python package in a isolated
 [Python virtual environment](https://virtualenv.pypa.io).
 
 ### Installing the manifest tool from [PyPi](https://pypi.org/project/manifest-tool/)

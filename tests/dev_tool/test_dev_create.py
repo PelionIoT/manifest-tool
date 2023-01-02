@@ -23,7 +23,7 @@ from manifesttool.dev_tool import defaults
 from manifesttool.dev_tool import dev_tool
 from manifesttool.dev_tool.actions.init import generate_developer_config
 from manifesttool.package_tool.actions.create import CreateAction as PackageCreateAction
-from tests import conftest
+from tests.conftest import working_directory
 
 
 @pytest.mark.parametrize(
@@ -62,7 +62,7 @@ def test_cli_developer(happy_day_data, action):
         '--priority', '100500',
         '--output', output_manifest.as_posix(),
         '--cache-dir', happy_day_data['tmp_path'].as_posix(),
-        '--payload-url', 'https://pelion.com/foo.bin?id=67567565576857',
+        '--payload-url', 'https://izumanetworks.com/foo.bin?id=67567565576857',
         '--payload-path', payload_path,
         '--vendor-data', dev_cfg.as_posix(),
     ]
@@ -74,7 +74,7 @@ def test_cli_developer(happy_day_data, action):
         else:
             cmd.extend(['--fw-version', '100.500.666'])
 
-    with conftest.working_directory(happy_day_data['tmp_path']):
+    with working_directory(happy_day_data['tmp_path']):
         assert 0 == dev_tool.entry_point(cmd)
 
 def generate_package(happy_day_data):

@@ -1,5 +1,18 @@
 # Changelog
 
+## 2.5.0
+- Izuma branding, contact email/author updated, Cloud documentation links updated.
+- Timeouts for `requests.put/post/delete` operations.
+- Pinned down critical Python module versions in `dev-requirements.txt`.
+- Module name fixes for some tests.
+- Removed obsolete options from `.pylintrc`.
+- Support for / testing on Python 3.6 dropped.
+- Support for / testing on Python 3.10 added.
+
+## 2.4.1
+
+- Aarch64 support.
+
 ## 2.4.0
 - Add `manifest-package-tool`:
   - New tool to generate combined package files for combined updates.

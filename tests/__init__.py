@@ -1,7 +1,5 @@
-#!/usr/bin/env bash -e
 # ----------------------------------------------------------------------------
-# Copyright 2019-2021 Pelion
-# Copyright (c) 2022-2023 Izuma Networks
+# Copyright (c) 2022 Izuma Networks
 #
 # SPDX-License-Identifier: Apache-2.0
 #
@@ -17,14 +15,3 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ----------------------------------------------------------------------------
-
-generate() {
-    local input=$1
-    local output=$2
-    echo "asn1ate $input > $output"
-    cat ../../../IZUMA_NETWORKS_LICENSE > $output
-    asn1ate $input >> $output
-}
-
-generate v3/manifest_v3.asn v3/manifest_schema_v3.py
-generate v1/manifest-1.0.0 v1/manifest_schema_v1.py

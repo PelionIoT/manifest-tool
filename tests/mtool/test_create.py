@@ -68,7 +68,7 @@ def test_create_happy_day_full(
 
     input_cfg = {
         'vendor': {
-            'domain': 'pelion.com'
+            'domain': 'izumanetworks.com'
         },
         'device': {
             'model-name': 'my-device'
@@ -223,7 +223,7 @@ def test_create_happy_day_delta(
     for manifest_version in ManifestVersion.list_codecs():
         input_cfg = {
             'vendor': {
-                'domain': 'pelion.com'
+                'domain': 'izumanetworks.com'
             },
             'device': {
                 'model-name': 'my-device'
@@ -359,7 +359,7 @@ def cli_test_common(happy_day_data, manifest_version, update_type):
         yaml.dump(
             {
                 'vendor': {
-                    'domain': 'pelion.com'
+                    'domain': 'izumanetworks.com'
                 },
                 'device': {
                     'model-name': 'my-device'

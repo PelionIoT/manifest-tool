@@ -7,10 +7,11 @@
 
 Example:
 ```shell
+$ pyenv install 3.10.0
+$ pyenv install 3.9.0
 $ pyenv install 3.8.0
 $ pyenv install 3.7.5
-$ pyenv install 3.6.9
-$ pyenv local 3.8.0 3.7.5 3.6.9
+$ pyenv local 3.9.0 3.8.0 3.7.5
 $ python --version
 Python 3.8.0
 ```
@@ -61,7 +62,7 @@ Execute `tox -e py38` to test only the python3.8 environment.
 ```shell
 $ pyenv local 3.7.5
 $ python setup.py bdist_wheel
-$ pyenv local 3.6.9
+$ pyenv local 3.8.9
 $ python setup.py bdist_wheel
 ```
 do the same on each platform (Windows, Linux, macOS) per Python
@@ -112,7 +113,7 @@ the release creation time.
 1. Run `tox` on Windows, Linux and Mac.
 1. Create release on GitHub.
 1. Run `build_manylinux_wheels.sh` on Linux. The dist folder should contain 4 wheels for every Linux distribution (16 wheels overall).
-1. Gather wheels and tar.gz from all `dist` folder into one dist folder:
+1. Gather all the wheels and 1 tar.gz from all `dist` folders from 3 OSes (Windows, Linux, Mac) into one dist folder:
    ```
    scp $USER@<source base path>/manifest-tool/dist/*.whl dist/
    ```

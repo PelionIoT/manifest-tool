@@ -1,5 +1,6 @@
 # ----------------------------------------------------------------------------
 # Copyright 2019-2021 Pelion
+# Copyright 2022-2023 Izuma Networks
 #
 # SPDX-License-Identifier: Apache-2.0
 #
@@ -96,21 +97,21 @@ def register_parser(parser: argparse.ArgumentParser):
     )
 
     service = parser.add_argument_group(
-        'optional arguments (Pelion Device Management service configuration)')
+        'optional arguments (Izuma Device Management service configuration)')
     service.add_argument(
         '-p', '--gw-preset',
         help='The preset name defined in {}, '
              ' which specifies a URL and '
-             'access key.'.format(defaults.PELION_GW_PATH),
-        choices=defaults.PELION_GW.keys() if defaults.PELION_GW else []
+             'access key.'.format(defaults.IZUMA_GW_PATH),
+        choices=defaults.IZUMA_GW.keys() if defaults.IZUMA_GW else []
     )
     service.add_argument(
         '-a', '--access-key', '--api-key',
-        help='Access key for accessing a Pelion Device Management API.'
+        help='Access key for accessing a Izuma Device Management API.'
     )
     service.add_argument(
         '-u', '--api-url',
-        help='Pelion Device Management API URL. '
+        help='Izuma Device Management API URL. '
              '[Default: {}]'.format(defaults.API_GW),
         default=defaults.API_GW
     )
@@ -440,14 +441,14 @@ def entry_point(
     access_key = args.access_key
     if not access_key and hasattr(args, 'gw_preset') and args.gw_preset:
         access_key = \
-            defaults.PELION_GW[args.gw_preset].get('access_key')
+            defaults.IZUMA_GW[args.gw_preset].get('access_key')
         if not access_key:
             access_key = \
-                defaults.PELION_GW[args.gw_preset].get('api_key')
+                defaults.IZUMA_GW[args.gw_preset].get('api_key')
 
     api_url = args.api_url
     if hasattr(args, 'gw_preset') and args.gw_preset:
-        api_url = defaults.PELION_GW[args.gw_preset].get('host')
+        api_url = defaults.IZUMA_GW[args.gw_preset].get('host')
 
     generate_service_config(
         access_key=access_key,

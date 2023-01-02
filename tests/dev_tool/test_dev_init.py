@@ -20,7 +20,7 @@ import yaml
 
 from manifesttool.delta_tool.delta_tool import digest_file
 from manifesttool.dev_tool import dev_tool, defaults
-from tests import conftest
+from tests.conftest import working_directory
 
 
 def test_cli(tmp_path):
@@ -39,7 +39,7 @@ def test_cli(tmp_path):
         'init'
     ]
 
-    with conftest.working_directory(tmp_path):
+    with working_directory(tmp_path):
         assert 0 == dev_tool.entry_point(cmd)
 
     assert not api_cfg.is_file()
@@ -55,8 +55,8 @@ def test_cli(tmp_path):
         '--api-url', dummy_api_url
     ]
 
-    with conftest.working_directory(tmp_path):
-        assert 0 == dev_tool.entry_point(cmd + ['--api-url', 'https://some.url.pelion.com'])
+    with working_directory(tmp_path):
+        assert 0 == dev_tool.entry_point(cmd + ['--api-url', 'https://some.url.izumanetworks.com'])
 
     assert c_source_digest != digest_file(c_source)
     assert cert_digest != digest_file(cert)
@@ -64,7 +64,7 @@ def test_cli(tmp_path):
     assert dev_cfg_digest != digest_file(dev_cfg)
     assert api_cfg.is_file()
 
-    with conftest.working_directory(tmp_path):
+    with working_directory(tmp_path):
         assert 0 == dev_tool.entry_point(cmd + ['--force'])
 
     assert c_source_digest != digest_file(c_source)

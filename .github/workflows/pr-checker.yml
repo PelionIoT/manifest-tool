@@ -1,0 +1,126 @@
+name: PR-check
+run-name: ${{ github.actor }} PR checker
+on: [push]
+jobs:
+  run_tox_on_ubuntu22:
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+      - uses: actions/setup-python@v4
+        with:
+          python-version: '3.9'
+      - uses: actions/setup-python@v4
+        with:
+          python-version: '3.8'
+      - uses: actions/setup-python@v4
+        with:
+          python-version: '3.7'
+      - run: python -m pip install wheel --user
+      - run: python -m pip install pipx-in-pipx --user
+      - run: pipx install tox
+      # No py36 available in ubuntu 22.04, skip it
+      - run: tox
+  run_tox_on_ubuntu20:
+    runs-on: ubuntu-20.04
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+      - uses: actions/setup-python@v4
+        with:
+          python-version: '3.9'
+      - uses: actions/setup-python@v4
+        with:
+          python-version: '3.8'
+      - uses: actions/setup-python@v4
+        with:
+          python-version: '3.7'
+      - run: python -m pip install wheel --user
+      - run: python -m pip install pipx-in-pipx --user
+      - run: pipx install tox
+      - run: tox
+
+  run_tox_on_windows2022:
+    runs-on: windows-2022
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+      - uses: actions/setup-python@v4
+        with:
+          python-version: '3.9'
+      - uses: actions/setup-python@v4
+        with:
+          python-version: '3.8'
+      - uses: actions/setup-python@v4
+        with:
+          python-version: '3.7'
+      - run: python -m pip install wheel --user
+      - run: python -m pip install pipx-in-pipx --user
+      - run: pipx install tox
+      - run: tox
+
+  run_tox_on_windows2019:
+    runs-on: windows-2019
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+      - uses: actions/setup-python@v4
+        with:
+          python-version: '3.9'
+      - uses: actions/setup-python@v4
+        with:
+          python-version: '3.8'
+      - uses: actions/setup-python@v4
+        with:
+          python-version: '3.7'
+      - run: wmic os get osarchitecture
+      - run: python -m pip install wheel --user
+      - run: python -m pip install pipx-in-pipx --user
+      - run: pipx install tox
+      - run: tox
+
+  run_tox_on_mac:
+    runs-on: macos-11
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+      - uses: actions/setup-python@v4
+        with:
+          python-version: '3.9'
+      - uses: actions/setup-python@v4
+        with:
+          python-version: '3.8'
+      - uses: actions/setup-python@v4
+        with:
+          python-version: '3.7'
+      - run: python -m pip install wheel --user
+      - run: python -m pip install pipx-in-pipx --user
+      - run: pipx install tox
+      - run: tox
+
+# We are not ready for this yet...
+#  run-pysh-check:
+#    runs-on: ubuntu-22.04
+#    steps:
+#      - uses: actions/checkout@v3
+#      # Install pyshcheck tooling
+#      - run: sudo apt install pycodestyle pydocstyle black
+#      # git instead of rules to use access token
+#      - run: git config --global url."https://${{ secrets.ACCESS_TOKEN }}@github.com/".insteadOf "git@github.com:"
+#      - run: git config --global url."https://${{ secrets.ACCESS_TOKEN }}@github".insteadOf "https://github"
+#      - run: git config --list
+#      # Linux coreutils is already installed wc -command can be found.
+#      - run: git clone git@github.com:PelionIoT/scripts-internal.git
+#      #- run: git clone https://github.com/PelionIoT/scripts-internal.git
+#      - run: echo "." >scripts-internal/.nopyshcheck
+#      - run: .github/workflows/pysh-checker.sh ${{ github.event.repository.default_branch }} ${{ github.ref_name }}

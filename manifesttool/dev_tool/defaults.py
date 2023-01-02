@@ -1,5 +1,6 @@
 # ----------------------------------------------------------------------------
 # Copyright 2019-2021 Pelion
+# Copyright 2022-2023 Izuma Networks
 #
 # SPDX-License-Identifier: Apache-2.0
 #
@@ -28,8 +29,8 @@ DEV_README = 'README.txt'
 API_GW = 'https://api.us-east-1.mbedcloud.com'
 UPDATE_VERSION = 'update.version.yaml'
 
-PELION_GW_PATH = Path.home() / '.pelion-dev-presets.yaml'
-PELION_GW = None
-if PELION_GW_PATH.is_file():
-    with PELION_GW_PATH.open('rb') as fh:
-        PELION_GW = yaml.safe_load(fh)
+IZUMA_GW_PATH = Path.home() / '.izuma-dev-presets.yaml'
+IZUMA_GW = None
+if IZUMA_GW_PATH.is_file():
+    with IZUMA_GW_PATH.open('rb') as fh:
+        IZUMA_GW = yaml.safe_load(fh)

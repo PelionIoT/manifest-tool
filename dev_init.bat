@@ -1,5 +1,5 @@
 @REM ----------------------------------------------------------------------------
-@REM Copyright 2021 Pelion
+@REM Copyright 2021-2022 Izuma Networks
 @REM
 @REM SPDX-License-Identifier: Apache-2.0
 @REM

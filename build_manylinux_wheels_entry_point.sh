@@ -1,6 +1,6 @@
 #!/bin/bash
 # ----------------------------------------------------------------------------
-# Copyright 2020-2021 Pelion
+# Copyright 2020-2022 Izuma Networks
 #
 # SPDX-License-Identifier: Apache-2.0
 #

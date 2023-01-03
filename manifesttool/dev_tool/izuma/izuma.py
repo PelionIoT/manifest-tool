@@ -1,5 +1,6 @@
 # ----------------------------------------------------------------------------
-# Copyright 2019-2021 Pelion
+# Copyright 2019-2021
+# Copyright 2022-2023 Izuma Networks
 #
 # SPDX-License-Identifier: Apache-2.0
 #
@@ -27,11 +28,11 @@ import requests
 import yaml
 
 # APIs documentation:
-# https://developer.pelion.com/docs/device-management/current/service-api-references/service-api-documentation.html
+# https://developer.izumanetworks.com/docs/device-management/current/service-api-references/service-api-documentation.html
 # Device directory -
-#   https://developer.pelion.com/docs/device-management-api/device-directory
+#   https://developer.izumanetworks.com/docs/device-management-api/device-directory
 # Update Service -
-#   https://developer.pelion.com/docs/device-management-api/update-service
+#   https://developer.izumanetworks.com/docs/device-management-api/update-service
 
 DEVICES = 'v3/devices'
 DEVICE = 'v3/devices/{id}'
@@ -70,17 +71,21 @@ FW_UPLOAD_MAX_SMALL_SIZE = int(100 * 1024 * 1024)
 # must be greater than 5MB - AWS limitation
 FW_UPLOAD_CHUNK_SIZE = int(6 * 1024 * 1024)
 
-LOG = logging.getLogger('pelion')
+LOG = logging.getLogger('izuma')
 
 URL = NewType('URL', str)
 ID = NewType('ID', str)
 Phase = NewType('Phase', str)
 
-class PelionServiceApi:
+GET_TIMEOUT = 15 * 60
+POST_TIMEOUT = 15 * 60
+DEL_TIMEOUT = 5 * 60
+
+class IzumaServiceApi:
     def __init__(self, config_file: Path):
         """
         Create REST API provider for Update Service APIs
-        :param host: Pelion service URL
+        :param host: Izuma service URL
         :param access_key: account access key
         """
 
@@ -102,14 +107,14 @@ class PelionServiceApi:
             }
             return
 
-        raise AssertionError('Pelion service configurations '
+        raise AssertionError('Izuma service configurations '
                              '(URL and access key) are not provided')
 
     def _url(self, api, **kwargs) -> str:
         """
         Helper function for constructing full REST API URL
 
-        Concatenates Pelion host URL with the desired REST API url and expands
+        Concatenates Izuma host URL with the desired REST API url and expands
         any patterns present in the URL (e.g. v3/manifests/{id})
         :param api: REST API URL part
         :param kwargs: dictionary for expanding the the URL patterns
@@ -163,8 +168,8 @@ class PelionServiceApi:
             -> dict:
         """
         Upload FW image
-        :param fw_name: update candidate image name as will appear on Pelion
-               portal
+        :param fw_name: update candidate image name as will appear on
+               Izuma portal
         :param image: candidate FW image
         :param encrypt: request to encrypt FW image
         :return: uploaded image meta
@@ -197,7 +202,8 @@ class PelionServiceApi:
                     'Content-MD5': self._chunk_md5(chunk)
                 }
             ),
-            data=chunk
+            data=chunk,
+            timeout=POST_TIMEOUT
         )
         response.raise_for_status()
 
@@ -260,7 +266,8 @@ class PelionServiceApi:
                 data={
                     'name': fw_name,
                     'datafile_encryption': encrypt
-                }
+                },
+                timeout=POST_TIMEOUT
             )
             response.raise_for_status()
             return response.json()
@@ -273,12 +280,14 @@ class PelionServiceApi:
         """
         response = requests.get(
             self._url(FW_UPLOAD_JOB, id=job_id),
-            headers=self._headers())
+            headers=self._headers(),
+            timeout=GET_TIMEOUT)
         response.raise_for_status()
         image_id = response.json()['firmware_image_id']
         response = requests.get(
             self._url(FW_IMAGE, id=image_id),
-            headers=self._headers())
+            headers=self._headers(),
+            timeout=GET_TIMEOUT)
         response.raise_for_status()
 
         return response.json()
@@ -290,7 +299,8 @@ class PelionServiceApi:
         """
         response = requests.delete(
             self._url(FW_UPLOAD_JOB, id=job_id),
-            headers=self._headers()
+            headers=self._headers(),
+            timeout=DEL_TIMEOUT
         )
         response.raise_for_status()
         LOG.debug('FW upload job %s deleted', job_id)
@@ -308,7 +318,8 @@ class PelionServiceApi:
             json={
                 'name': fw_name,
                 'datafile_encryption': encrypt
-            }
+            },
+            timeout=POST_TIMEOUT
         )
         response.raise_for_status()
         response_data = response.json()
@@ -318,20 +329,21 @@ class PelionServiceApi:
 
     def fw_delete(self, image_id: ID):
         """
-        Delete candidate image from Pelion portal
+        Delete candidate image from Izuma portal
         :param image_id: image ID as appears on the portal
         """
         response = requests.delete(
             self._url(FW_IMAGE, id=image_id),
-            headers=self._headers()
+            headers=self._headers(),
+            timeout=DEL_TIMEOUT
         )
         response.raise_for_status()
         LOG.info('Deleted FW image %s', image_id)
 
     def manifest_upload(self, name: str, manifest: Path) -> ID:
         """
-        Upload manifest file to Pelion service
-        :param name: manifest name as will appear on Pelion portal
+        Upload manifest file to Izuma service
+        :param name: manifest name as will appear on Izuma portal
         :param manifest: manifest file
         :return: manifest ID as reported by portal
         """
@@ -345,7 +357,8 @@ class PelionServiceApi:
                     },
                     data={
                         'name': name
-                    }
+                    },
+                    timeout=POST_TIMEOUT
                 )
                 response.raise_for_status()
                 manifest_id = response.json()['id']
@@ -357,12 +370,13 @@ class PelionServiceApi:
 
     def manifest_delete(self, manifest_id: ID):
         """
-        Delete manifest file from Pelion portal
+        Delete manifest file from Izuma portal
         :param manifest_id: manifest ID to be deleted
         """
         response = requests.delete(
             self._url(FW_MANIFEST, id=manifest_id),
-            headers=self._headers()
+            headers=self._headers(),
+            timeout=DEL_TIMEOUT
         )
         response.raise_for_status()
         LOG.info('Deleted manifest ID: %s', manifest_id)
@@ -374,9 +388,9 @@ class PelionServiceApi:
             device_filter: str
     ) -> ID:
         """
-        Create update campaign on Pelion portal
+        Create update campaign on Izuma portal
 
-        :param name: campaign name as will appear on Pelion portal
+        :param name: campaign name as will appear on Izuma portal
         :param manifest_id: manifest ID as
         :param device_filter: device filter query
         :return: campaign ID as reported by portal
@@ -391,7 +405,8 @@ class PelionServiceApi:
                     'device_filter': device_filter,
                     'name': name,
                     'root_manifest_id': manifest_id
-                }
+                },
+                timeout=POST_TIMEOUT
             )
             response.raise_for_status()
             campaign_id = response.json()['id']
@@ -408,7 +423,8 @@ class PelionServiceApi:
         """
         response = requests.delete(
             self._url(FW_CAMPAIGN, id=campaign_id),
-            headers=self._headers()
+            headers=self._headers(),
+            timeout=DEL_TIMEOUT
         )
         response.raise_for_status()
         LOG.info('Deleted campaign %s', campaign_id)
@@ -427,7 +443,8 @@ class PelionServiceApi:
             # send request to stop
             response = requests.post(
                 self._url(FW_CAMPAIGN_STOP, id=campaign_id),
-                headers=self._headers()
+                headers=self._headers(),
+                timeout=POST_TIMEOUT
             )
             response.raise_for_status()
             curr_phase = self.campaign_get(campaign_id)['phase']
@@ -451,7 +468,8 @@ class PelionServiceApi:
         """
         response = requests.post(
             self._url(FW_CAMPAIGN_START, id=campaign_id),
-            headers=self._headers()
+            headers=self._headers(),
+            timeout=POST_TIMEOUT
         )
         response.raise_for_status()
 
@@ -463,7 +481,8 @@ class PelionServiceApi:
         """
         response = requests.get(
             self._url(FW_CAMPAIGN, id=campaign_id),
-            headers=self._headers()
+            headers=self._headers(),
+            timeout=GET_TIMEOUT
         )
         response.raise_for_status()
         return response.json()
@@ -478,7 +497,8 @@ class PelionServiceApi:
         try:
             response = requests.get(
                 self._url(FW_CAMPAIGN_STATISTICS, id=campaign_id),
-                headers=self._headers()
+                headers=self._headers(),
+                timeout=GET_TIMEOUT
             )
             response.raise_for_status()
             return response.json()['data']
@@ -501,7 +521,8 @@ class PelionServiceApi:
             response = requests.get(
                 self._url(FW_CAMPAIGN_STATISTICS_EVENTS,
                           id=campaign_id, summary_id=summary_id),
-                headers=self._headers()
+                headers=self._headers(),
+                timeout=GET_TIMEOUT
             )
             response.raise_for_status()
             return response.json()['data']
@@ -522,7 +543,8 @@ class PelionServiceApi:
         """
         response = requests.get(
             self._url(FW_CAMPAIGN_DEV_METADATA, id=campaign_id),
-            headers=self._headers()
+            headers=self._headers(),
+            timeout=GET_TIMEOUT
         )
         response.raise_for_status()
         return response.json()['data']
@@ -553,7 +575,8 @@ class PelionServiceApi:
         """
         response = requests.delete(
             self._url(DEVICE, id=device_id),
-            headers=self._headers()
+            headers=self._headers(),
+            timeout=DEL_TIMEOUT
         )
         response.raise_for_status()
         LOG.info('Deleted device %s', device_id)
@@ -568,7 +591,8 @@ class PelionServiceApi:
         url = '{}?limit=1000&include=total_count{}'.format(api_url, api_filter)
         response = requests.get(
             self._url(url),
-            headers=self._headers()
+            headers=self._headers(),
+            timeout=GET_TIMEOUT
         )
         response.raise_for_status()
         total_count = response.json()['total_count']
@@ -580,7 +604,8 @@ class PelionServiceApi:
             last_object_id = objects[-1]['id']
             response = requests.get(
                 self._url(url, after=last_object_id),
-                headers=self._headers()
+                headers=self._headers(),
+                timeout=GET_TIMEOUT
             )
             response.raise_for_status()
             objects.extend(response.json()['data'])

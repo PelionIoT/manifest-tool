@@ -1,5 +1,6 @@
 # ----------------------------------------------------------------------------
 # Copyright 2019-2021 Pelion
+# Copyright (c) 2022 Izuma Networks
 #
 # SPDX-License-Identifier: Apache-2.0
 #
@@ -44,8 +45,8 @@ setup(
     long_description=open("README.md").read(),
     long_description_content_type="text/markdown",
     url='https://github.com/PelionIoT/manifest-tool',
-    author='Pelion',
-    author_email='pdm-support@pelion.com',
+    author='Izuma Networks',
+    author_email="opensource@izumanetworks.com",
     license='Apache 2.0',
     packages=find_packages(exclude=['tests']),
     zip_safe=False,

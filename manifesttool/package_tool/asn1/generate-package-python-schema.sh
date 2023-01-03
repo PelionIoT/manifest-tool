@@ -21,7 +21,7 @@ generate() {
     local input=$1
     local output=$2
     echo "asn1ate $input > $output"
-    cat ../../../PELION_LICENSE > $output
+    cat ../../../IZUMA_NETWORKS_LICENSE > $output
     asn1ate $input >> $output
 }
 

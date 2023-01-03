@@ -1,5 +1,6 @@
 # ----------------------------------------------------------------------------
 # Copyright 2019-2021 Pelion
+# Copyright 2022-2023 Izuma Networks
 #
 # SPDX-License-Identifier: Apache-2.0
 #
@@ -29,7 +30,7 @@ from manifesttool.dev_tool.actions.create \
 from manifesttool.dev_tool.actions.create \
     import register_parser as register_create_parser
 from manifesttool.dev_tool.actions.create import create_dev_manifest
-from manifesttool.dev_tool.pelion import pelion
+from manifesttool.dev_tool.izuma import izuma
 from manifesttool.common.common_helpers import get_non_negative_int_argument
 from manifesttool.mtool.asn1 import ManifestAsnCodecBase
 
@@ -79,8 +80,8 @@ def register_parser(parser: argparse.ArgumentParser, schema_version: str):
              'Only relevant if --wait-for-completion was provided.'
     )
 
-def _manage_campaign(api: pelion.PelionServiceApi,
-                     campaign_id: pelion.ID,
+def _manage_campaign(api: izuma.IzumaServiceApi,
+                     campaign_id: izuma.ID,
                      end_time: int,
                      do_wait: bool):
     starting = True
@@ -151,11 +152,11 @@ def _print_summary(summary: dict, summary_reasons: dict):
                 logger.warning(" %s", reasons.get('description'))
 
 
-def _finalize(api: pelion.PelionServiceApi,
+def _finalize(api: izuma.IzumaServiceApi,
               do_cleanup: bool,
-              campaign_id: pelion.ID,
-              manifest_id: pelion.ID,
-              fw_image_id: pelion.ID,
+              campaign_id: izuma.ID,
+              manifest_id: izuma.ID,
+              fw_image_id: izuma.ID,
               manifest_path: Path):
     summary = {}
     summary_reasons = {}
@@ -219,7 +220,7 @@ def update(
         encrypt_payload: bool,
         combined_package: bool
 ):
-    api = pelion.PelionServiceApi(service_config)
+    api = izuma.IzumaServiceApi(service_config)
     manifest_path = None
     fw_image_id = None
     manifest_id = None

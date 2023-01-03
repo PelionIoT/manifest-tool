@@ -21,8 +21,8 @@ from typing import Optional, Union, Tuple
 import pytest
 
 from manifesttool.dev_tool import dev_tool
-from manifesttool.dev_tool.pelion import pelion
-from tests import conftest
+from manifesttool.dev_tool.izuma import izuma
+from tests.conftest import working_directory
 
 
 # phase to state:
@@ -58,13 +58,13 @@ def api_url(api, **kwargs):
 
 class CampaignFsm:
     CAMPAIGN_STATUSES = [
-        (pelion.Phase('draft'), 'draft'),
-        (pelion.Phase('starting'), 'scheduled'),
-        (pelion.Phase('active'), 'publishing'),
-        (pelion.Phase('active'), 'publishing'),
-        (pelion.Phase('active'), 'publishing'),
-        (pelion.Phase('stopping'), 'stopping'),
-        (pelion.Phase('stopped'), 'auto_stopped')
+        (izuma.Phase('draft'), 'draft'),
+        (izuma.Phase('starting'), 'scheduled'),
+        (izuma.Phase('active'), 'publishing'),
+        (izuma.Phase('active'), 'publishing'),
+        (izuma.Phase('active'), 'publishing'),
+        (izuma.Phase('stopping'), 'stopping'),
+        (izuma.Phase('stopped'), 'auto_stopped')
     ]
 
     PHASE_DRAFT = 0
@@ -78,7 +78,7 @@ class CampaignFsm:
         else:
             self.last_idx = len(self.CAMPAIGN_STATUSES) - 1
 
-    def next_phase(self) -> Tuple[pelion.Phase, str]:
+    def next_phase(self) -> Tuple[izuma.Phase, str]:
         if self.current_idx < self.last_idx:
             self.current_idx += 1
         # return Phase, State
@@ -147,26 +147,26 @@ def mock_update_apis(
 
     # FW upload job - create
     requests_mock.post(
-        api_url(pelion.FW_UPLOAD_JOBS),
+        api_url(izuma.FW_UPLOAD_JOBS),
         json={'id': job_id},
         status_code=http_status_code
     )
 
     # FW upload job - upload chunk
     requests_mock.post(
-        api_url(pelion.FW_UPLOAD_JOB_CHUNK, id=job_id),
+        api_url(izuma.FW_UPLOAD_JOB_CHUNK, id=job_id),
         status_code=http_status_code
     )
 
     # FW upload job - delete
     requests_mock.delete(
-        api_url(pelion.FW_UPLOAD_JOB, id=job_id),
+        api_url(izuma.FW_UPLOAD_JOB, id=job_id),
         status_code=http_status_code
     )
 
     # FW upload job - get metadata
     requests_mock.get(
-        api_url(pelion.FW_UPLOAD_JOB, id=job_id),
+        api_url(izuma.FW_UPLOAD_JOB, id=job_id),
         json={'firmware_image_id': firmware_image_id},
         status_code=http_status_code
     )
@@ -184,21 +184,21 @@ def mock_update_apis(
 
     # FW image - get URL
     requests_mock.get(
-        api_url(pelion.FW_IMAGE, id=firmware_image_id),
+        api_url(izuma.FW_IMAGE, id=firmware_image_id),
         json=fw_meta_res,
         status_code=http_status_code
     )
 
     # FW one shot upload
     requests_mock.post(
-        api_url(pelion.FW_UPLOAD),
+        api_url(izuma.FW_UPLOAD),
         json=fw_meta_res,
         status_code=http_status_code
     )
 
     # FW image - delete
     requests_mock.delete(
-        api_url(pelion.FW_IMAGE, id=firmware_image_id),
+        api_url(izuma.FW_IMAGE, id=firmware_image_id),
         status_code=http_status_code
     )
 
@@ -208,14 +208,14 @@ def mock_update_apis(
     manifest_id = 987
     # Manifest upload
     requests_mock.post(
-        api_url(pelion.FW_MANIFESTS),
+        api_url(izuma.FW_MANIFESTS),
         json={'id': manifest_id},
         status_code=http_status_code
     )
 
     # Manifest delete
     requests_mock.delete(
-        api_url(pelion.FW_MANIFEST, id=manifest_id),
+        api_url(izuma.FW_MANIFEST, id=manifest_id),
         status_code=http_status_code
     )
 
@@ -228,42 +228,42 @@ def mock_update_apis(
 
     # Campaign create
     requests_mock.post(
-        api_url(pelion.FW_CAMPAIGNS),
+        api_url(izuma.FW_CAMPAIGNS),
         json=campaign_create_callback,
         status_code=http_status_code
     )
 
     # Campaign delete
     requests_mock.delete(
-        api_url(pelion.FW_CAMPAIGN, id=campaign_id),
+        api_url(izuma.FW_CAMPAIGN, id=campaign_id),
         json=campaign_delete_callback,
         status_code=http_status_code
     )
 
     # Campaign stop
     requests_mock.post(
-        api_url(pelion.FW_CAMPAIGN_STOP, id=campaign_id),
+        api_url(izuma.FW_CAMPAIGN_STOP, id=campaign_id),
         json=campaign_stop_callback,
         status_code=http_status_code
     )
 
     # Campaign start
     requests_mock.post(
-        api_url(pelion.FW_CAMPAIGN_START, id=campaign_id),
+        api_url(izuma.FW_CAMPAIGN_START, id=campaign_id),
         json=campaign_start_callback,
         status_code=http_status_code
     )
 
     # Campaign get metadata
     requests_mock.get(
-        api_url(pelion.FW_CAMPAIGN, id=campaign_id),
+        api_url(izuma.FW_CAMPAIGN, id=campaign_id),
         json=campaign_get_callback,
         status_code=http_status_code
     )
 
     # Campaign statistics
     requests_mock.get(
-        api_url(pelion.FW_CAMPAIGN_STATISTICS, id=campaign_id),
+        api_url(izuma.FW_CAMPAIGN_STATISTICS, id=campaign_id),
         json={
             'data': [
                 {
@@ -305,7 +305,7 @@ def mock_update_apis(
 
     # Campaign statistics fail events
     requests_mock.get(
-        api_url(pelion.FW_CAMPAIGN_STATISTICS_EVENTS, id=campaign_id, summary_id='fail'),
+        api_url(izuma.FW_CAMPAIGN_STATISTICS_EVENTS, id=campaign_id, summary_id='fail'),
         json={
             'data': [
                 {
@@ -325,7 +325,7 @@ def mock_update_apis(
 
     # Campaign statistics skipped events
     requests_mock.get(
-        api_url(pelion.FW_CAMPAIGN_STATISTICS_EVENTS, id=campaign_id, summary_id='skipped'),
+        api_url(izuma.FW_CAMPAIGN_STATISTICS_EVENTS, id=campaign_id, summary_id='skipped'),
         json={
             'data': [
                 {
@@ -345,7 +345,7 @@ def mock_update_apis(
 
     # Campaign devices
     requests_mock.get(
-        api_url(pelion.FW_CAMPAIGN_DEV_METADATA, id=campaign_id),
+        api_url(izuma.FW_CAMPAIGN_DEV_METADATA, id=campaign_id),
         json={
             'data': [
                 {
@@ -398,7 +398,7 @@ def _common(happy_day_data, action, payload_path):
         else:
             cmd.extend(['--fw-version', '100.500.666'])
 
-    with conftest.working_directory(happy_day_data['tmp_path']):
+    with working_directory(happy_day_data['tmp_path']):
         return dev_tool.entry_point(cmd)
 
 
@@ -432,8 +432,8 @@ def test_cli_update_happy_day(
     )
 
     if force_chunks:
-        monkeypatch.setattr(pelion, 'FW_UPLOAD_MAX_SMALL_SIZE', 10, raising=True)
-        monkeypatch.setattr(pelion, 'FW_UPLOAD_CHUNK_SIZE', 10, raising=True)
+        monkeypatch.setattr(izuma, 'FW_UPLOAD_MAX_SMALL_SIZE', 10, raising=True)
+        monkeypatch.setattr(izuma, 'FW_UPLOAD_CHUNK_SIZE', 10, raising=True)
 
     assert _common(
         happy_day_data,

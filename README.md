@@ -49,7 +49,8 @@ We recommend installing the `manifest-tool` Python package in a isolated
 
 **Prerequisites:**
 
-* [Python 3.6 or higher](https://www.python.org/downloads/).
+* [Python 3.7 or higher](https://www.python.org/downloads/).
+    * Python 3.11 support is not in place yet.
 * [pip (Python Package Installer)](https://pip.pypa.io/en/stable/).
 * Internet connectivity
 
@@ -57,11 +58,18 @@ We recommend installing the `manifest-tool` Python package in a isolated
 pip install manifest-tool
 ```
 
+**NOTE!** If your system has only Python 3.6 or older - you must an older version of this tool.
+
+```
+pip install manifest-tool==2.4.1
+```
+
+
 ### Installing from local source tree
 
 **Prerequisites:**
 
-* [Python 3.6 or later](https://www.python.org/downloads/).
+* [Python 3.7 or later](https://www.python.org/downloads/).
 * [pip (Python Package Installer)](https://pip.pypa.io/en/stable/).
 * Native toolchain:
     * GCC/Clang for Linux/MacOS.
@@ -132,7 +140,7 @@ describing the update type.
     Configuration file format:
     ```yaml
     vendor:  # One of "domain" or "vendor-id" fields are expected.
-      domain: pelion.com  # FW owner domain. Used to generate a vendor UUID.
+      domain: izumanetworks.com  # FW owner domain. Used to generate a vendor UUID.
                           # Expected to include a dot (".").
       # OR
       vendor-id: fa6b4a53d5ad5fdfbe9de663e4d41ffe  # Valid vendor UUID.
@@ -194,7 +202,7 @@ describing the update type.
 
     ```yaml
     vendor:
-      domain: pelion.com
+      domain: izumanetworks.com
     device:
       model-name: Smart Flip-flops
     priority: 1
@@ -496,7 +504,7 @@ configuration file.
 
 ```shell
 manifest-dev-tool create \
-    --payload-url http://test.pdmc.pelion.com?fileId=1256 \
+    --payload-url http://test.pdmc.izumanetworks.com?fileId=1256 \
     --payload-path new_fw.bin \
     --fw-version 1.2.3 \
     --component-name MAIN \
@@ -516,7 +524,7 @@ configuration file.
 
 ```shell
 manifest-dev-tool create-v1 \
-    --payload-url http://test.pdmc.pelion.com?fileId=1256 \
+    --payload-url http://test.pdmc.izumanetworks.com?fileId=1256 \
     --payload-path new-fw.bin \
     --output update-manifest.bin
 ```

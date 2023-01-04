@@ -5,8 +5,6 @@ on:
     branches:
       - master
 
-if: github.repository == 'PelionIoT/manifest-tool'
-
 # This allows a subsequently queued workflow run to interrupt previous runs
 concurrency:
   group: '${{ github.workflow }} @ ${{ github.event.pull_request.head.label || github.head_ref || github.ref }}'
@@ -15,6 +13,7 @@ concurrency:
 jobs:
   create-wheels-for-manylinux:
       runs-on: ubuntu-22.04
+      if: github.repository == 'PelionIoT/manifest-tool'
       steps:
         - uses: actions/checkout@v3
         - run: ./build_manylinux_wheels.sh
@@ -25,6 +24,7 @@ jobs:
             path: dist/*.*
   create-tar-gz:
       runs-on: ubuntu-22.04
+      if: github.repository == 'PelionIoT/manifest-tool'
       steps:
         - uses: actions/checkout@v3
         - run: pip install -r requirements.txt
@@ -35,4 +35,18 @@ jobs:
           with:
             name: wheels
             path: dist/*.tar.gz
+  create-wheels-for-manylinux-int:
+      runs-on: ubuntu-22.04
+      if: github.repository == 'PelionIoT/manifest-tool-internal'
+      steps:
+        - uses: actions/checkout@v3
+        - run: ./build_manylinux_wheels.sh
+  create-tar-gz-int:
+      runs-on: ubuntu-22.04
+      if: github.repository == 'PelionIoT/manifest-tool-internal'
+      steps:
+        - uses: actions/checkout@v3
+        - run: pip install -r requirements.txt
+        - run: pip install build
+        - run: python -m build
 

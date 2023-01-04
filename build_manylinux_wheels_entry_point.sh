@@ -39,24 +39,25 @@ function repair_wheel {
 
 # Compile wheels to wheelhouse/$PLAT
 for PYBIN in /opt/python/cp3*/bin; do
-    if [[ $PYBIN == /opt/python/cp35-cp35m/bin ]]; then
+    # Skip Python 3.5 and 3.6 (too old)
+    if [[ "$PYBIN" == /opt/python/cp35-cp35m/bin ]]; then
         continue
     fi
-    if [[ $PYBIN == /opt/python/cp310-cp310/bin ]]; then
+    if [[ "$PYBIN" == /opt/python/cp36-cp36m/bin ]]; then
         continue
     fi
     echo '------------------------------------------------------------'
     echo "${PYBIN}"
     echo '------------------------------------------------------------'
-    "${PYBIN}/pip" wheel . --no-deps -w wheelhouse/$PLAT
+    "${PYBIN}/pip" wheel . --no-deps -w wheelhouse/"$PLAT"
 done
 
 # Bundle external shared libraries into the wheels
-for whl in wheelhouse/$PLAT/*-linux_x86_64.whl; do
+for whl in wheelhouse/"$PLAT"/*-linux_x86_64.whl; do
     repair_wheel "$whl"
 done
 
-for whl in wheelhouse/$PLAT/*-linux_aarch64.whl; do
+for whl in wheelhouse/"$PLAT"/*-linux_aarch64.whl; do
     repair_wheel "$whl"
 done
 
@@ -67,10 +68,11 @@ fi
 
 # Install packages and test
 for PYBIN in /opt/python/cp3*/bin; do
+    # Skip Python 3.5 and 3.6 (too old)
     if [[ $PYBIN == /opt/python/cp35-cp35m/bin ]]; then
         continue
     fi
-    if [[ $PYBIN == /opt/python/cp310-cp310/bin ]]; then
+    if [[ $PYBIN == /opt/python/cp36-cp36m/bin ]]; then
         continue
     fi
     echo '------------------------------------------------------------'

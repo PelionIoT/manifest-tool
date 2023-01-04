@@ -1,0 +1,38 @@
+name: create-Linux-wheels
+run-name: ${{ github.actor }} create_wheels_for_linux
+on:
+  push: 
+    branches:
+      - master
+
+if: github.repository == 'PelionIoT/manifest-tool'
+
+# This allows a subsequently queued workflow run to interrupt previous runs
+concurrency:
+  group: '${{ github.workflow }} @ ${{ github.event.pull_request.head.label || github.head_ref || github.ref }}'
+  cancel-in-progress: true
+
+jobs:
+  create-wheels-for-manylinux:
+      runs-on: ubuntu-22.04
+      steps:
+        - uses: actions/checkout@v3
+        - run: ./build_manylinux_wheels.sh
+        - name: Upload manylinux wheels
+          uses: actions/upload-artifact@v3
+          with:
+            name: wheels
+            path: dist/*.*
+  create-tar-gz:
+      runs-on: ubuntu-22.04
+      steps:
+        - uses: actions/checkout@v3
+        - run: pip install -r requirements.txt
+        - run: pip install build
+        - run: python -m build
+        - name: Upload .tar.gz -file
+          uses: actions/upload-artifact@v3
+          with:
+            name: wheels
+            path: dist/*.tar.gz
+

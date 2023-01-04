@@ -1,6 +1,6 @@
 #!/bin/bash
 # ----------------------------------------------------------------------------
-# Copyright 2020-2021 Pelion
+# Copyright 2020-2022 Izuma Networks
 #
 # SPDX-License-Identifier: Apache-2.0
 #
@@ -22,18 +22,21 @@ set -e -u -x
 mkdir -p dist
 rm -rf dist/*
 
-PLAT=manylinux1_x86_64     && docker run --rm -e PLAT=$PLAT -v `pwd`:/io quay.io/pypa/$PLAT /io/build_manylinux_wheels_entry_point.sh |& tee $PLAT.log &
+# https://github.com/pypa/manylinux
+PLAT="manylinux1_x86_64"     && docker run --rm -e PLAT="$PLAT" -v "$(pwd)":/io quay.io/pypa/"$PLAT" /io/build_manylinux_wheels_entry_point.sh |& tee "$PLAT.log" &
 
-PLAT=manylinux2010_x86_64  && docker run --rm -e PLAT=$PLAT -v `pwd`:/io quay.io/pypa/$PLAT /io/build_manylinux_wheels_entry_point.sh |& tee $PLAT.log &
+PLAT="manylinux2010_x86_64"  && docker run --rm -e PLAT="$PLAT" -v "$(pwd)":/io quay.io/pypa/"$PLAT" /io/build_manylinux_wheels_entry_point.sh |& tee "$PLAT.log" &
 
-PLAT=manylinux2014_x86_64  && docker run --rm -e PLAT=$PLAT -v `pwd`:/io quay.io/pypa/$PLAT /io/build_manylinux_wheels_entry_point.sh |& tee $PLAT.log &
+PLAT="manylinux2014_x86_64"  && docker run --rm -e PLAT="$PLAT" -v "$(pwd)":/io quay.io/pypa/"$PLAT" /io/build_manylinux_wheels_entry_point.sh |& tee "$PLAT.log" &
 
-PLAT=manylinux_2_24_x86_64 && docker run --rm -e PLAT=$PLAT -v `pwd`:/io quay.io/pypa/$PLAT /io/build_manylinux_wheels_entry_point.sh |& tee $PLAT.log &
+# EoL 1st Jan, 2023
+# PLAT=manylinux_2_24_x86_64 && docker run --rm -e PLAT="$PLAT" -v "$(pwd)":/io quay.io/pypa/$PLAT /io/build_manylinux_wheels_entry_point.sh |& tee "$PLAT.log" &
+PLAT="manylinux_2_28_x86_64" && docker run --rm -e PLAT="$PLAT" -v "$(pwd)":/io quay.io/pypa/"$PLAT" /io/build_manylinux_wheels_entry_point.sh |& tee "$PLAT.log" &
 
 docker run --rm --privileged tonistiigi/binfmt:latest --install all &
 
-PLAT=manylinux2014_aarch64 && docker run --rm -e PLAT=$PLAT -v `pwd`:/io quay.io/pypa/$PLAT /io/build_manylinux_wheels_entry_point.sh |& tee $PLAT.log &
+PLAT="manylinux2014_aarch64" && docker run --rm -e PLAT="$PLAT" -v "$(pwd)":/io quay.io/pypa/"$PLAT" /io/build_manylinux_wheels_entry_point.sh |& tee "$PLAT.log" &
 
 wait
 
-sudo chown -R $USER:$USER dist/
+sudo chown -R "$USER":"$USER" dist/

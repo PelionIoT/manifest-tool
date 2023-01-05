@@ -58,7 +58,7 @@ setup(
             "manifest-package-tool=manifesttool.package_tool.package_tool:entry_point"
         ],
     },
-    python_requires='>=3.6.0',
+    python_requires='>=3.7.0',
     include_package_data=True,
     install_requires=tool_requirements,
     ext_modules=[armbsdiff]

@@ -1,5 +1,8 @@
 # Changelog
 
+## 2.5.1
+- Fix the minimal required Python version to 3.7.
+
 ## 2.5.0
 - Izuma branding, contact email/author updated, Cloud documentation links updated.
 - Timeouts for `requests.put/post/delete` operations.

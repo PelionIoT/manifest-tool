@@ -42,7 +42,32 @@ The `manifest-tool` Python package includes these command line tools:
 
 ## Installing the manifest tool
 
-We recommend installing the `manifest-tool` Python package in a isolated
+### Via Docker 
+
+Unfortunately this tool is written in Python. For this reason we recommend just using the docker container version:
+
+```
+docker pull ghcr.io/pelioniot/manifest-tool:latest
+```
+
+and for simplicity:
+
+```
+docker tag ghcr.io/pelioniot/manifest-tool  manifest-tool
+```
+
+And then run the manifest-tool like:
+
+```
+docker run -v `pwd`:/work manifest-tool [ARGS ...]
+```
+
+This assumes the files you are working with will be in your local directory.
+
+
+### Installing locally
+
+If installing locally, we recommend installing the `manifest-tool` Python package in a isolated
 [Python virtual environment](https://virtualenv.pypa.io).
 
 ### Installing the manifest tool from [PyPi](https://pypi.org/project/manifest-tool/)
@@ -129,6 +154,12 @@ describing the update type.
         $ openssl ecparam -genkey -name prime256v1 -outform PEM -out my.priv.key.pem
         ```
 
+        If using the docker `manifest-tool` (and you don't have `openssl` installed) you can run you can do:
+
+        ```
+        docker run -v `pwd`:/work --entrypoint openssl manifest-tool ecparam -genkey -name prime256v1 -outform PEM -out my.priv.key.pem
+        ```
+
   *   To generate a public key in uncompressed point format (X9.62), use
       the [`manifest-tool public-key`](#manifest-tool-public-key)
       command.
@@ -198,6 +229,13 @@ describing the update type.
 
 **Example**
 
+* To generate a "test" firmware file (if you are just trying out the command) you can do this on Linux
+
+```
+time dd if=/dev/urandom of=my.fw.bin bs=1 count=1024
+```
+
+
 * For this configuration file, called `my.config.yaml`:
 
     ```yaml
@@ -221,6 +259,16 @@ describing the update type.
         --key my.priv.key.pem \
         --fw-version 1.2.3 \
         --output my.manifest.bin
+    ```
+
+    Docker variation:
+
+    ```shell
+    docker run -v `pwd`:/work manifest-tool create \ 
+         --config my.config.yaml \ 
+         --key my.priv.key.pem \
+         --fw-version 1.2.3  \
+         --output my.manifest.bin
     ```
 
 <span class="notes">**Note:** The value of `--fw-version` refers to the firmware version of the component to be updated. The value can be between 0.0.1 and 999.999.999 and must be greater than the firmware version currently installed on the device.</span>
@@ -348,6 +396,13 @@ arguments.
 $ manifest-delta-tool -c current_fw.bin -n new_fw.bin -o delta-patch.bin
 ```
 
+Docker version:
+
+```shell
+$ docker run -v `pwd`:/work --entrypoint manifest-delta-tool manifest-tool -c current_fw.bin -n new_fw.bin -o delta-patch.bin
+```
+
+
 <span class="notes">**Note 1:** Additional configuration file with same name but with `.yaml` extension will be generated. Both files are required by the manifest-tool. Only the output file specified by `--output` argument should be uploaded to Pelion storage.</span>
 
 <span class="notes">**Note 2:** Compression block size has a direct impact on the amount of memory required by the device receiving the update. The device requires twice the amount of RAM in runtime to decompress and apply the patch.</span>
@@ -395,6 +450,13 @@ with information about firmware images for a combined update.
 ```shell
 $ manifest-package-tool create --config combined_package_config.yaml --output combined_package_file
 ```
+
+Docker version:
+
+```shell
+$ docker run -v `pwd`:/work --entrypoint manifest-package-tool manifest-tool create --config combined_package_config.yaml --output combined_package_file
+```
+
 
 Where `combined_package_config.yaml` is the input configuration file.
 
@@ -494,6 +556,13 @@ Or
 ```shell
 manifest-dev-tool init --gw-preset usa
 ```
+
+Docker version:
+
+```shell
+docker run -v `pwd`:/work --entrypoint manifest-dev-tool manifest-tool --gw-preset usa
+```
+
 
 #### `manifest-dev-tool create`
 

@@ -15,15 +15,18 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ----------------------------------------------------------------------------
+"""Helper functions."""
 import argparse
 from pathlib import Path
 
+
 def get_argument_path(value):
     """
-        Construct Path to an existing file for an argument
-        :param value: input string
-        :return: constructed Path with semantics
-        appropriate for the operating systems
+    Construct Path to an existing file for an argument.
+
+    :param value: input string
+    :return: constructed Path with semantics
+    appropriate for the operating systems
     """
     arg_path = Path(value)
     if not arg_path.is_file():
@@ -32,12 +35,16 @@ def get_argument_path(value):
         )
     return arg_path
 
+
 def get_file_size(path_file: Path):
+    """Get file size."""
     return Path(path_file).stat().st_size
+
 
 def get_non_negative_int_argument(value: str) -> int:
     """
-    Construct non negative integer value for an argument
+    Construct non-negative integer value for an argument.
+
     :param value: input string
     :return: integer value
     """
@@ -48,5 +55,6 @@ def get_non_negative_int_argument(value: str) -> int:
         pass
     if int_value is None or int_value < 0:
         raise argparse.ArgumentTypeError(
-            '"{}" is an invalid non-negative integer value'.format(value))
+            '"{}" is an invalid non-negative integer value'.format(value)
+        )
     return int_value

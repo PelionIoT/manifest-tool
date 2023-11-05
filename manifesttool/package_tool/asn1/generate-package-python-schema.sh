@@ -1,4 +1,4 @@
-#!/usr/bin/env bash -e
+#!/usr/bin/env bash
 # ----------------------------------------------------------------------------
 # Copyright 2021 Pelion
 #
@@ -16,13 +16,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ----------------------------------------------------------------------------
-
+set -e
 generate() {
     local input=$1
     local output=$2
     echo "asn1ate $input > $output"
-    cat ../../../IZUMA_NETWORKS_LICENSE > $output
-    asn1ate $input >> $output
+    cat "../../../IZUMA_NETWORKS_LICENSE" > "$output"
+    asn1ate "$input" >> "$output"
 }
 
 generate package.asn package_schema.py

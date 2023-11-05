@@ -24,28 +24,51 @@ from manifesttool.dev_tool.actions.init import generate_developer_config
 
 
 def test_generate_developer_config_happy_day(tmp_path):
-    key_file = tmp_path / 'dev.key.pem'
-    certificate_file = tmp_path / 'dev.cert.der'
+    key_file = tmp_path / "dev.key.pem"
+    certificate_file = tmp_path / "dev.cert.der"
     generate_credentials(
-        key_file=key_file,
-        cert_file=certificate_file,
-        cred_valid_time=8
+        key_file=key_file, cert_file=certificate_file, cred_valid_time=8
     )
-    config = tmp_path / 'my_cfg.yaml'
+    config = tmp_path / "my_cfg.yaml"
     class_id = uuid.uuid4()
     vendor_id = uuid.uuid4()
+    # required arguments
     generate_developer_config(
         key_file=key_file,
         cert_file=certificate_file,
         config=config,
         class_id=class_id,
-        vendor_id=vendor_id
+        vendor_id=vendor_id,
     )
-    with config.open('rb') as fh:
+    with config.open("rb") as fh:
         raw_cfg = yaml.safe_load(fh)
 
-    assert 'key_file' in raw_cfg
-    assert 'vendor-id' in raw_cfg
-    assert len(raw_cfg['vendor-id']) == 32
-    assert 'class-id' in raw_cfg
-    assert len(raw_cfg['class-id']) == 32
+    assert "key_file" in raw_cfg
+    assert "vendor-id" in raw_cfg
+    assert len(raw_cfg["vendor-id"]) == 32
+    assert "class-id" in raw_cfg
+    assert len(raw_cfg["class-id"]) == 32
+
+    signing_tool = tmp_path / "sign.sh"
+    signing_key_id = tmp_path / "key.pem"
+    # optional arguments
+    generate_developer_config(
+        key_file=key_file,
+        cert_file=certificate_file,
+        config=config,
+        class_id=class_id,
+        vendor_id=vendor_id,
+        signing_tool=signing_tool,
+        signing_key_id=signing_key_id,
+    )
+
+    with config.open("rb") as fh:
+        raw_cfg = yaml.safe_load(fh)
+
+    assert "key_file" in raw_cfg
+    assert "vendor-id" in raw_cfg
+    assert len(raw_cfg["vendor-id"]) == 32
+    assert "class-id" in raw_cfg
+    assert len(raw_cfg["class-id"]) == 32
+    assert "signing_tool" in raw_cfg
+    assert "signing_key_id" in raw_cfg

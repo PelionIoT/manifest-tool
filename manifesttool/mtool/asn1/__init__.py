@@ -15,6 +15,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ----------------------------------------------------------------------------
+"""Init ASN1."""
 import argparse
 import collections
 from typing import Type
@@ -24,37 +25,50 @@ from manifesttool.mtool.asn1.manifest_codec import ManifestAsnCodecBase
 
 
 class ManifestVersion:
+    """ManifestVersion class."""
+
     VERSIONS = collections.OrderedDict(
         [
             (v3.ManifestAsnCodecV3.get_name(), v3.ManifestAsnCodecV3),
-            (v1.ManifestAsnCodecV1.get_name(), v1.ManifestAsnCodecV1)
+            (v1.ManifestAsnCodecV1.get_name(), v1.ManifestAsnCodecV1),
         ]
     )
 
     @classmethod
     def list_names(cls):  # pragma: no cover
+        """List names."""
         return cls.VERSIONS.keys()
 
     @classmethod
     def list_codecs(cls):
+        """List codecs."""
         return cls.VERSIONS.values()
 
     @classmethod
-    def from_string(cls, _str: str) -> \
-            Type[ManifestAsnCodecBase]:  # pragma: no cover
+    def from_string(
+        cls, _str: str
+    ) -> Type[ManifestAsnCodecBase]:  # pragma: no cover
+        """Extract from string."""
         return cls.VERSIONS[_str]
 
     @classmethod
     def get_default(cls) -> Type[ManifestAsnCodecBase]:  # pragma: no cover
+        """Get defaults."""
         return next(iter(cls.VERSIONS.values()))
+
 
 # pylint: disable=too-few-public-methods
 class StoreManifestVersion(argparse.Action):  # pragma: no cover
+    """StoreManifestVersion class."""
+
     def __call__(self, parser, namespace, values, option_string=None):
+        """Call method."""
         prospective = values
         try:
-            setattr(namespace, self.dest,
-                    ManifestVersion.from_string(prospective))
+            setattr(
+                namespace, self.dest, ManifestVersion.from_string(prospective)
+            )
         except KeyError as ex:
             raise argparse.ArgumentTypeError(
-                'invalid manifest schema version') from ex
+                "invalid manifest schema version"
+            ) from ex

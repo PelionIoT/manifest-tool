@@ -1,6 +1,6 @@
 #!/bin/bash -ex
 # ----------------------------------------------------------------------------
-# Copyright 2019-2022 Izuma Networks
+# Copyright 2019-2023 Izuma Networks
 #
 # SPDX-License-Identifier: Apache-2.0
 #
@@ -22,6 +22,7 @@ if [[ ! -d venv ]]; then
 virtualenv -p python3 venv
 fi
 
+# shellcheck disable=SC1091
 source venv/bin/activate
 
 pip uninstall manifest-tool --yes

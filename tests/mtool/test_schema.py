@@ -20,6 +20,6 @@ from manifesttool.mtool import mtool
 
 
 def test_print_schema():
-    print('Schema:')
-    cmd = ['schema']
+    print("Schema:")
+    cmd = ["schema"]
     assert 0 == mtool.entry_point(cmd)

@@ -17,6 +17,7 @@
 # ----------------------------------------------------------------------------
 
 import yaml
+import pytest
 
 from manifesttool.delta_tool.delta_tool import digest_file
 from manifesttool.dev_tool import dev_tool, defaults
@@ -24,20 +25,22 @@ from tests.conftest import working_directory
 
 
 def test_cli(tmp_path):
-    c_source = tmp_path / 'update_default_resources.c'
+    c_source = tmp_path / "update_default_resources.c"
     cache_dir = tmp_path / defaults.BASE_PATH.as_posix()
     dev_cfg = cache_dir / defaults.DEV_CFG
     cert = cache_dir / defaults.UPDATE_PUBLIC_KEY_CERT
     key = cache_dir / defaults.UPDATE_PRIVATE_KEY
     api_cfg = cache_dir / defaults.CLOUD_CFG
 
-    dummy_access_key = '456321789541515'
-    dummy_api_url = 'https://i.am.tired.of.writing.tests.com'
+    dummy_access_key = "456321789541515"
+    dummy_api_url = "https://i.am.tired.of.writing.tests.com"
 
-    cmd = [
-        '--debug',
-        'init'
-    ]
+    # Check that the parameters --signing-tool and --signing-key-id
+    # are coming together
+    dummy_signing_tool = str(tmp_path / "sign.sh")
+    dummy_signing_key_id = str(tmp_path / "key.pem")
+
+    cmd = ["--debug", "init"]
 
     with working_directory(tmp_path):
         assert 0 == dev_tool.entry_point(cmd)
@@ -50,13 +53,17 @@ def test_cli(tmp_path):
     key_digest = digest_file(key)
 
     cmd = [
-        'init',
-        '--access-key', dummy_access_key,
-        '--api-url', dummy_api_url
+        "init",
+        "--access-key",
+        dummy_access_key,
+        "--api-url",
+        dummy_api_url,
     ]
 
     with working_directory(tmp_path):
-        assert 0 == dev_tool.entry_point(cmd + ['--api-url', 'https://some.url.izumanetworks.com'])
+        assert 0 == dev_tool.entry_point(
+            cmd + ["--api-url", "https://some.url.izumanetworks.com"]
+        )
 
     assert c_source_digest != digest_file(c_source)
     assert cert_digest != digest_file(cert)
@@ -65,14 +72,52 @@ def test_cli(tmp_path):
     assert api_cfg.is_file()
 
     with working_directory(tmp_path):
-        assert 0 == dev_tool.entry_point(cmd + ['--force'])
+        assert 0 == dev_tool.entry_point(cmd)
 
     assert c_source_digest != digest_file(c_source)
     assert cert_digest != digest_file(cert)
     assert key_digest != digest_file(key)
     assert dev_cfg_digest != digest_file(dev_cfg)
 
-    with api_cfg.open('rb') as fh:
+    with api_cfg.open("rb") as fh:
         api_cfg_data = yaml.safe_load(fh)
-    assert dummy_access_key == api_cfg_data['access_key']
-    assert dummy_api_url == api_cfg_data['host']
+    assert dummy_access_key == api_cfg_data["access_key"]
+    assert dummy_api_url == api_cfg_data["host"]
+
+    cmd = ["init", "--signing-tool", dummy_signing_tool]
+
+    # Expect an exception if only --signing-tool parameter is provided
+    # The exception is error 2, coming from parse.error() function
+    # https://docs.python.org/3/library/argparse.html
+    # ArgumentParser.error(message)
+    # This method prints a usage message including the message to the standard
+    # error and terminates the program with a status code of 2.
+    with working_directory(tmp_path):
+        with pytest.raises(SystemExit) as e:
+            dev_tool.entry_point(cmd)
+        assert e.value.code == 2
+
+    cmd = ["init", "--signing-key-id", dummy_signing_key_id]
+
+    # Expect an exception if only --signing-key-id parameter is provided
+    # The exception is error 2, coming from parse.error() function
+    # https://docs.python.org/3/library/argparse.html
+    # ArgumentParser.error(message)
+    # This method prints a usage message including the message to the standard
+    # error and terminates the program with a status code of 2.
+    with working_directory(tmp_path):
+        with pytest.raises(SystemExit) as e:
+            dev_tool.entry_point(cmd)
+        assert e.value.code == 2
+
+    cmd = [
+        "init",
+        "--signing-tool",
+        dummy_signing_tool,
+        "--signing-key-id",
+        dummy_signing_key_id,
+    ]
+
+    # Expect no exception if both parameters are provided
+    with working_directory(tmp_path):
+        assert 0 == dev_tool.entry_point(cmd)

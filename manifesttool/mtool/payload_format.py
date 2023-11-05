@@ -15,13 +15,15 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ----------------------------------------------------------------------------
-
+"""Payload format options."""
 import enum
 
 
 class PayloadFormat(enum.Enum):
-    RAW = 'raw-binary'
-    PATCH = 'arm-patch-stream'
-    COMBINED = 'combined'
-    ENCRYPTED_RAW = 'encrypted-raw'
-    ENCRYPTED_COMBINED = 'encrypted-combined'
+    """PayloadFormat class."""
+
+    RAW = "raw-binary"
+    PATCH = "arm-patch-stream"
+    COMBINED = "combined"
+    ENCRYPTED_RAW = "encrypted-raw"
+    ENCRYPTED_COMBINED = "encrypted-combined"

@@ -16,21 +16,23 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ----------------------------------------------------------------------------
+"""Defaults for the dev-tool."""
 from pathlib import Path
 
 import yaml
-BASE_PATH = Path('.manifest-dev-tool')
-UPDATE_PUBLIC_KEY_CERT = 'dev.cert.der'
-UPDATE_PRIVATE_KEY = 'dev.key.pem'
-DEV_CFG = 'dev.cfg.yaml'
-UPDATE_RESOURCE_C = 'update_default_resources.c'
-CLOUD_CFG = 'dev.cloud_cfg.yaml'
-DEV_README = 'README.txt'
-API_GW = 'https://api.us-east-1.mbedcloud.com'
-UPDATE_VERSION = 'update.version.yaml'
 
-IZUMA_GW_PATH = Path.home() / '.izuma-dev-presets.yaml'
+BASE_PATH = Path(".manifest-dev-tool")
+UPDATE_PUBLIC_KEY_CERT = "dev.cert.der"
+UPDATE_PRIVATE_KEY = "dev.key.pem"
+DEV_CFG = "dev.cfg.yaml"
+UPDATE_RESOURCE_C = "update_default_resources.c"
+CLOUD_CFG = "dev.cloud_cfg.yaml"
+DEV_README = "README.txt"
+API_GW = "https://api.us-east-1.mbedcloud.com"
+UPDATE_VERSION = "update.version.yaml"
+
+IZUMA_GW_PATH = Path.home() / ".izuma-dev-presets.yaml"
 IZUMA_GW = None
 if IZUMA_GW_PATH.is_file():
-    with IZUMA_GW_PATH.open('rb') as fh:
+    with IZUMA_GW_PATH.open("rb") as fh:
         IZUMA_GW = yaml.safe_load(fh)

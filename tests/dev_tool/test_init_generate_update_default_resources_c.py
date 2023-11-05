@@ -18,18 +18,18 @@
 import uuid
 
 from manifesttool.dev_tool.actions.init import generate_credentials
-from manifesttool.dev_tool.actions.init import generate_update_default_resources_c
+from manifesttool.dev_tool.actions.init import (
+    generate_update_default_resources_c,
+)
 
 
 def test_generate_update_default_resources_c_happy_day(tmp_path):
-    key_file = tmp_path / 'dev.key.pem'
-    certificate_file = tmp_path / 'dev.cert.der'
+    key_file = tmp_path / "dev.key.pem"
+    certificate_file = tmp_path / "dev.cert.der"
     generate_credentials(
-        key_file=key_file,
-        cert_file=certificate_file,
-        cred_valid_time=8
+        key_file=key_file, cert_file=certificate_file, cred_valid_time=8
     )
-    c_source = tmp_path / 'my_source.c'
+    c_source = tmp_path / "my_source.c"
     vendor_id = uuid.uuid4()
     class_id = uuid.uuid4()
 
@@ -42,6 +42,6 @@ def test_generate_update_default_resources_c_happy_day(tmp_path):
     )
     assert c_source.is_file()
     gen_data = c_source.read_text()
-    assert 'arm_uc_vendor_id' in gen_data
-    assert 'arm_uc_class_id' in gen_data
-    assert 'arm_uc_default_certificate' in gen_data
+    assert "arm_uc_vendor_id" in gen_data
+    assert "arm_uc_class_id" in gen_data
+    assert "arm_uc_default_certificate" in gen_data

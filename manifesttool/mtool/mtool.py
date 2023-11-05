@@ -15,7 +15,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ----------------------------------------------------------------------------
-
+"""Manifest tool file."""
 import argparse
 import enum
 import logging
@@ -29,96 +29,96 @@ from manifesttool.mtool.actions.schema import PrintSchemaAction
 from manifesttool.mtool.asn1.v1 import ManifestAsnCodecV1
 from manifesttool.mtool.asn1.v3 import ManifestAsnCodecV3
 
-logger = logging.getLogger('manifest-tool')
+logger = logging.getLogger("manifest-tool")
 
 
 class Actions(enum.Enum):
-    CREATE = 'create'
-    CREATE_V1 = 'create-v1'
-    PARSE = 'parse'
-    SCHEMA = 'schema'
-    PUB_KEY = 'public-key'
+    """Actions class."""
+
+    CREATE = "create"
+    CREATE_V1 = "create-v1"
+    PARSE = "parse"
+    SCHEMA = "schema"
+    PUB_KEY = "public-key"
 
 
 def get_parser():
+    """Get argument parser."""
     parser = argparse.ArgumentParser(
-        description='Tool for creating, signing and verifying '
-                    'manifest files for running Pelion Device '
-                    'management update campaigns.',
-        add_help=False
+        description="Tool for creating, signing and verifying "
+        "manifest files for running Pelion Device "
+        "management update campaigns.",
+        add_help=False,
     )
 
     parser.add_argument(
-        '-h',
-        '--help',
-        action='help',
-        help='Show this help message and exit.'
+        "-h", "--help", action="help", help="Show this help message and exit."
     )
     parser.add_argument(
-        '--version',
-        action='version',
-        version='Manifest-Tool version {}'.format(__version__),
-        help='Show program\'s version number and exit.'
+        "--version",
+        action="version",
+        version="Manifest-Tool version {}".format(__version__),
+        help="Show program's version number and exit.",
     )
 
     parser.add_argument(
-        '-q', '--quiet',
-        action='store_true',
-        help='Print error logs only.'
+        "-q", "--quiet", action="store_true", help="Print error logs only."
     )
 
     parser.add_argument(
-        '--debug',
-        action='store_true',
-        help='Print exception info upon exiting.'
+        "--debug",
+        action="store_true",
+        help="Print exception info upon exiting.",
     )
 
-    actions_parser = parser.add_subparsers(title='Commands', dest='action')
+    actions_parser = parser.add_subparsers(title="Commands", dest="action")
     actions_parser.required = True
 
     create_parser = actions_parser.add_parser(
         Actions.CREATE.value,
-        help='Create a manifest.',
-        description='Create a manifest.',
-        add_help=False
+        help="Create a manifest.",
+        description="Create a manifest.",
+        add_help=False,
     )
     CreateAction.register_parser_args(
-        create_parser, ManifestAsnCodecV3.get_name())
+        create_parser, ManifestAsnCodecV3.get_name()
+    )
 
     create_parser = actions_parser.add_parser(
         Actions.CREATE_V1.value,
-        help='Create a V1 schema manifest.',
-        description='Create a V1 schema manifest.',
-        add_help=False
+        help="Create a V1 schema manifest.",
+        description="Create a V1 schema manifest.",
+        add_help=False,
     )
     CreateAction.register_parser_args(
-        create_parser, ManifestAsnCodecV1.get_name())
+        create_parser, ManifestAsnCodecV1.get_name()
+    )
 
     verify_parser = actions_parser.add_parser(
         Actions.PARSE.value,
-        help='Parse and verify a manifest against the input '
-             'validation schema.',
-        description='Parse and verify a manifest against the input '
-                    'validation schema.',
-        add_help=False
+        help="Parse and verify a manifest against the input "
+        "validation schema.",
+        description="Parse and verify a manifest against the input "
+        "validation schema.",
+        add_help=False,
     )
     ParseAction.register_parser_args(verify_parser)
 
     schema_parser = actions_parser.add_parser(
         Actions.SCHEMA.value,
-        help='Print the input validation schema.',
-        description='Print the input validation schema.',
-        add_help=False
+        help="Print the input validation schema.",
+        description="Print the input validation schema.",
+        add_help=False,
     )
     PrintSchemaAction.register_parser_args(schema_parser)
 
     public_key_parser = actions_parser.add_parser(
         Actions.PUB_KEY.value,
-        help='Create a public key file containing a key in '
-             'uncompressed point format.',
-        description='Create a public key file containing a key in '
-                    'uncompressed point format.',
-        add_help=False
+        help="Create a public key file containing a key in "
+        "uncompressed point format.",
+        description="Create a public key file containing a key in "
+        "uncompressed point format.",
+        add_help=False,
     )
     PublicKeyAction.register_parser_args(public_key_parser)
 
@@ -126,13 +126,14 @@ def get_parser():
 
 
 def entry_point(argv=sys.argv[1:]):  # pylint: disable=dangerous-default-value
+    """Entry point of the manifest tool."""
     parser = get_parser()
     args = parser.parse_args(argv)
 
     logging.basicConfig(
         stream=sys.stdout,
-        format='%(asctime)s %(levelname)s %(message)s',
-        level=logging.ERROR if args.quiet else logging.DEBUG
+        format="%(asctime)s %(levelname)s %(message)s",
+        level=logging.ERROR if args.quiet else logging.DEBUG,
     )
     try:
         action = Actions(args.action)
@@ -148,15 +149,12 @@ def entry_point(argv=sys.argv[1:]):  # pylint: disable=dangerous-default-value
             PublicKeyAction.entry_point(args)
         else:
             # will never get here
-            raise AssertionError('Invalid action')
+            raise AssertionError("Invalid action")
     except Exception as ex:  # pylint: disable=broad-except
-        logger.error(
-            str(ex),
-            exc_info=args.debug
-        )
+        logger.error(str(ex), exc_info=args.debug)
         return 1
     return 0
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     raise SystemExit(entry_point())

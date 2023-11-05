@@ -1,0 +1,84 @@
+name: Static checks - misspell and shellcheck
+on: 
+  push:
+  workflow_dispatch:
+
+  schedule:
+    - cron: '0 0 */3 * *' # Run every 3 days
+
+# This allows a subsequently queued workflow run to interrupt previous runs
+concurrency:
+  group: manifest-int-'${{ github.workflow }} @ ${{ github.event.pull_request.head.label || github.head_ref || github.ref }}'
+  cancel-in-progress: true
+
+jobs:
+  static-checks:
+    runs-on: ubuntu-latest
+    env:
+      SUMMARY_FILE: summary.log
+      SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v4
+
+      # Need to run this 1st, so that the other log files do not cause unnecessary findings
+      # tox already runs pylint
+      - name: Run misspell
+        if: always()
+        run: |
+            curl -L -o ./install-misspell.sh https://git.io/misspell
+            sh ./install-misspell.sh
+            bin/misspell -i mosquitto . >misspell.log
+            echo "### misspell" >>$SUMMARY_FILE
+            bin/misspell -error -i mosquitto .
+            lines=$(wc -l < "misspell.log")
+            if [[ $lines -gt 0 ]]; then
+              echo "Misspell has findings, fail."
+              echo "TEST_FAIL=true" >> $GITHUB_ENV
+              cat misspell.log >>$SUMMARY_FILE
+              exit 1
+            else
+              echo "No findings" >>$SUMMARY_FILE
+            fi          
+
+      - name: Checkout scripts-internal
+        uses: actions/checkout@v4
+        with:
+          repository: PelionIoT/scripts-internal
+          token: ${{ secrets.ACCESS_TOKEN }}
+          path: scripts-internal
+
+      - name: Run pysh-check
+        if: always()
+        run: |
+          sudo apt-get install black pycodestyle pydocstyle shellcheck python3
+          black --version
+          rm -rf install-misspell.sh # cause some findings
+          scripts-internal/pysh-check/pysh-check.sh --workdir .
+
+      - name: Archive production artifacts
+        if: always()
+        uses: actions/upload-artifact@v3
+        with:
+            name: Upload findings logs
+            path: |
+                *.log
+
+      - name: Summary
+        if: always()
+        run: cat $SUMMARY_FILE >>$GITHUB_STEP_SUMMARY
+
+      - name: Set whole job status based on found fails
+        if: always()
+        run: |
+          if [ "$TEST_FAIL" = "true" ]; then
+            echo "Some test has failed, fail the job."
+            exit 1  # You can choose to exit with success (0) to mark this step as successful but skipped.
+          fi
+
+      - name: Integration with slack
+        uses: act10ns/slack@v2
+        with:
+          status: ${{ job.status }}
+          channel: '#testing_device'
+        if: always()

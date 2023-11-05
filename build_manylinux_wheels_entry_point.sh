@@ -1,6 +1,6 @@
 #!/bin/bash
 # ----------------------------------------------------------------------------
-# Copyright 2020-2022 Izuma Networks
+# Copyright 2020-2023 Izuma Networks
 #
 # SPDX-License-Identifier: Apache-2.0
 #
@@ -62,7 +62,7 @@ for whl in wheelhouse/"$PLAT"/*-linux_aarch64.whl; do
 done
 
 # Remove wheelhouse/$PLAT if it's empty
-if [ -z "$(ls -A wheelhouse/$PLAT)" ]; then
+if [ -z "$(ls -A wheelhouse/"$PLAT")" ]; then
     rm -rf "wheelhouse/$PLAT"
 fi
 

@@ -15,45 +15,53 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ----------------------------------------------------------------------------
+"""Public key method."""
 import argparse
 from pathlib import Path
 
 from manifesttool.mtool import ecdsa_helper
 from manifesttool.common.common_helpers import get_argument_path
 
+
 class PublicKeyAction:
+    """PublicKeyAction class."""
+
     @staticmethod
     def register_parser_args(parser: argparse.ArgumentParser):
-        required = parser.add_argument_group('required arguments')
-        optional = parser.add_argument_group('optional arguments')
+        """Register parser arguments."""
+        required = parser.add_argument_group("required arguments")
+        optional = parser.add_argument_group("optional arguments")
 
         required.add_argument(
-            'private_key',
-            help='Path to a private key PEM file.',
+            "private_key",
+            help="Path to a private key PEM file.",
             type=get_argument_path,
         )
 
         required.add_argument(
-            '-o', '--out',
-            help='Output public key filename.',
+            "-o",
+            "--out",
+            help="Output public key filename.",
             type=Path,
-            required=True
+            required=True,
         )
 
         optional.add_argument(
-            '-h',
-            '--help',
-            action='help',
-            help='Show this help message and exit.'
+            "-h",
+            "--help",
+            action="help",
+            help="Show this help message and exit.",
         )
 
     @classmethod
     def get_key(cls, private_key_bytes: bytes):
+        """Get key method."""
         public_key = ecdsa_helper.public_key_from_private(private_key_bytes)
         public_key_bytes = ecdsa_helper.public_key_to_bytes(public_key)
         return public_key_bytes
 
     @classmethod
     def entry_point(cls, args):
+        """Entry point method."""
         private_key_bytes = cls.get_key(args.private_key.read_bytes())
         args.out.write_bytes(private_key_bytes)

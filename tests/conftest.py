@@ -164,7 +164,6 @@ def data_generator(
         class_id=class_id,
         vendor_id=vendor_id,
         signing_tool=signing_tool_path,
-        signing_key_id=key_file,
     )
 
     api_config_path = tmp_path / "dev.cloud_cfg.yaml"

@@ -258,6 +258,10 @@ def entry_point(argv=sys.argv[1:]):  # pylint: disable=dangerous-default-value
         level=logging.DEBUG,
     )
 
+    if args.debug:
+        root = logging.getLogger()
+        root.setLevel(logging.DEBUG)
+
     try:
         generate_delta(
             orig_fw=args.current_fw,

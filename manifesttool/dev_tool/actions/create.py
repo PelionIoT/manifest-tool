@@ -257,10 +257,15 @@ def create_dev_manifest(
     if vendor_data_path:
         input_cfg["vendor"]["custom-data-path"] = vendor_data_path.as_posix()
 
-    if "signing_tool" in dev_cfg and dev_cfg["signing_tool"] is not None:
-        input_cfg["signing_tool"] = dev_cfg["signing_tool"]
-    if "signing_key_id" in dev_cfg and dev_cfg["signing_key_id"] is not None:
-        input_cfg["signing_key_id"] = dev_cfg["signing_key_id"]
+    if "signing-tool" in dev_cfg and dev_cfg["signing-tool"] is not None:
+        if (
+            "signing-key-id" in dev_cfg
+            and dev_cfg["signing-key-id"] is not None
+        ):
+            input_cfg["external-signing-tool"] = {
+                "signing-tool": dev_cfg["signing-tool"],
+                "signing-key-id": dev_cfg["signing-key-id"],
+            }
 
     logger.debug("input_cfg=\n%s", yaml.dump(input_cfg))
 

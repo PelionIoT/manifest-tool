@@ -99,12 +99,20 @@ def register_parser(parser: argparse.ArgumentParser):
 
     optional.add_argument(
         "--update-certificate",
-        help="Path to the update certificate file.",
+        help="""
+        Path to the update certificate file.
+        The parameter must come together with `--update-certificate` argument
+        """,
         type=Path,
     )
 
     optional.add_argument(
-        "--key", help="Path to the PEM format private key file.", type=Path
+        "--key",
+        help="""
+        Path to the PEM format private key file.
+        The parameter must come together with `--update-certificate` argument
+        """,
+        type=Path,
     )
 
     optional.add_argument(
@@ -115,17 +123,11 @@ def register_parser(parser: argparse.ArgumentParser):
              This allows signing with existing infrastructure.
              The arguments to the tool are:
              <digest algorithm> <key identifier> <input file> <output file>.
+             Only SHA256 is currently supported as <digest algorithm>.
+             The parameter must come together with `--key`
+             and `--update-certificate` arguments.
+             The `--key` will be used as <key identifier>
              """,
-        type=Path,
-    )
-
-    optional.add_argument(
-        "--signing-key-id",
-        help="""
-            An identifier for the private key that will be used as
-            a parameter to the signing-tool provided with -s.
-            This allows signing with existing infrastructure.
-            """,
         type=Path,
     )
 
@@ -356,7 +358,6 @@ def generate_developer_config(
     vendor_id: uuid.UUID,
     class_id: uuid.UUID,
     signing_tool: Optional[Path] = None,
-    signing_key_id: Optional[Path] = None,
 ):
     """
     Generate developer config.
@@ -367,8 +368,6 @@ def generate_developer_config(
     :param vendor_id - vendor ID
     :param class_id - class ID
     :param signing_tool - optional parameter, external signing tool
-    :param signing_key_id - optional parameter, a key-id that will be used
-                            as a parameter to an external signing tool
     """
     cfg_data = {
         "key_file": key_file.as_posix(),
@@ -377,9 +376,9 @@ def generate_developer_config(
         "vendor-id": vendor_id.bytes.hex(),
     }
 
-    if signing_tool is not None and signing_key_id is not None:
-        cfg_data["signing_tool"] = signing_tool.as_posix()
-        cfg_data["signing_key_id"] = signing_key_id.as_posix()
+    if signing_tool is not None:
+        cfg_data["signing-tool"] = signing_tool.as_posix()
+        cfg_data["signing-key-id"] = key_file.as_posix()
 
     config.parent.mkdir(parents=True, exist_ok=True)
     with config.open("wt") as fh:
@@ -434,7 +433,7 @@ def entry_point(args, parser: argparse.ArgumentParser):
     if import_key or import_cert:
         if not import_key or not import_cert:
             parser.error(
-                "require --key and --update-certificate or none of those."
+                "require both --key and --update-certificate or none of those."
             )
         import_credentials(
             origin_key_file=import_key,
@@ -450,13 +449,10 @@ def entry_point(args, parser: argparse.ArgumentParser):
         )
 
     signing_tool = getattr(args, "signing_tool", None)
-    signing_key_id = getattr(args, "signing_key_id", None)
 
-    if (signing_tool and not signing_key_id) or (
-        signing_key_id and not signing_tool
-    ):
+    if signing_tool and not import_key and not import_cert:
         parser.error(
-            "both --signing-tool and --signing-key-id or none of those."
+            "--signing-tool requires also --key and --update-certificate."
         )
 
     generate_developer_config(
@@ -466,7 +462,6 @@ def entry_point(args, parser: argparse.ArgumentParser):
         vendor_id=vendor_id,
         class_id=class_id,
         signing_tool=signing_tool,
-        signing_key_id=signing_key_id,
     )
 
     generate_update_default_resources_c(

@@ -719,6 +719,7 @@ The external signing tool should be configured to accept the following parameter
 <digest algorithm> <key identifier> <input file> <output file>
 ```
 
+Only SHA256 is currently supported as <digest algorithm>.
 Before invoking the script, the manifest tool populates the `<input file>` with the data to be signed.  
 Once the script execution is completed, the manifest tool retrieves the signature from the `<output file>`.  
 It's important to note that both of these files should be in their raw binary form.
@@ -743,9 +744,11 @@ Once the manifest-tool create command is executed, the `signing-tool` script wil
 **Developer mode**
 
 To test the external signing tool feature, it can be beneficial to use the developer flow.  
-Start by executing the [`manifest-dev-tool init`](#manifest-dev-tool-init) command with the `-s` and `--signing-key-id` parameters as follows:
+Start by executing the [`manifest-dev-tool init`](#manifest-dev-tool-init) command with the `-s`, `--key` and `--update-certificates` parameters as follows:
+The `$UPDATE_CERTIFICATE` certificate should match the `$KEY`
+
 ```shell
-manifest-dev-tool init -a $MY_ACCESS_KEY -s $SIGNING_TOOL --signing-key-id $SIGNING_KEY_ID
+manifest-dev-tool init -a $MY_ACCESS_KEY -s $SIGNING_TOOL --key $KEY --update-certificate $UPDATE_CERTIFICATE
 ```
 
 After the initiation of the `manifest-dev-tool`, the subsequent `manifest-dev-tool` commands such as [`update`](#manifest-dev-tool-update), [`update-v1`](#manifest-dev-tool-update-v1), [`create`](#manifest-dev-tool-create), and [`create-v1`](#manifest-dev-tool-create-v1) will employ the external `SIGNING_TOOL` script to sign the manifest using the specified `SIGNING_KEY_ID`.

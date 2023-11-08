@@ -135,6 +135,11 @@ def entry_point(argv=sys.argv[1:]):  # pylint: disable=dangerous-default-value
         format="%(asctime)s %(levelname)s %(message)s",
         level=logging.ERROR if args.quiet else logging.DEBUG,
     )
+
+    if args.debug:
+        root = logging.getLogger()
+        root.setLevel(logging.DEBUG)
+
     try:
         action = Actions(args.action)
         if action == Actions.PARSE:

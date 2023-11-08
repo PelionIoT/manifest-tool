@@ -48,11 +48,11 @@ def create_signature(
     pem_key_data: bytes,
 ) -> bytes:
     """Create signature."""
-    if input_cfg.get("signing_tool"):
+    if "external-signing-tool" in input_cfg:
         try:
-            signing_tool = input_cfg.get("signing_tool")
+            signing_tool = input_cfg["external-signing-tool"]["signing-tool"]
             signing_tool_path = os.path.join(os.getcwd(), signing_tool)
-            key_id = input_cfg.get("signing_key_id")
+            key_id = input_cfg["external-signing-tool"]["signing-key-id"]
             digest_algo = "sha256"
             infile = None
             with tempfile.NamedTemporaryFile(delete=False) as f:
@@ -65,7 +65,7 @@ def create_signature(
                 outfile = f.name
                 logger.debug("Temporary signature file: %s", outfile)
             cmd = [signing_tool_path, digest_algo, key_id, infile, outfile]
-            logger.debug("Running %s to sign manifest.", (" ".join(cmd)))
+            logger.info("Running %s to sign manifest.", (" ".join(cmd)))
             # pylint: disable=R1732
             process = subprocess.Popen(cmd)  # nosec
             process.wait()
@@ -76,6 +76,7 @@ def create_signature(
         with open(outfile, "rb") as f:
             signature = f.read()
     else:
+        logger.debug("no external signing tool")
         signature = ecdsa_helper.ecdsa_sign(der_manifest, pem_key_data)
     if raw_signature:
         signature = ecdsa_helper.signature_der_to_raw(signature)

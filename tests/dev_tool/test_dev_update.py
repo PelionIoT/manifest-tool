@@ -19,6 +19,8 @@ import urllib
 from typing import Optional, Union, Tuple
 
 import pytest
+import yaml
+import re
 
 from manifesttool.dev_tool import dev_tool
 from manifesttool.dev_tool.izuma import izuma
@@ -473,6 +475,23 @@ def test_cli_update_happy_day(
         " Pending:                0",
         " Total in this campaign: 2",
     ]
+
+    # If external signing tool is defined, check if it indeed is running
+    if external_signing_tool:
+        # load dev_cfg
+        with (happy_day_data["dev_cfg"]).open("rt") as fh:
+            dev_cfg = yaml.safe_load(fh)
+
+        expected_message = r"^Running {} {} {} (.+?) to sign manifest.".format(
+            dev_cfg["signing-tool"], "sha256", dev_cfg["signing-key-id"]
+        )
+        matching_messages = [
+            message
+            for message in caplog.messages
+            if re.match(expected_message, message)
+        ]
+
+        assert matching_messages
 
 
 @pytest.mark.parametrize(

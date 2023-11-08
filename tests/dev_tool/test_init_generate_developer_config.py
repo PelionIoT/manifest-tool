@@ -50,7 +50,7 @@ def test_generate_developer_config_happy_day(tmp_path):
     assert len(raw_cfg["class-id"]) == 32
 
     signing_tool = tmp_path / "sign.sh"
-    signing_key_id = tmp_path / "key.pem"
+
     # optional arguments
     generate_developer_config(
         key_file=key_file,
@@ -59,7 +59,6 @@ def test_generate_developer_config_happy_day(tmp_path):
         class_id=class_id,
         vendor_id=vendor_id,
         signing_tool=signing_tool,
-        signing_key_id=signing_key_id,
     )
 
     with config.open("rb") as fh:
@@ -70,5 +69,5 @@ def test_generate_developer_config_happy_day(tmp_path):
     assert len(raw_cfg["vendor-id"]) == 32
     assert "class-id" in raw_cfg
     assert len(raw_cfg["class-id"]) == 32
-    assert "signing_tool" in raw_cfg
-    assert "signing_key_id" in raw_cfg
+    assert "signing-tool" in raw_cfg
+    assert "signing-key-id" in raw_cfg

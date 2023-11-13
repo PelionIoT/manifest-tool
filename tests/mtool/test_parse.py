@@ -71,7 +71,7 @@ def happy_day_data(tmp_path_factory: TempPathFactory, request):
         input_cfg["sign-image"] = True
 
     manifest_data = CreateAction.do_create(
-        pem_key_data=key_file.read_bytes(),
+        signing_key=key_file.read_bytes(),
         input_cfg=input_cfg,
         fw_version=fw_version,
         update_certificate=certificate_file,

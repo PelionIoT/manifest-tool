@@ -219,11 +219,6 @@ def create_dev_manifest(
     combined_package: bool,
 ):
     """Create developer manifest."""
-    key_file = Path(dev_cfg["key_file"])
-    if not key_file.is_file():
-        raise AssertionError("{} not found".format(key_file.as_posix()))
-    key_data = key_file.read_bytes()
-
     payload_file = payload_path
     delta_meta_file = payload_file.with_suffix(".yaml")
 
@@ -257,20 +252,20 @@ def create_dev_manifest(
     if vendor_data_path:
         input_cfg["vendor"]["custom-data-path"] = vendor_data_path.as_posix()
 
+    signing_key = None
     if "signing-tool" in dev_cfg and dev_cfg["signing-tool"] is not None:
-        if (
-            "signing-key-id" in dev_cfg
-            and dev_cfg["signing-key-id"] is not None
-        ):
-            input_cfg["external-signing-tool"] = {
-                "signing-tool": dev_cfg["signing-tool"],
-                "signing-key-id": dev_cfg["signing-key-id"],
-            }
+        input_cfg["signing-tool"] = dev_cfg["signing-tool"]
+        signing_key = dev_cfg["key_file"]
+    else:
+        key_file = Path(dev_cfg["key_file"])
+        if not key_file.is_file():
+            raise AssertionError("{} not found".format(key_file.as_posix()))
+        signing_key = key_file.read_bytes()
 
     logger.debug("input_cfg=\n%s", yaml.dump(input_cfg))
 
     manifest_bin = CreateAction.do_create(
-        pem_key_data=key_data,
+        signing_key=signing_key,
         input_cfg=input_cfg,
         fw_version=fw_version,
         update_certificate=Path(dev_cfg["certificate"]),

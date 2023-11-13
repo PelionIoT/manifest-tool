@@ -34,7 +34,7 @@ def test_generate_developer_config_happy_day(tmp_path):
     vendor_id = uuid.uuid4()
     # required arguments
     generate_developer_config(
-        key_file=key_file,
+        key=key_file,
         cert_file=certificate_file,
         config=config,
         class_id=class_id,
@@ -53,7 +53,7 @@ def test_generate_developer_config_happy_day(tmp_path):
 
     # optional arguments
     generate_developer_config(
-        key_file=key_file,
+        key=key_file,
         cert_file=certificate_file,
         config=config,
         class_id=class_id,
@@ -70,4 +70,3 @@ def test_generate_developer_config_happy_day(tmp_path):
     assert "class-id" in raw_cfg
     assert len(raw_cfg["class-id"]) == 32
     assert "signing-tool" in raw_cfg
-    assert "signing-key-id" in raw_cfg

@@ -21,6 +21,7 @@ from pathlib import Path
 from typing import Type
 import pytest
 import yaml
+import re
 from enum import Enum
 from cryptography.hazmat import backends
 from cryptography.hazmat.primitives import hashes
@@ -125,7 +126,7 @@ def test_create_happy_day_full(
         component_file.write_text(component)
 
     manifest = CreateAction.do_create(
-        pem_key_data=happy_day_data["key_file"].read_bytes(),
+        signing_key=Path(happy_day_data["key_file"]).read_bytes(),
         input_cfg=input_cfg,
         fw_version=version,
         update_certificate=happy_day_data["certificate_file"],
@@ -260,7 +261,7 @@ def create_test_data_file(
     key_file = test_dir / "{}_{}_priv_key.bin".format(
         file_id, file_name_prefix
     )
-    private_key_data = happy_day_data["key_file"].read_bytes()
+    private_key_data = Path(happy_day_data["key_file"]).read_bytes()
     key_file.write_bytes(private_key_data)
 
     public_key = ecdsa_helper.public_key_from_private(private_key_data)
@@ -313,7 +314,7 @@ def test_create_happy_day_delta(tmp_path_factory, fw_size):
             component_file.write_text(component)
 
         manifest = CreateAction.do_create(
-            pem_key_data=happy_day_data["key_file"].read_bytes(),
+            signing_key=Path(happy_day_data["key_file"]).read_bytes(),
             input_cfg=input_cfg,
             update_certificate=happy_day_data["certificate_file"],
             fw_version=version,
@@ -375,6 +376,34 @@ def test_cli_full(
     cli_test_common(happy_day_data, manifest_version, UpdateType.DELTA)
 
 
+# @pytest.mark.parametrize("manifest_version", ManifestVersion.list_codecs())
+@pytest.mark.parametrize("manifest_version", [v1.ManifestAsnCodecV1])
+def test_cli_external_signing(
+    tmp_path_factory, manifest_version: Type[ManifestAsnCodecBase], caplog
+):
+    happy_day_data = data_generator(
+        tmp_path_factory, size=512, signing_tool=True
+    )
+    happy_day_data["key_file"] = "123"
+    data_cfg = cli_test_common(
+        happy_day_data,
+        manifest_version,
+        UpdateType.DELTA,
+        extrenal_signing=True,
+    )
+
+    expected_message = r"^Running {} {} {} (.+?) to sign manifest.".format(
+        data_cfg["signing-tool"], "sha256", happy_day_data["key_file"]
+    )
+    matching_messages = [
+        message
+        for message in caplog.messages
+        if re.match(expected_message, message)
+    ]
+
+    assert matching_messages
+
+
 @pytest.mark.parametrize("manifest_version", [v3.ManifestAsnCodecV3])
 @pytest.mark.parametrize("pack_format", ["tar"])
 def test_cli_combined(
@@ -389,7 +418,9 @@ def test_cli_combined(
     cli_test_common(happy_day_data, manifest_version, UpdateType.COMBINED)
 
 
-def cli_test_common(happy_day_data, manifest_version, update_type):
+def cli_test_common(
+    happy_day_data, manifest_version, update_type, extrenal_signing=False
+):
     tmp_cfg = happy_day_data["tmp_path"] / "input.yaml"
     output_manifest = happy_day_data["tmp_path"] / "foo.bin"
     if update_type == UpdateType.DELTA:
@@ -402,20 +433,24 @@ def cli_test_common(happy_day_data, manifest_version, update_type):
         file_path = happy_day_data["fw_file"].as_posix()
         file_format = "raw-binary"
 
+    data = {
+        "vendor": {"domain": "izumanetworks.com"},
+        "device": {"model-name": "my-device"},
+        "priority": 15,
+        "payload": {
+            "url": "https://my.server.com/some.file?new=1",
+            "file-path": file_path,
+            "format": file_format,
+        },
+    }
+
+    if extrenal_signing:
+        signing_tool = happy_day_data["signing_tool"].as_posix()
+        data["signing-tool"] = signing_tool
+
     with tmp_cfg.open("wt") as fh:
-        yaml.dump(
-            {
-                "vendor": {"domain": "izumanetworks.com"},
-                "device": {"model-name": "my-device"},
-                "priority": 15,
-                "payload": {
-                    "url": "https://my.server.com/some.file?new=1",
-                    "file-path": file_path,
-                    "format": file_format,
-                },
-            },
-            fh,
-        )
+        yaml.dump(data, fh)
+
     action = "create"
     if "v1" in manifest_version.get_name():
         action = "create-v1"
@@ -425,7 +460,7 @@ def cli_test_common(happy_day_data, manifest_version, update_type):
         "--config",
         tmp_cfg.as_posix(),
         "--key",
-        happy_day_data["key_file"].as_posix(),
+        happy_day_data["key_file"],
         "--output",
         output_manifest.as_posix(),
     ]
@@ -439,6 +474,8 @@ def cli_test_common(happy_day_data, manifest_version, update_type):
     else:
         cmd.extend(["--fw-version", "100.0.500"])
     assert 0 == mtool.entry_point(cmd)
+
+    return data
 
 
 @pytest.mark.parametrize("manifest_version", ManifestVersion.list_codecs())
@@ -468,7 +505,7 @@ def test_create_happy_day_with_ids(happy_day_data, manifest_version):
         "--config",
         tmp_cfg.as_posix(),
         "--key",
-        happy_day_data["key_file"].as_posix(),
+        happy_day_data["key_file"],
         "--output",
         output_manifest.as_posix(),
     ]
@@ -498,11 +535,13 @@ def test_create_happy_day_with_ids(happy_day_data, manifest_version):
     ],
 )
 def test_create_happy_day_with_external_signing(
-    tmp_path_factory, happy_day_data, manifest_codec, payload_format
+    tmp_path_factory, happy_day_data, manifest_codec, payload_format, caplog
 ):
     global FILE_ID
     GEN_DIR.mkdir(exist_ok=True)
-    happy_day_data = data_generator(tmp_path_factory, size=512)
+    happy_day_data = data_generator(
+        tmp_path_factory, size=512, encryption_key=None, signing_tool=True
+    )
 
     manifest = None
     payload_file_path = None
@@ -526,8 +565,7 @@ def test_create_happy_day_with_external_signing(
             "format": payload_format,
         },
         "component": "MAIN",
-        "signing_tool": happy_day_data["signing_tool"],
-        "signing_key_id": happy_day_data["key_file"].as_posix(),
+        "signing-tool": happy_day_data["signing_tool"].as_posix(),
     }
 
     if issubclass(manifest_codec, ManifestAsnCodecV1):
@@ -536,7 +574,7 @@ def test_create_happy_day_with_external_signing(
         version = "100.500.0"
 
     manifest = CreateAction.do_create(
-        pem_key_data=happy_day_data["key_file"].read_bytes(),
+        signing_key=happy_day_data["key_file"],
         input_cfg=input_cfg,
         fw_version=version,
         update_certificate=happy_day_data["certificate_file"],
@@ -570,6 +608,17 @@ def test_create_happy_day_with_external_signing(
     new_fw_file.write_bytes(happy_day_data["fw_file"].read_bytes())
 
     FILE_ID += 1
+
+    expected_message = r"^Running {} {} {} (.+?) to sign manifest.".format(
+        input_cfg["signing-tool"], "sha256", happy_day_data["key_file"]
+    )
+    matching_messages = [
+        message
+        for message in caplog.messages
+        if re.match(expected_message, message)
+    ]
+
+    assert matching_messages
 
     print(
         "Full manifest in HEX to be viewed on "

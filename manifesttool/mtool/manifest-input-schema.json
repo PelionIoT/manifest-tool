@@ -141,22 +141,9 @@
       "description": "Do sign installed image - only relevant for manifest v3. Required for devices with PKI image authentication in bootloader",
       "type": "boolean"
     },
-    "external-signing-tool": {
-      "type": "object",
-      "required": [
-        "signing-tool",
-        "signing-key-id"
-      ],
-      "properties": {
-        "signing-tool": {
-          "description": "Path to external signing tool that signs the manifest. Must be accessible by the manifest tool",
-          "$ref": "#/definitions/non_empty_string"
-        },
-        "signing-key-id": {
-          "description": "An identifier for the private key that will be used together with the signing tool.",
-          "$ref": "#/definitions/non_empty_string"
-        }
-      }
+    "signing-tool": {
+      "description": "Path to an external signing tool that signs the manifest. Must be accessible by the manifest tool. The signing tool should accept the following arguments: <digest algorithm> <key identifier> <input file> <output file>.",
+      "$ref": "#/definitions/non_empty_string"
     }
   },
   "definitions": {

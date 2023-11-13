@@ -156,9 +156,10 @@ def data_generator(
         # signing_tool_path = tmp_path / "sign"
         signing_tool_path = generate_external_signing_tool(tmp_path / "sign")
 
+    key_file = key_file.as_posix()
     dev_cfg = tmp_path / "dev.cfg.yaml"
     dev_init.generate_developer_config(
-        key_file=key_file,
+        key=key_file,
         cert_file=certificate_file,
         config=dev_cfg,
         class_id=class_id,

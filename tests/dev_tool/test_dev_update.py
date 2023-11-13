@@ -483,7 +483,7 @@ def test_cli_update_happy_day(
             dev_cfg = yaml.safe_load(fh)
 
         expected_message = r"^Running {} {} {} (.+?) to sign manifest.".format(
-            dev_cfg["signing-tool"], "sha256", dev_cfg["signing-key-id"]
+            dev_cfg["signing-tool"], "sha256", happy_day_data["key_file"]
         )
         matching_messages = [
             message

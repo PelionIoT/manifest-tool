@@ -197,17 +197,12 @@ creates a manifest based on the provided details.
                       # image will be added to the manifest.
                       # This image signature can be used when the device bootloader
                       # expects to work with signed images (e.g. secure-boot).
-                      # By default, it's set to False.
-    
-    external-signing-tool: # Both `signing-tool` and `signing-key-id` are expected.
+                      # By default, it's set to False. 
   
-      signing-tool: ./sign.sh # A path to an external signing tool that signs the manifest.
-                              # It enables signing with existing infrastructure, and the tool 
-                              # should accept the following arguments: <digest algorithm> <key identifier> <input file> <output file>.
-  
-      signing-key-id: key.pem # An identifier for the private key that will be used as a parameter 
-                              # to the signing tool - <key identifier>.
-                              # It allows signing with existing infrastructure.
+    signing-tool: ./sign.sh # Path to the external signing tool.
+                            # Enables signing with existing infrastructure.
+                            # The tool should accept the arguments: <digest algorithm> <key identifier> <input file> <output file>.
+                            # The `--key` CLI argument will be used as <key identifier>. 
     ```
 
 **Example**
@@ -728,18 +723,28 @@ Here is an explanation of how to utilize an external signing tool in both develo
 
 **Production mode**
 
-The configuration JSON or YAML file used as a parameter for the [`manifest-tool create`](#manifest-tool-create) command should include the following keys:
-```
-external-signing-tool: # Both `signing-tool` and `signing-key-id` are expected
+To generate a manifest signed by an external signing tool, follow these steps:
+
+1. Include the following key in the configuration JSON or YAML file used 
+   as a parameter for the `manifest-tool create` command:
+   ```
+   signing-tool: ./sign.sh # Path to the external signing tool.
+                           # Enables signing with existing infrastructure.
+                           # The tool should accept the arguments: <digest algorithm> <key identifier> <input file> <output file>.
+                           # The `--key` CLI argument will be used as <key identifier>.
+   ```
+2. Execute the `manifest-tool create` command with the `$SIGNING_KEY_ID`
+   argument. This will use the specified `$SIGNING_KEY_ID` with the `signing-tool` script.
+   ```shell
+    manifest-tool create \
+         --config config.yaml \
+         --key $SIGNING_KEY_ID \
+         --fw-version 1.2.3 \
+         --output my.manifest.bin 
+    ```
   
-      signing-tool: ./sign.sh # A path to an external signing tool that signs the manifest.
-                              # This allows signing with existing infrastructure.
-                              # The arguments to the tool are: <digest algorithm> <key identifier> <input file> <output file>.
-  
-      signing-key-id: key.pem # An identifier for the private key that will be used as a parameter to the signing tool - <key identifier>.
-                              # This allows signing with existing infrastructure.
-```
-Once the manifest-tool create command is executed, the `signing-tool` script will be used to sign the manifest with the specified `signing-key-id`.
+These steps enable the creation of a manifest signed by the designated 
+external signing tool in a production environment.
 
 **Developer mode**
 
@@ -748,7 +753,11 @@ Start by executing the [`manifest-dev-tool init`](#manifest-dev-tool-init) comma
 The `$UPDATE_CERTIFICATE` certificate should match the `$KEY`
 
 ```shell
-manifest-dev-tool init -a $MY_ACCESS_KEY -s $SIGNING_TOOL --key $KEY --update-certificate $UPDATE_CERTIFICATE
+manifest-dev-tool init \
+     -a $MY_ACCESS_KEY \
+     -s $SIGNING_TOOL  \
+     --key $KEY        \
+     --update-certificate $UPDATE_CERTIFICATE
 ```
 
 After the initiation of the `manifest-dev-tool`, the subsequent `manifest-dev-tool` commands such as [`update`](#manifest-dev-tool-update), [`update-v1`](#manifest-dev-tool-update-v1), [`create`](#manifest-dev-tool-create), and [`create-v1`](#manifest-dev-tool-create-v1) will employ the external `SIGNING_TOOL` script to sign the manifest using the specified `SIGNING_KEY_ID`.

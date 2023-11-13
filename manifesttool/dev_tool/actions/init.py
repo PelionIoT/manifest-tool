@@ -109,8 +109,12 @@ def register_parser(parser: argparse.ArgumentParser):
     optional.add_argument(
         "--key",
         help="""
-        Path to the PEM format private key file.
-        The parameter must come together with `--update-certificate` argument
+        A private key file that sings the manifest.
+        Could be a path to the PEM format private key file.
+        It could also be an identifier for a private key,
+        if `signing-tool` parameter is supplied.
+        The `--key` parameter must come together with
+        `--update-certificate` argument.
         """,
         type=Path,
     )
@@ -179,7 +183,6 @@ def generate_update_default_resources_c(
     c_source: Path,
     vendor_id: uuid.UUID,
     class_id: uuid.UUID,
-    private_key_file: Path,
     cert_file: Path,
 ):
     """
@@ -188,7 +191,6 @@ def generate_update_default_resources_c(
     :param c_source: generated C source file
     :param vendor_id: vendor UUID
     :param class_id: class UUID
-    :param private_key_file: private key file
     :param cert_file: update certificate file
     """
     vendor_id_str = pretty_print(vendor_id.bytes)
@@ -200,9 +202,7 @@ def generate_update_default_resources_c(
 
     template = (SCRIPT_DIR / "code_template.txt").read_text()
 
-    public_key = ecdsa_helper.public_key_from_private(
-        private_key_file.read_bytes()
-    )
+    public_key = ecdsa_helper.public_key_from_certificate(cert_data)
     public_key_bytes = ecdsa_helper.public_key_to_bytes(public_key)
     update_public_key_str = pretty_print(public_key_bytes)
 
@@ -221,24 +221,26 @@ def generate_update_default_resources_c(
 
 
 def import_credentials(
-    origin_key_file: Path,
     origin_cert_file: Path,
-    dest_key_file: Path,
     dest_cert_file: Path,
+    origin_key_file: Optional[Path],
+    dest_key_file: Optional[Path],
 ):
     """
     Import developer credentials.
 
-    :param origin_key_file - path to .pem signing key file
     :param origin_cert_file - path to .der public key certificate file
-    :param dest_key_file - destination file path
     :param dest_cert_file - destination file path
+    :param origin_key_file - If provided, path to .pem signing key file
+    :param dest_key_file - If provided, destination file path
+
     """
     logger.info("importing dev-credentials")
 
-    if origin_key_file != dest_key_file:
-        shutil.copy(origin_key_file, dest_key_file)
-        logger.info("imported %s to %s", origin_key_file, dest_key_file)
+    if origin_key_file is not None:
+        if origin_key_file != dest_key_file:
+            shutil.copy(origin_key_file, dest_key_file)
+            logger.info("imported %s to %s", origin_key_file, dest_key_file)
 
     if origin_cert_file != dest_cert_file:
         shutil.copy(origin_cert_file, dest_cert_file)
@@ -352,7 +354,7 @@ def generate_credentials(
 
 
 def generate_developer_config(
-    key_file: Path,
+    key,
     cert_file: Path,
     config: Path,
     vendor_id: uuid.UUID,
@@ -362,7 +364,8 @@ def generate_developer_config(
     """
     Generate developer config.
 
-    :param key_file - path to .pem signing key file
+    :param key - can be a path to .pem signing key file or
+    a key identifier in case `signing_tool` is configured
     :param cert_file - path to .der public key certificate file
     :param config - config file
     :param vendor_id - vendor ID
@@ -370,7 +373,7 @@ def generate_developer_config(
     :param signing_tool - optional parameter, external signing tool
     """
     cfg_data = {
-        "key_file": key_file.as_posix(),
+        "key_file": str(key),
         "certificate": cert_file.as_posix(),
         "class-id": class_id.bytes.hex(),
         "vendor-id": vendor_id.bytes.hex(),
@@ -378,13 +381,13 @@ def generate_developer_config(
 
     if signing_tool is not None:
         cfg_data["signing-tool"] = signing_tool.as_posix()
-        cfg_data["signing-key-id"] = key_file.as_posix()
 
     config.parent.mkdir(parents=True, exist_ok=True)
     with config.open("wt") as fh:
         yaml.dump(cfg_data, fh)
 
     logger.info("generated developer config file %s", config)
+    logger.debug("input_cfg=\n%s", yaml.dump(cfg_data))
 
 
 def generate_service_config(
@@ -427,36 +430,46 @@ def entry_point(args, parser: argparse.ArgumentParser):
     vendor_id = args.vendor_id
     class_id = args.class_id
 
-    import_key = getattr(args, "key", None)
-    import_cert = getattr(args, "update_certificate", None)
-
-    if import_key or import_cert:
-        if not import_key or not import_cert:
-            parser.error(
-                "require both --key and --update-certificate or none of those."
-            )
-        import_credentials(
-            origin_key_file=import_key,
-            origin_cert_file=import_cert,
-            dest_key_file=cache_dir / defaults.UPDATE_PRIVATE_KEY,
-            dest_cert_file=cache_dir / defaults.UPDATE_PUBLIC_KEY_CERT,
-        )
-    else:
-        generate_credentials(
-            key_file=cache_dir / defaults.UPDATE_PRIVATE_KEY,
-            cert_file=cache_dir / defaults.UPDATE_PUBLIC_KEY_CERT,
-            cred_valid_time=365 * 20,  # years
-        )
-
     signing_tool = getattr(args, "signing_tool", None)
+    key = getattr(args, "key", None)
+    update_certificate = getattr(args, "update_certificate", None)
 
-    if signing_tool and not import_key and not import_cert:
+    if signing_tool and (not key or not update_certificate):
         parser.error(
             "--signing-tool requires also --key and --update-certificate."
         )
 
+    if key or update_certificate:
+        if not update_certificate or not key:
+            parser.error(
+                "require both --key and --update-certificate or none of those."
+            )
+
+        import_cert = update_certificate
+        import_key = None
+        dest_key_file = None
+        if not signing_tool:
+            # If signing tool isn't supplied the given key should be imported
+            import_key = key
+            dest_key_file = cache_dir / defaults.UPDATE_PRIVATE_KEY
+
+        import_credentials(
+            origin_cert_file=import_cert,
+            dest_cert_file=cache_dir / defaults.UPDATE_PUBLIC_KEY_CERT,
+            origin_key_file=import_key,
+            dest_key_file=dest_key_file,
+        )
+    else:
+        # If a key and a certificate aren't given, they will be generated
+        key = cache_dir / defaults.UPDATE_PRIVATE_KEY
+        generate_credentials(
+            key_file=key,
+            cert_file=cache_dir / defaults.UPDATE_PUBLIC_KEY_CERT,
+            cred_valid_time=365 * 20,  # years
+        )
+
     generate_developer_config(
-        key_file=cache_dir / defaults.UPDATE_PRIVATE_KEY,
+        key=key,
         cert_file=cache_dir / defaults.UPDATE_PUBLIC_KEY_CERT,
         config=cache_dir / defaults.DEV_CFG,
         vendor_id=vendor_id,
@@ -468,7 +481,6 @@ def entry_point(args, parser: argparse.ArgumentParser):
         c_source=args.generated_resource,
         vendor_id=vendor_id,
         class_id=class_id,
-        private_key_file=cache_dir / defaults.UPDATE_PRIVATE_KEY,
         cert_file=cache_dir / defaults.UPDATE_PUBLIC_KEY_CERT,
     )
     access_key = args.access_key

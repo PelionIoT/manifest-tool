@@ -37,7 +37,6 @@ def test_generate_update_default_resources_c_happy_day(tmp_path):
         c_source=c_source,
         vendor_id=vendor_id,
         class_id=class_id,
-        private_key_file=key_file,
         cert_file=certificate_file,
     )
     assert c_source.is_file()

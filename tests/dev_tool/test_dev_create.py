@@ -51,7 +51,7 @@ def test_cli_developer(happy_day_data, action):
     class_id = uuid.uuid4()
     vendor_id = uuid.uuid4()
     generate_developer_config(
-        key_file=happy_day_data["key_file"],
+        key=happy_day_data["key_file"],
         cert_file=happy_day_data["certificate_file"],
         config=dev_cfg,
         class_id=class_id,

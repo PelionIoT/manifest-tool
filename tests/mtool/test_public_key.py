@@ -18,6 +18,7 @@
 import logging
 import sys
 
+from pathlib import Path
 import pytest
 from _pytest.tmpdir import TempPathFactory
 from cryptography.hazmat.backends import default_backend
@@ -45,11 +46,11 @@ def text_fixture(tmp_path_factory: TempPathFactory):
         key_file=key_file, cert_file=certificate_file, cred_valid_time=8
     )
 
-    return {"tmp_path": tmp_path, "key_file": key_file}
+    return {"tmp_path": tmp_path, "key_file": key_file.as_posix()}
 
 
 def test_parse_happy_day(text_fixture):
-    PublicKeyAction.get_key(text_fixture["key_file"].read_bytes())
+    PublicKeyAction.get_key(Path(text_fixture["key_file"]).read_bytes())
 
 
 def test_parse_happy_day_cli(text_fixture):
@@ -57,7 +58,7 @@ def test_parse_happy_day_cli(text_fixture):
     cmd = [
         "--debug",
         "public-key",
-        text_fixture["key_file"].as_posix(),
+        text_fixture["key_file"],
         "--out",
         output_file.as_posix(),
     ]
@@ -68,7 +69,7 @@ def test_parse_happy_day_cli(text_fixture):
     assert output_file.stat().st_size == 65  # 0x04 + 32B + 32B
 
     private_key = serialization.load_pem_private_key(
-        text_fixture["key_file"].read_bytes(),
+        Path(text_fixture["key_file"]).read_bytes(),
         password=None,
         backend=default_backend(),
     )

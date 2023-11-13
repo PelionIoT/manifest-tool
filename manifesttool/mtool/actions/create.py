@@ -45,14 +45,13 @@ def create_signature(
     input_cfg: dict,
     raw_signature: bool,
     der_manifest: bytes,
-    pem_key_data: bytes,
+    signing_key,
 ) -> bytes:
     """Create signature."""
-    if "external-signing-tool" in input_cfg:
+    if "signing-tool" in input_cfg:
         try:
-            signing_tool = input_cfg["external-signing-tool"]["signing-tool"]
+            signing_tool = input_cfg["signing-tool"]
             signing_tool_path = os.path.join(os.getcwd(), signing_tool)
-            key_id = input_cfg["external-signing-tool"]["signing-key-id"]
             digest_algo = "sha256"
             infile = None
             with tempfile.NamedTemporaryFile(delete=False) as f:
@@ -64,7 +63,14 @@ def create_signature(
             with tempfile.NamedTemporaryFile(delete=False) as f:
                 outfile = f.name
                 logger.debug("Temporary signature file: %s", outfile)
-            cmd = [signing_tool_path, digest_algo, key_id, infile, outfile]
+
+            cmd = [
+                signing_tool_path,
+                digest_algo,
+                signing_key,
+                infile,
+                outfile,
+            ]
             logger.info("Running %s to sign manifest.", (" ".join(cmd)))
             # pylint: disable=R1732
             process = subprocess.Popen(cmd)  # nosec
@@ -77,7 +83,7 @@ def create_signature(
             signature = f.read()
     else:
         logger.debug("no external signing tool")
-        signature = ecdsa_helper.ecdsa_sign(der_manifest, pem_key_data)
+        signature = ecdsa_helper.ecdsa_sign(der_manifest, signing_key)
     if raw_signature:
         signature = ecdsa_helper.signature_der_to_raw(signature)
 
@@ -107,9 +113,13 @@ class CreateAction:
         required.add_argument(
             "-k",
             "--key",
-            help="Path to the PEM format private key file.",
+            help="""
+            A private key file that sings the manifest.
+            Could be a path to the PEM format private key file.
+            It could also be an identifier for a private key,
+            if `signing-tool` value is supplied in the configuration file
+            """,
             metavar="KEY",
-            type=argparse.FileType("rb"),
             required=True,
         )
 
@@ -166,7 +176,7 @@ class CreateAction:
 
     @staticmethod
     def do_create(
-        pem_key_data: bytes,
+        signing_key,
         input_cfg: dict,
         fw_version,
         update_certificate: Path,
@@ -199,8 +209,13 @@ class CreateAction:
                 raise AssertionError(
                     "sign-image is unexpected for manifest schema v1"
                 )
+            if "signing-tool" in input_cfg:
+                raise AssertionError(
+                    "sign-image option is not supported together \
+                    with signing-tool option"
+                )
             signature = ecdsa_helper.ecdsa_sign_prehashed(
-                installed_digest, pem_key_data
+                installed_digest, signing_key
             )
             codec.set_image_signature(
                 ecdsa_helper.signature_der_to_raw(signature)
@@ -211,7 +226,7 @@ class CreateAction:
         der_manifest = codec.get_signed_data()
 
         signature = create_signature(
-            input_cfg, raw_signature, der_manifest, pem_key_data
+            input_cfg, raw_signature, der_manifest, signing_key
         )
         manifest_bin = codec.get_der_signed_resource(signature)
 
@@ -236,8 +251,17 @@ class CreateAction:
         else:
             fw_version = args.fw_version
 
+        if "signing-tool" in input_cfg:
+            # If signing-tool option is supplied
+            # The key argument is propagated as is, without any manipulations
+            # It will be used, later on, together with the signing-tool
+            signing_key = args.key
+        else:
+            key_file = Path(args.key)
+            signing_key = key_file.read_bytes()
+
         manifest_bin = cls.do_create(
-            pem_key_data=args.key.read(),
+            signing_key=signing_key,
             input_cfg=input_cfg,
             fw_version=fw_version,
             update_certificate=getattr(args, "update_certificate", None),

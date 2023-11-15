@@ -389,7 +389,7 @@ def test_cli_external_signing(
         happy_day_data,
         manifest_version,
         UpdateType.DELTA,
-        extrenal_signing=True,
+        external_signing=True,
     )
 
     expected_message = r"^Running {} {} {} (.+?) to sign manifest.".format(
@@ -419,7 +419,7 @@ def test_cli_combined(
 
 
 def cli_test_common(
-    happy_day_data, manifest_version, update_type, extrenal_signing=False
+    happy_day_data, manifest_version, update_type, external_signing=False
 ):
     tmp_cfg = happy_day_data["tmp_path"] / "input.yaml"
     output_manifest = happy_day_data["tmp_path"] / "foo.bin"
@@ -444,7 +444,7 @@ def cli_test_common(
         },
     }
 
-    if extrenal_signing:
+    if external_signing:
         signing_tool = happy_day_data["signing_tool"].as_posix()
         data["signing-tool"] = signing_tool
 

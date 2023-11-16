@@ -3,8 +3,6 @@ run-name: ${{ github.actor }} create_wheels_for_linux
 on:
   push:
   workflow_dispatch:
-  schedule:
-    - cron: '0 0 */3 * *' # Run every 3 days
 
 # This allows a subsequently queued workflow run to interrupt previous runs
 concurrency:

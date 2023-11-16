@@ -3,9 +3,6 @@ on:
   push:
   workflow_dispatch:
 
-  schedule:
-    - cron: '0 0 */3 * *' # Run every 3 days
-
 # This allows a subsequently queued workflow run to interrupt previous runs
 concurrency:
   group: manifest-int-'${{ github.workflow }} @ ${{ github.event.pull_request.head.label || github.head_ref || github.ref }}'

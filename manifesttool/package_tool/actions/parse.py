@@ -15,39 +15,45 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ----------------------------------------------------------------------------
+"""Package tool parse action."""
 import tarfile
 import logging
 from manifesttool.common.common_helpers import get_argument_path
-from manifesttool.package_tool.package_format.tar_package \
-    import PackageFormatTar
+from manifesttool.package_tool.package_format.tar_package import (
+    PackageFormatTar,
+)
+
 
 class ParseAction:
+    """ParseAction class."""
 
-    logger = logging.getLogger('manifest-package-parse')
+    logger = logging.getLogger("manifest-package-parse")
 
     @staticmethod
     def register_parser_args(parser):
-        required = parser.add_argument_group('required arguments')
-        optional = parser.add_argument_group('optional arguments')
+        """Register parser arguments."""
+        required = parser.add_argument_group("required arguments")
+        optional = parser.add_argument_group("optional arguments")
 
         required.add_argument(
-            '-p', '--package',
-            help='Path to the package file.',
+            "-p",
+            "--package",
+            help="Path to the package file.",
             type=get_argument_path,
-            required=True
+            required=True,
         )
 
         optional.add_argument(
-            '-h',
-            '--help',
-            action='help',
-            help='Show this help message and exit.'
+            "-h",
+            "--help",
+            action="help",
+            help="Show this help message and exit.",
         )
 
     # pylint: disable=too-many-branches
     @staticmethod
     def do_parse(package):
-
+        """Parse action."""
         if tarfile.is_tarfile(package):
             package_format = PackageFormatTar()
         else:
@@ -58,6 +64,6 @@ class ParseAction:
 
     @classmethod
     def entry_point(cls, args):
-
+        """Entry point to the parse action."""
         logging.info(args.package)
         cls.do_parse(args.package)

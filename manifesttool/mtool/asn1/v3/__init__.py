@@ -15,4 +15,5 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ----------------------------------------------------------------------------
+"""Init V3."""
 from manifesttool.mtool.asn1.v3.manifest_encoder_v3 import ManifestAsnCodecV3

@@ -25,39 +25,39 @@ from manifesttool.package_tool import package_tool
 from manifesttool.package_tool.actions.create import CreateAction
 from manifesttool.package_tool.actions.parse import ParseAction
 from manifesttool.package_tool.asn1.package_encoder import DescriptorAsnCodec
-from manifesttool.package_tool.package_format.package_format \
-    import DESCRIPTOR_FILE_NAME
+from manifesttool.package_tool.package_format.package_format import (
+    DESCRIPTOR_FILE_NAME,
+)
 from tests.conftest import package_data_generator
 
 FW_SIZE_BITS = 1024 * 512
-@pytest.mark.parametrize('pack_format', ['tar'])
-def test_create_happy_day_action(
-    tmp_path_factory,
-    pack_format
-):
-    happy_day_data = package_data_generator(tmp_path_factory,FW_SIZE_BITS)
 
-   # Create package
-    CreateAction.do_create(happy_day_data['input_cfg'], \
-        happy_day_data['out_file_name'], pack_format)
 
-    ParseAction.do_parse(happy_day_data['out_file_name'])
-
-@pytest.mark.parametrize('pack_format', ['tar'])
-def test_create_happy_day_command(
-    tmp_path_factory,
-    pack_format
-):
-
-    happy_day_data = package_data_generator(tmp_path_factory,FW_SIZE_BITS)
+@pytest.mark.parametrize("pack_format", ["tar"])
+def test_create_happy_day_action(tmp_path_factory, pack_format):
+    happy_day_data = package_data_generator(tmp_path_factory, FW_SIZE_BITS)
 
     # Create package
-    CreateAction.do_create(happy_day_data['input_cfg'], \
-        happy_day_data['out_file_name'], pack_format)
+    CreateAction.do_create(
+        happy_day_data["input_cfg"],
+        happy_day_data["out_file_name"],
+        pack_format,
+    )
+
+    ParseAction.do_parse(happy_day_data["out_file_name"])
 
 
-    cmd = [
-        'parse',
-        '--package', happy_day_data['out_file_name']
-    ]
+@pytest.mark.parametrize("pack_format", ["tar"])
+def test_create_happy_day_command(tmp_path_factory, pack_format):
+
+    happy_day_data = package_data_generator(tmp_path_factory, FW_SIZE_BITS)
+
+    # Create package
+    CreateAction.do_create(
+        happy_day_data["input_cfg"],
+        happy_day_data["out_file_name"],
+        pack_format,
+    )
+
+    cmd = ["parse", "--package", happy_day_data["out_file_name"]]
     assert package_tool.entry_point(cmd) == 0

@@ -24,67 +24,91 @@ from manifesttool.package_tool.package_tool import entry_point
 from manifesttool.package_tool import package_tool
 from manifesttool.package_tool.actions.create import CreateAction
 from manifesttool.package_tool.asn1.package_encoder import DescriptorAsnCodec
-from manifesttool.package_tool.package_format.package_format \
-    import DESCRIPTOR_FILE_NAME
+from manifesttool.package_tool.package_format.package_format import (
+    DESCRIPTOR_FILE_NAME,
+)
 from tests.conftest import package_data_generator
 
 FW_SIZE_BITS = 1024 * 512
-@pytest.mark.parametrize('pack_format', ['tar'])
-def test_create_happy_day_action(
-    tmp_path_factory,
-    pack_format
-):
-    happy_day_data = package_data_generator(tmp_path_factory,FW_SIZE_BITS)
+
+
+@pytest.mark.parametrize("pack_format", ["tar"])
+def test_create_happy_day_action(tmp_path_factory, pack_format):
+    happy_day_data = package_data_generator(tmp_path_factory, FW_SIZE_BITS)
 
     # Create package
-    CreateAction.do_create(happy_day_data['input_cfg'], \
-        happy_day_data['out_file_name'], pack_format)
+    CreateAction.do_create(
+        happy_day_data["input_cfg"],
+        happy_day_data["out_file_name"],
+        pack_format,
+    )
 
     check_tar_package(happy_day_data)
 
-@pytest.mark.parametrize('pack_format', ['tar'])
-def test_create_happy_day_command(
-    tmp_path_factory,
-    pack_format
-):
 
-    happy_day_data = package_data_generator(tmp_path_factory,FW_SIZE_BITS)
+@pytest.mark.parametrize("pack_format", ["tar"])
+def test_create_happy_day_command(tmp_path_factory, pack_format):
+
+    happy_day_data = package_data_generator(tmp_path_factory, FW_SIZE_BITS)
 
     cmd = [
-        'create',
-        '--config', happy_day_data['tmp_cfg'],
-        '--format', pack_format,
-        '--image-alignment-size', "1",
-        '--output', happy_day_data['out_file_name']
+        "create",
+        "--config",
+        happy_day_data["tmp_cfg"],
+        "--format",
+        pack_format,
+        "--image-alignment-size",
+        "1",
+        "--output",
+        happy_day_data["out_file_name"],
     ]
     assert package_tool.entry_point(cmd) == 0
 
     check_tar_package(happy_day_data)
+
 
 def check_tar_package_file(tar_file, file_name, expected_size):
 
     with tar_file.extractfile(file_name) as fh:
         fh.seek(0, os.SEEK_END)
         file_size = fh.tell()
-        assert file_size==expected_size
+        assert file_size == expected_size
 
-def check_descriptor_file(tar_file, file_name,input_config):
+
+def check_descriptor_file(tar_file, file_name, input_config):
     with tar_file.extractfile(file_name) as fh:
         asn1der = fh.read()
         # decode the descriptor
         asn1 = DescriptorAsnCodec.decode(asn1der)
-        assert len(input_config['images'])==asn1['num-of-images']
-        for asn_image, config_image in zip(asn1['descriptors-array'], input_config['images']):
-            assert asn_image['id']==config_image['sub_comp_name'].encode('ASCII')
-            assert asn_image['vendor-data-size'] == len(config_image['vendor_data'])
-            assert asn_image['vendor-data']==config_image['vendor_data'].encode('ASCII')
+        assert len(input_config["images"]) == asn1["num-of-images"]
+        for asn_image, config_image in zip(
+            asn1["descriptors-array"], input_config["images"]
+        ):
+            assert asn_image["id"] == config_image["sub_comp_name"].encode(
+                "ASCII"
+            )
+            assert asn_image["vendor-data-size"] == len(
+                config_image["vendor_data"]
+            )
+            assert asn_image["vendor-data"] == config_image[
+                "vendor_data"
+            ].encode("ASCII")
+
 
 def check_tar_package(happy_day_data):
-    #extract tar file
-    with tarfile.open(happy_day_data['out_file_name'], "r:") as tar_arch:
-        check_tar_package_file(tar_arch, os.path.basename(happy_day_data['1img_id']), \
-            happy_day_data['1img_size'])
-        check_tar_package_file(tar_arch, os.path.basename(happy_day_data['2img_id']), \
-            happy_day_data['2img_size'])
+    # extract tar file
+    with tarfile.open(happy_day_data["out_file_name"], "r:") as tar_arch:
+        check_tar_package_file(
+            tar_arch,
+            os.path.basename(happy_day_data["1img_id"]),
+            happy_day_data["1img_size"],
+        )
+        check_tar_package_file(
+            tar_arch,
+            os.path.basename(happy_day_data["2img_id"]),
+            happy_day_data["2img_size"],
+        )
         # Check descriptor
-        check_descriptor_file(tar_arch,DESCRIPTOR_FILE_NAME, happy_day_data['input_cfg'])
+        check_descriptor_file(
+            tar_arch, DESCRIPTOR_FILE_NAME, happy_day_data["input_cfg"]
+        )

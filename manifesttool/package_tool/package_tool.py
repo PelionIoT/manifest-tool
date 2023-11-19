@@ -15,6 +15,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ----------------------------------------------------------------------------
+"""Package tool module."""
 import argparse
 import logging
 import sys
@@ -26,57 +27,60 @@ from manifesttool import __version__
 
 logger = logging.getLogger("manifest-package-tool")
 
+
 class Actions(enum.Enum):
-    CREATE = 'create'
-    PARSE = 'parse'
+    """Actions class."""
+
+    CREATE = "create"
+    PARSE = "parse"
+
 
 def get_parser():
+    """Get parser."""
     parser = argparse.ArgumentParser(
-        description='Tool for creating and verifying combined package files '
-                    'used for full update campaigns.',
-        add_help=False
+        description="Tool for creating and verifying combined package files "
+        "used for full update campaigns.",
+        add_help=False,
     )
-    required = parser.add_argument_group('required arguments')
+    required = parser.add_argument_group("required arguments")
 
     required.add_argument(
-        '-h', '--help',
-        action='help',
-        help='Show this help message and exit.'
+        "-h", "--help", action="help", help="Show this help message and exit."
     )
 
-    actions_parser = parser.add_subparsers(title='Commands', dest='action')
+    actions_parser = parser.add_subparsers(title="Commands", dest="action")
     actions_parser.required = True
 
     create_parser = actions_parser.add_parser(
         Actions.CREATE.value,
-        help='Create a package.',
-        description='Create a package.',
-        add_help=False
+        help="Create a package.",
+        description="Create a package.",
+        add_help=False,
     )
 
-    CreateAction.register_parser_args(
-        create_parser)
+    CreateAction.register_parser_args(create_parser)
 
     verify_parser = actions_parser.add_parser(
         Actions.PARSE.value,
-        help='Parse and verify a package against the input '
-             'validation schema.',
-        description='Parse and verify a package against the input '
-                    'validation schema.',
-        add_help=False
+        help="Parse and verify a package against the input "
+        "validation schema.",
+        description="Parse and verify a package against the input "
+        "validation schema.",
+        add_help=False,
     )
     ParseAction.register_parser_args(verify_parser)
     return parser
 
 
 def entry_point(argv=sys.argv[1:]):  # pylint: disable=dangerous-default-value
+    """Entry point to the package tool."""
     parser = get_parser()
     args = parser.parse_args(argv)
 
     logging.basicConfig(
         stream=sys.stdout,
-        format='%(asctime)s %(levelname)s %(message)s',
-        level=logging.DEBUG
+        format="%(asctime)s %(levelname)s %(message)s",
+        level=logging.DEBUG,
     )
     try:
         action = Actions(args.action)
@@ -86,7 +90,7 @@ def entry_point(argv=sys.argv[1:]):  # pylint: disable=dangerous-default-value
             CreateAction.entry_point(args)
         else:
             # will never get here
-            raise AssertionError('Invalid action')
+            raise AssertionError("Invalid action")
     except Exception as ex:  # pylint: disable=broad-except
         logger.error(
             str(ex),
@@ -96,5 +100,5 @@ def entry_point(argv=sys.argv[1:]):  # pylint: disable=dangerous-default-value
     return 0
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     raise SystemExit(entry_point())

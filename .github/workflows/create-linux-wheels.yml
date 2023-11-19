@@ -1,21 +1,23 @@
 name: create-Linux-wheels
 run-name: ${{ github.actor }} create_wheels_for_linux
 on:
-  push: 
-    branches:
-      - master
+  push:
+  workflow_dispatch:
 
 # This allows a subsequently queued workflow run to interrupt previous runs
 concurrency:
   group: '${{ github.workflow }} @ ${{ github.event.pull_request.head.label || github.head_ref || github.ref }}'
   cancel-in-progress: true
 
+env:
+  SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+
 jobs:
   create-wheels-for-manylinux:
       runs-on: ubuntu-22.04
       if: github.repository == 'PelionIoT/manifest-tool'
       steps:
-        - uses: actions/checkout@v3
+        - uses: actions/checkout@v4
         - run: ./build_manylinux_wheels.sh
         - name: Upload manylinux wheels
           uses: actions/upload-artifact@v3
@@ -26,7 +28,7 @@ jobs:
       runs-on: ubuntu-22.04
       if: github.repository == 'PelionIoT/manifest-tool'
       steps:
-        - uses: actions/checkout@v3
+        - uses: actions/checkout@v4
         - run: pip install -r requirements.txt
         - run: pip install build
         - run: python -m build
@@ -35,18 +37,31 @@ jobs:
           with:
             name: wheels
             path: dist/*.tar.gz
-  create-wheels-for-manylinux-int:
+  # From internal - do not upload, just build to make sure
+  # all is OK.
+  create-wheels-for-manylinux-internal:
       runs-on: ubuntu-22.04
       if: github.repository == 'PelionIoT/manifest-tool-internal'
       steps:
-        - uses: actions/checkout@v3
+        - uses: actions/checkout@v4
         - run: ./build_manylinux_wheels.sh
+        - name: Integration with slack
+          uses: act10ns/slack@v2
+          with:
+            status: ${{ job.status }}
+            channel: '#testing_device'
+          if: always()
   create-tar-gz-int:
       runs-on: ubuntu-22.04
       if: github.repository == 'PelionIoT/manifest-tool-internal'
       steps:
-        - uses: actions/checkout@v3
+        - uses: actions/checkout@v4
         - run: pip install -r requirements.txt
         - run: pip install build
         - run: python -m build
-
+        - name: Integration with slack
+          uses: act10ns/slack@v2
+          with:
+            status: ${{ job.status }}
+            channel: '#testing_device'
+          if: always()

@@ -1,5 +1,23 @@
 # Changelog
 
+## 2.6.0
+- Add support for an external signing tool
+   - The feature enables to use of an external signing tool for signing the manifest. 
+   - Add a new CLI option `--signing-tool` to the `manifest-dev-tool init` command.
+   - The `--key` CLI option of the `manifest-dev-tool init` command can receive an identifier private key 
+     or a private key file name that will be used to sign the manifest with the external signing tool provided.
+   - Add a new configuration option `signing-tool` that is used by the `manifest-tool create` command.
+   - The `--key` CLI option of the `manifest-tool create` or `manifest-tool create-v1` command can receive 
+     an identifier private key or a private key file name that will be used to sign the manifest with 
+     the external signing tool provided.
+- Update `requests` to `2.31.0`.
+- Update `cryptography` to `41.0.4`.
+- Add support for Python 3.11 (super inits, imports with try, `tox` additions etc.).
+- Update `dev-requirements`:
+    - Update `pytest` to the latest `7.4.2`.
+    - Update `pylint` to `2.17.7` (`3.0.2` does not support older versions of Python).
+- Remove the `--force` CLI option that was deprecated already.
+
 ## 2.5.1
 - Fix the minimal required Python version to 3.7.
 

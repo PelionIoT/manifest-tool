@@ -29,8 +29,16 @@
         }
       },
       "oneOf": [
-        {"required": ["domain"]},
-        {"required": ["vendor-id"]}
+        {
+          "required": [
+            "domain"
+          ]
+        },
+        {
+          "required": [
+            "vendor-id"
+          ]
+        }
       ]
     },
     "device": {
@@ -46,8 +54,16 @@
         }
       },
       "oneOf": [
-        {"required": ["model-name"]},
-        {"required": ["class-id"]}
+        {
+          "required": [
+            "model-name"
+          ]
+        },
+        {
+          "required": [
+            "class-id"
+          ]
+        }
       ]
     },
     "priority": {
@@ -101,10 +117,19 @@
         }
       },
       "if": {
-        "properties": { "format": { "enum": ["encrypted-raw", "encrypted-combined"] } }
+        "properties": {
+          "format": {
+            "enum": [
+              "encrypted-raw",
+              "encrypted-combined"
+            ]
+          }
+        }
       },
       "then": {
-        "required": ["encrypted"]
+        "required": [
+          "encrypted"
+        ]
       }
     },
     "component": {
@@ -112,9 +137,13 @@
       "type": "string",
       "minLength": 1
     },
-    "sign-image":{
+    "sign-image": {
       "description": "Do sign installed image - only relevant for manifest v3. Required for devices with PKI image authentication in bootloader",
       "type": "boolean"
+    },
+    "signing-tool": {
+      "description": "Path to an external signing tool that signs the manifest. Must be accessible by the manifest tool. The signing tool should accept the following arguments: <digest algorithm> <key identifier> <input file> <output file>.",
+      "$ref": "#/definitions/non_empty_string"
     }
   },
   "definitions": {

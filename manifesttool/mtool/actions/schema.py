@@ -15,28 +15,34 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ----------------------------------------------------------------------------
+"""Schema action."""
 from pathlib import Path
 
 MTOOL_PATH = Path(__file__).resolve().parent.parent
 
 
 class PrintSchemaAction:
+    """PrintSchemaAction class."""
+
     @staticmethod
     def print_schema():
-        schema_file = MTOOL_PATH / 'manifest-input-schema.json'
+        """Print schema."""
+        schema_file = MTOOL_PATH / "manifest-input-schema.json"
         print(schema_file.read_text())
 
     @staticmethod
     def register_parser_args(parser):
-        optional = parser.add_argument_group('optional arguments')
+        """Register parser arguments."""
+        optional = parser.add_argument_group("optional arguments")
 
         optional.add_argument(
-            '-h',
-            '--help',
-            action='help',
-            help='Show this help message and exit.'
+            "-h",
+            "--help",
+            action="help",
+            help="Show this help message and exit.",
         )
 
     @classmethod
     def entry_point(cls, _):
+        """Entry point method."""
         cls.print_schema()

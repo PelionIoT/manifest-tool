@@ -1,5 +1,6 @@
 # ----------------------------------------------------------------------------
 # Copyright 2021 Pelion
+# Copyright (c) 2023 Izuma Networks
 #
 # SPDX-License-Identifier: Apache-2.0
 #
@@ -15,23 +16,32 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ----------------------------------------------------------------------------
-import abc
+"""Package format logic."""
 import logging
 from typing import TypeVar
 
+try:
+    from builtins import ABC, abstractmethod
+except ImportError:
+    from abc import ABC, abstractmethod
+
+
 DESCRIPTOR_FILE_NAME = "_desc_"
 
-PackageFormatBaseT = TypeVar(
-    'PackageFormatBaseT', bound='PackageFormatBase')
+PackageFormatBaseT = TypeVar("PackageFormatBaseT", bound="PackageFormatBase")
 
-logger = logging.getLogger('package-format')
+logger = logging.getLogger("package-format")
 
-class PackageFormatBase(abc.ABC):
 
-    @abc.abstractmethod
+class PackageFormatBase(ABC):
+    """PackageFormatBase class."""
+
+    @abstractmethod
     def parse_package(self, package_file):
+        """Parse package."""
         raise NotImplementedError
 
-    @abc.abstractmethod
+    @abstractmethod
     def create_package(self, output_file, input_cfg, asn1der):
+        """Create package."""
         raise NotImplementedError

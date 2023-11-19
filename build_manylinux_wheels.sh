@@ -1,6 +1,6 @@
 #!/bin/bash
 # ----------------------------------------------------------------------------
-# Copyright 2020-2022 Izuma Networks
+# Copyright 2020-2023 Izuma Networks
 #
 # SPDX-License-Identifier: Apache-2.0
 #

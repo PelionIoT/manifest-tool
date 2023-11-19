@@ -1,20 +1,28 @@
 name: PR-checker
-on: [push]
+on: 
+  push:
+  workflow_dispatch:
+
 # This allows a subsequently queued workflow run to interrupt previous runs
 concurrency:
   group: '${{ github.workflow }} @ ${{ github.event.pull_request.head.label || github.head_ref || github.ref }}'
   cancel-in-progress: true
 jobs:
+  # Job for public repo, upload artifacts
+  # Run on larger number of OSes
   run_tox_pub:
-    if: github.repository == 'PelionIoT/manifest-tool'
     timeout-minutes: 10
     strategy:
       fail-fast: true
       matrix:
         os: [ubuntu-22.04, ubuntu-20.04, windows-2022, windows-2019, macos11]
     runs-on: ${{ matrix.os }}
+    if: github.repository == 'PelionIoT/manifest-tool'
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
       - uses: actions/setup-python@v4
         with:
           python-version: '3.10'
@@ -28,24 +36,30 @@ jobs:
         with:
           python-version: '3.7'
       - run: python -m pip install wheel --user
-      - run: python -m pip install pipx-in-pipx --user
-      - run: pipx install tox
+      - run: python -m pip install --user tox
       - run: tox
       - uses: actions/upload-artifact@v3
         with:
           name: wheels
           path: dist/*.whl
 
-  run_tox_int:
-    if: github.repository == 'PelionIoT/manifest-tool-internal'
+  # Job for internal repo, do not upload artifacts
+  # Run with smaller set of OSes
+  run_tox_internal:
+    env:
+      SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
     timeout-minutes: 10
     strategy:
       fail-fast: true
       matrix:
         os: [ubuntu-22.04, windows-2022]
     runs-on: ${{ matrix.os }}
+    if: github.repository == 'PelionIoT/manifest-tool-internal'
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
       - uses: actions/setup-python@v4
         with:
           python-version: '3.10'
@@ -59,23 +73,12 @@ jobs:
         with:
           python-version: '3.7'
       - run: python -m pip install wheel --user
-      - run: python -m pip install pipx-in-pipx --user
-      - run: pipx install tox
+      - run: python -m pip install --user tox
       - run: tox
 
-# We are not ready for this yet...
-#  run-pysh-check:
-#    runs-on: ubuntu-22.04
-#    steps:
-#      - uses: actions/checkout@v3
-#      # Install pyshcheck tooling
-#      - run: sudo apt install pycodestyle pydocstyle black
-#      # git instead of rules to use access token
-#      - run: git config --global url."https://${{ secrets.ACCESS_TOKEN }}@github.com/".insteadOf "git@github.com:"
-#      - run: git config --global url."https://${{ secrets.ACCESS_TOKEN }}@github".insteadOf "https://github"
-#      - run: git config --list
-#      # Linux coreutils is already installed wc -command can be found.
-#      - run: git clone git@github.com:PelionIoT/scripts-internal.git
-#      #- run: git clone https://github.com/PelionIoT/scripts-internal.git
-#      - run: echo "." >scripts-internal/.nopyshcheck
-#      - run: .github/workflows/pysh-checker.sh ${{ github.event.repository.default_branch }} ${{ github.ref_name }}
+      - name: Integration with slack
+        uses: act10ns/slack@v2
+        with:
+          status: ${{ job.status }}
+          channel: '#testing_device'
+        if: always()

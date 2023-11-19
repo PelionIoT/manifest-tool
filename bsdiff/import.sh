@@ -1,6 +1,7 @@
 #!/bin/bash -e
 # ----------------------------------------------------------------------------
 # Copyright 2019-2021 Pelion
+# Copyright (c) 2023 Izuma Networks
 #
 # SPDX-License-Identifier: Apache-2.0
 #
@@ -35,7 +36,7 @@ declare -a BSDIFF_FILES=(
 
 for file in "${BSDIFF_FILES[@]}"
 do
-   cp -v $file $SCRIPT_DIR
+   cp -v "$file" "$SCRIPT_DIR"
 done
 
-echo "Imported from delta-tool at hash: $(git -C $DELTA_TOOL_DIR rev-parse HEAD)" > $SCRIPT_DIR/import_ref.txt
+echo "Imported from delta-tool at hash: $(git -C "$DELTA_TOOL_DIR" rev-parse HEAD)" > "$SCRIPT_DIR"/import_ref.txt

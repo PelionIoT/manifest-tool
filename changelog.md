@@ -1,5 +1,13 @@
 # Changelog
 
+## 2.6.1
+- Drop support for Python 3.7.
+    - Python 3.7 is end of life.
+    - It fails the PR-checks in Mac runner as an `arm64`-package of Python 3.7 is not available.
+- Upgrade cryptography dependency from 41.0.4 to latest 42.0.7.
+    - There were multiple CVEs in the earlier one.
+    - However, they do not impact manifest-tool as we do not use pkcs12 functionality.
+
 ## 2.6.0
 - Add support for an external signing tool
    - The feature enables to use of an external signing tool for signing the manifest. 

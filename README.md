@@ -51,8 +51,8 @@ It is advisable to install the `manifest-tool` Python package within a segregate
 
 **Prerequisites:**
 
-* [Python 3.7 ... 3.11](https://www.python.org/downloads/).
-    * Python 3.12 support is not available yet (it functions on Linux but not on Windows).
+* [Python 3.8 ... 3.11](https://www.python.org/downloads/).
+    * Python 3.12 support is not available yet.
 * [pip (Python Package Installer)](https://pip.pypa.io/en/stable/).
 * Internet connectivity
 
@@ -71,8 +71,7 @@ pip install manifest-tool==2.4.1
 
 **Prerequisites:**
 
-* [Python 3.7 ... 3.11](https://www.python.org/downloads/).
-* [pip (Python Package Installer)](https://pip.pypa.io/en/stable/).
+* In addition to PyPi-installation pre-requisites:
 * Native toolchain:
     * GCC/Clang for Linux/MacOS.
     * [Microsoft Build Tools for Visual Studio 2019](https://www.visualstudio.com/downloads/#build-tools-for-visual-studio-2019) 

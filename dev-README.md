@@ -7,11 +7,11 @@
 
 Example:
 ```shell
+$ pyenv install 3.11.0
 $ pyenv install 3.10.0
 $ pyenv install 3.9.0
 $ pyenv install 3.8.0
-$ pyenv install 3.7.5
-$ pyenv local 3.9.0 3.8.0 3.7.5
+$ pyenv local 3.11.0 3.10.0 3.9.0 3.8.0
 $ python --version
 Python 3.8.0
 ```
@@ -60,7 +60,7 @@ Execute `tox -e py38` to test only the python3.8 environment.
 ## wheel creation
 
 ```shell
-$ pyenv local 3.7.5
+$ pyenv local 3.9.0
 $ python setup.py bdist_wheel
 $ pyenv local 3.8.9
 $ python setup.py bdist_wheel

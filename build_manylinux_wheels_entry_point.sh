@@ -41,7 +41,7 @@ function repair_wheel {
 # Return 0 if the python version shouldn't be skipped
 function skip_not_supported_python_version {
     pybin="$1"
-    
+
     # Skip Python 3.5, 3.6, and 3.7 (too old)
     if [[ "$pybin" == /opt/python/cp35-cp35m/bin ]]; then
         return 1
@@ -52,7 +52,7 @@ function skip_not_supported_python_version {
     if [[ "$pybin" == /opt/python/cp37-cp37m/bin ]]; then
         return 1
     fi
-    
+
     # Skip Python 3.12 and 3.13(not supported yet)
     if [[ "$pybin" == /opt/python/cp312-cp312/bin ]]; then
         return 1
@@ -63,8 +63,7 @@ function skip_not_supported_python_version {
     if [[ "$pybin" == /opt/python/cp313-cp313t/bin ]]; then
         return 1
     fi
-    
-    
+
     return 0
 }
 
@@ -94,7 +93,7 @@ if [ -z "$(ls -A wheelhouse/"$PLAT")" ]; then
 fi
 
 # Install packages and test
-for PYBIN in /opt/python/cp3*/bin; do   
+for PYBIN in /opt/python/cp3*/bin; do
     if ! skip_not_supported_python_version "$PYBIN"; then
         continue
     fi

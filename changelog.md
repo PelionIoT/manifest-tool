@@ -3,7 +3,9 @@
 ## 2.6.2
 - Copyright in `update_default_resoruces.c` created with Izuma Networks and current year.
 - Updated `cryptography` to version `43.0.1`.
-- Updated `requests` to version `2.32.0`.
+- Updated `requests` to version `2.32.2`.
+- Drop `manylinux_1` and `manylinux_2010`, add `musllinux_1_2` as `manylinux` platforms.
+- Add updating of pip in wheels building with manylinux.
 
 ## 2.6.1
 - Drop support for Python 3.7.

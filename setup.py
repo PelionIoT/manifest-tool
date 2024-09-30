@@ -1,6 +1,6 @@
 # ----------------------------------------------------------------------------
 # Copyright 2019-2021 Pelion
-# Copyright (c) 2022-2023 Izuma Networks
+# Copyright (c) 2022-2024 Izuma Networks
 #
 # SPDX-License-Identifier: Apache-2.0
 #

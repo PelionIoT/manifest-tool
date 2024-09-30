@@ -23,10 +23,6 @@ mkdir -p dist
 rm -rf dist/*
 
 # https://github.com/pypa/manylinux
-PLAT="manylinux1_x86_64"     && docker run --rm -e PLAT="$PLAT" -v "$(pwd)":/io quay.io/pypa/"$PLAT" /io/build_manylinux_wheels_entry_point.sh |& tee "$PLAT.log" &
-
-PLAT="manylinux2010_x86_64"  && docker run --rm -e PLAT="$PLAT" -v "$(pwd)":/io quay.io/pypa/"$PLAT" /io/build_manylinux_wheels_entry_point.sh |& tee "$PLAT.log" &
-
 PLAT="manylinux2014_x86_64"  && docker run --rm -e PLAT="$PLAT" -v "$(pwd)":/io quay.io/pypa/"$PLAT" /io/build_manylinux_wheels_entry_point.sh |& tee "$PLAT.log" &
 
 # EoL 1st Jan, 2023
@@ -36,6 +32,8 @@ PLAT="manylinux_2_28_x86_64" && docker run --rm -e PLAT="$PLAT" -v "$(pwd)":/io 
 docker run --rm --privileged tonistiigi/binfmt:latest --install all &
 
 PLAT="manylinux2014_aarch64" && docker run --rm -e PLAT="$PLAT" -v "$(pwd)":/io quay.io/pypa/"$PLAT" /io/build_manylinux_wheels_entry_point.sh |& tee "$PLAT.log" &
+
+PLAT="musllinux_1_2_x86_64" && docker run --rm -e PLAT="$PLAT" -v "$(pwd)":/io quay.io/pypa/"$PLAT" /io/build_manylinux_wheels_entry_point.sh |& tee "$PLAT.log" &
 
 wait
 

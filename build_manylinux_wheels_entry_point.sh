@@ -1,6 +1,6 @@
 #!/bin/bash
 # ----------------------------------------------------------------------------
-# Copyright 2020-2023 Izuma Networks
+# Copyright 2020-2024 Izuma Networks
 #
 # SPDX-License-Identifier: Apache-2.0
 #
@@ -23,6 +23,7 @@ mkdir /work
 cd /work
 
 # Clone from shared dir
+git config --global --add safe.directory /io/.git
 git clone /io manifest-tool
 cd manifest-tool
 
@@ -78,6 +79,15 @@ for PYBIN in /opt/python/cp3*/bin; do
     "${PYBIN}/pip" wheel . --no-deps -w wheelhouse/"$PLAT"
 done
 
+# Turns out we need rust to build the wheels nowaydays
+# Check if cargo is available
+if command -v cargo; then
+    echo "Cargo is available => we assume rust is available."
+else
+    echo "Cargo is not available - install rust with rustup"
+    curl -sSf https://sh.rustup.rs | sh -s -- -y
+fi
+
 # Bundle external shared libraries into the wheels
 for whl in wheelhouse/"$PLAT"/*-linux_x86_64.whl; do
     repair_wheel "$whl"
@@ -100,6 +110,7 @@ for PYBIN in /opt/python/cp3*/bin; do
     echo '------------------------------------------------------------'
     echo "${PYBIN}"
     echo '------------------------------------------------------------'
+    "${PYBIN}/python" -m pip install --upgrade pip
     "${PYBIN}/pip" install --prefer-binary -r requirements.txt
     "${PYBIN}/pip" install manifest-tool --no-index -f wheelhouse/
     "${PYBIN}/manifest-tool" --version

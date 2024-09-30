@@ -18,12 +18,17 @@ jobs:
       if: github.repository == 'PelionIoT/manifest-tool'
       steps:
         - uses: actions/checkout@v4
-        - run: ./build_manylinux_wheels.sh
+
+        - name: Build wheels
+          run: ./build_manylinux_wheels.sh
+
         - name: Upload manylinux wheels
-          uses: actions/upload-artifact@v3
+          uses: actions/upload-artifact@v4
           with:
-            name: wheels
+            name: wheels-manylinux
             path: dist/*.*
+            if-no-files-found: error
+
   create-tar-gz:
       runs-on: ubuntu-22.04
       if: github.repository == 'PelionIoT/manifest-tool'
@@ -33,10 +38,11 @@ jobs:
         - run: pip install build
         - run: python -m build
         - name: Upload .tar.gz -file
-          uses: actions/upload-artifact@v3
+          uses: actions/upload-artifact@v4
           with:
-            name: wheels
+            name: wheels-tar-gz
             path: dist/*.tar.gz
+            if-no-files-found: error
   # From internal - do not upload, just build to make sure
   # all is OK.
   create-wheels-for-manylinux-internal:
@@ -44,13 +50,17 @@ jobs:
       if: github.repository == 'PelionIoT/manifest-tool-internal'
       steps:
         - uses: actions/checkout@v4
-        - run: ./build_manylinux_wheels.sh
+
+        - name: Build wheels
+          run: ./build_manylinux_wheels.sh
+
         - name: Integration with slack
           uses: act10ns/slack@v2
           with:
             status: ${{ job.status }}
-            channel: '#testing_device'
-          if: always()
+            channel: '#testing_build'
+          if: failure()
+
   create-tar-gz-int:
       runs-on: ubuntu-22.04
       if: github.repository == 'PelionIoT/manifest-tool-internal'

@@ -118,8 +118,8 @@ the release creation time.
    1. Create a PR with the changes to master. Merge it after successful PR checks and approval.
    1. Check that the `PR-checker` workflow passes on the master branch. It runs all the tox tests on all the OSes.
    1. Check that the `create-Linux-wheels` workflow passes on the master branch. It builds the Linux wheels and uploads them as an artifact.
-   1. Download the `wheels.zip` artifact to your local machine from the `create-Linux-wheels` workflow.
-   1. Extract the `wheels.zip` to a folder - <dist-folder>
+   1. Download the `wheels-manylinux.zip` and `wheels-tar-gz.zip `artifacts to your local machine from the `create-Linux-wheels` workflow.
+   1. Extract both zip files to a `<dist-folder>` folder.
    1. Install `twine`: `pip install twine`.
    1. Publish to https://test.pypi.org and check:
       ```

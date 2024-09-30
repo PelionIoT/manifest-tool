@@ -49,8 +49,8 @@ jobs:
           uses: act10ns/slack@v2
           with:
             status: ${{ job.status }}
-            channel: '#testing_device'
-          if: always()
+            channel: '#testing_build'
+          if: failure()
   create-tar-gz-int:
       runs-on: ubuntu-22.04
       if: github.repository == 'PelionIoT/manifest-tool-internal'
@@ -63,5 +63,5 @@ jobs:
           uses: act10ns/slack@v2
           with:
             status: ${{ job.status }}
-            channel: '#testing_device'
-          if: always()
+            channel: '#testing_build'
+          if: failure()

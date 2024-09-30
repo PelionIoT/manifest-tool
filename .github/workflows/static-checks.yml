@@ -51,7 +51,7 @@ jobs:
           sudo apt-get install black pycodestyle pydocstyle shellcheck python3
           black --version
           rm -rf install-misspell.sh # cause some findings
-          scripts-internal/pysh-check/pysh-check.sh --workdir .
+          scripts-internal/pysh-check/pysh-check.sh --workdir . | tee pysh-check.log
 
       - name: Archive production artifacts
         if: always()

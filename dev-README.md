@@ -87,44 +87,48 @@ the resulting archive (`tar.gz`) will be found under `dist` directory
 > command.
 
 ## manylinux wheels
-PyPi does not allows uploading platform-specific wheel. More details can be 
+PyPi does not allow uploading platform-specific wheels. More details can be 
 found here: [PEP-0513](https://www.python.org/dev/peps/pep-0513/#rationale).  
 
 To create [manylinux](https://github.com/pypa/manylinux) wheel files
-execute following script: `./build_manylinux_wheels.sh`.  
-> Note: this will require `docker` command. Make sure you have installed docker.
+execute the following script: `./build_manylinux_wheels.sh`.  
+> Note: this will require the `docker` command. Make sure you have installed docker.
 
 ## Dependent packages versions
-Dependent packages version should be tested with both lower and higher
-bound. Tox tests with new virtual env where all the latest versions will
+Dependent package versions should be tested with both lower and higher
+bounds. Tox tests with new virtual env where all the latest versions will
 be installed.  
 When issuing a new release:
 - test lower bound versions - if they are still applicable to latest
   changes.
 - bump the higher bound versions and test against them.
 
-We must freeze upper bound versions to the version which were tested at
+We must freeze upper-bound versions to the version which were tested at
 the release creation time.
 
 ## Publish release
-1. Update `requirements.txt` to dependencies latest version.
-1. Bump the package [version](./manifesttool/__init__.py) and tar name in [tox.ini](./tox.ini).
-1. Set the development environment by running `dev_init.sh` on Linux/Mac or `dev_init.bat` on Windows.
-1. Run `tox` on Windows, Linux and Mac.
-1. Create release on GitHub.
-1. Run `build_manylinux_wheels.sh` on Linux. The dist folder should contain 4 wheels for every Linux distribution (16 wheels overall).
-1. Gather all the wheels and 1 tar.gz from all `dist` folders from 3 OSes (Windows, Linux, Mac) into one dist folder:
-   ```
-   scp $USER@<source base path>/manifest-tool/dist/*.whl dist/
-   ```
-1. Install `twine`: `pip install twine`.
-1. Publish to https://test.pypi.org and check:
-    ```
-    twine upload -r testpypi dist/*
-    ```
-1. Publish to https://pypi.org:
-    ```
-    twine upload dist/*
-    ```
+1. In the `manifest-tool-internal` repository:
+   1. Update `requirements.txt` to dependencies latest version.
+   1. Bump the package [version](./manifesttool/__init__.py) and tar name in [tox.ini](./tox.ini).
+   1. Create a PR with the above changes and merge it to the master branch.
+   1. Check that the `PR-checker` workflow passes on the master branch. It runs all the tox tests on all the OSes.
+   1. Check that the `create-Linux-wheels` workflow passes on the master branch. It builds the Linux wheels.
+1. Compare manually between the `manifest-tool-internal` repo and the `manifest-tool` repo. Copy the required changes to the `manifest-tool` repo.
+1. In the `manifest-tool` repository:
+   1. Create a PR with the changes to master. Merge it after successful PR checks and approval.
+   1. Check that the `PR-checker` workflow passes on the master branch. It runs all the tox tests on all the OSes.
+   1. Check that the `create-Linux-wheels` workflow passes on the master branch. It builds the Linux wheels and uploads them as an artifact.
+   1. Download the `wheels.zip` artifact to your local machine from the `create-Linux-wheels` workflow.
+   1. Extract the `wheels.zip` to a folder - <dist-folder>
+   1. Install `twine`: `pip install twine`.
+   1. Publish to https://test.pypi.org and check:
+      ```
+      twine upload -r testpypi <dist-folder>/*
+      ```
+   1. Publish to https://pypi.org:
+      ```
+      twine upload <dist-folder>/*
+      ```
 1. Yank older pre-releases in https://pypi.org/manage/project/manifest-tool/releases/
 1. Close fixed issues
+1. Create a tag and a release in `manifest-tool-internal` and `manifest-tool` repos.

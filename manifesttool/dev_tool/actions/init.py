@@ -208,6 +208,7 @@ def generate_update_default_resources_c(
 
     c_source.write_text(
         template.format(
+            year=time.strftime("%Y"),
             vendor_id=vendor_id_str,
             class_id=class_id_str,
             cert=cert_str,

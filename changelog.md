@@ -1,5 +1,10 @@
 # Changelog
 
+## 2.6.2
+- Copyright in `update_default_resoruces.c` created with Izuma Networks and current year.
+- Updated `cryptography` to version `43.0.1`.
+- Updated `requests` to version `2.32.0`.
+
 ## 2.6.1
 - Drop support for Python 3.7.
     - Python 3.7 is end of life.
